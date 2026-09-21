@@ -1,6 +1,6 @@
 ---
 name: 'User Story '
-about: A feature the system should implement, written from a user's perspective
+about: Create a feature the system should implement, written from a user's perspective
 title: ''
 labels: ''
 assignees: ''

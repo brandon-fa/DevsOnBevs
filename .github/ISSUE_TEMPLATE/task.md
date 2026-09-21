@@ -1,6 +1,7 @@
 ---
 name: Task
-about: Describe this issue template's purpose here.
+about: Create a task relating to reminders or miscellaneous deliverables (e.g., Word,
+  Excel)
 title: ''
 labels: ''
 assignees: ''
