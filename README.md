@@ -52,7 +52,7 @@ The **Grocery Delivery System** is a full-stack application designed to offer on
 
 
 
-## How to run frontend & backend
+## How to first run frontend & backend
 in terminal
 
 frontend:
