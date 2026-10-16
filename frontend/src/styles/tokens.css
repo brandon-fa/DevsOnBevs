@@ -1,0 +1,35 @@
+:root {
+  /* Coconut & Terracotta. Taupe is for borders only: on cream it is 3.39:1, under the 4.5:1 text floor. */
+  --color-cream: oklch(0.98 0.01 81.795);
+  --color-linen: oklch(0.915 0.026 76.787);
+  --color-clay: oklch(0.7 0.081 45.907);
+  /* Same hue and chroma as Warm Clay, lower lightness so cream label text clears 4.5:1. */
+  --color-clay-deep: oklch(0.56 0.081 45.907);
+  --color-clay-deep-hover: oklch(0.52 0.081 45.907);
+  --color-taupe: oklch(0.626 0.041 55.001);
+  --color-brown: oklch(0.369 0.02 58.085);
+
+  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+  --font-body: "Source Sans 3", "Segoe UI", sans-serif;
+
+  --text-caption: 0.8125rem;
+  --text-body: 1rem;
+  --text-lead: 1.125rem;
+  --text-h3: 1.25rem;
+  --text-h2: 1.5rem;
+  --text-h1: clamp(2.25rem, 4vw, 3.25rem);
+
+  --radius-outer: 20px;
+  --radius-inner: 12px;
+  --radius-control: 12px;
+
+  --shadow-card:
+    0 1px 1px oklch(0.369 0.02 58.085 / 0.05),
+    0 16px 40px oklch(0.369 0.02 58.085 / 0.1);
+  --shadow-button:
+    0 1px 1px oklch(0.369 0.02 58.085 / 0.12),
+    0 8px 16px oklch(0.369 0.02 58.085 / 0.12);
+
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  color-scheme: light;
+}
