@@ -1,6 +1,6 @@
 # DevsOnBevs
 
-Little Isle - Grocery Delivery System
+Little Isles - Grocery Delivery System
 
 ## Project Oberview
 
@@ -49,3 +49,18 @@ The **Grocery Delivery System** is a full-stack application designed to offer on
 * **Microsoft JDBC Driver** *(for Java-to-SQL Server connection)*
 
 ## 📂 Repository Structure
+
+
+
+## How to first run frontend & backend
+in terminal
+
+frontend:
+cd frontend
+npm install
+npm run dev
+
+backend:
+cd backend
+npm install
+

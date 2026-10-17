@@ -1,0 +1,314 @@
+.dashboard {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--color-cream);
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-brown);
+  color: var(--color-cream);
+}
+
+.site-header :focus-visible {
+  outline-color: var(--color-cream);
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+}
+
+.wordmark {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.account-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.account-name {
+  max-width: 16rem;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.role-badge {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: var(--color-linen);
+  color: var(--color-brown);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sign-out {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--color-linen);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-cream);
+  font-weight: 600;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms var(--ease-out);
+}
+
+.sign-out:hover {
+  background: oklch(0.98 0.01 81.795 / 0.12);
+}
+
+.sign-out:active {
+  transform: scale(0.96);
+}
+
+.dash-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.dash-intro .lede {
+  max-width: 42rem;
+  margin-top: 0.6rem;
+  text-wrap: pretty;
+}
+
+.dash-section {
+  animation: rise 400ms var(--ease-out) both;
+}
+
+.dash-section:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.dash-section:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.order-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(16rem, 0.8fr);
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius-outer);
+  background: var(--color-brown);
+  color: var(--color-cream);
+  box-shadow: var(--shadow-card);
+}
+
+.order-card > div:first-child {
+  padding: 1rem 1rem 1rem 1.25rem;
+}
+
+.section-kicker {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.order-card h2 {
+  margin-top: 0.45rem;
+}
+
+.order-copy {
+  max-width: 46ch;
+  margin-top: 0.75rem;
+  text-wrap: pretty;
+}
+
+.order-id,
+.money {
+  font-variant-numeric: tabular-nums;
+}
+
+.money {
+  white-space: nowrap;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.step::before {
+  content: "";
+  display: block;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: oklch(0.98 0.01 81.795 / 0.35);
+}
+
+.step.is-done::before,
+.step.is-current::before {
+  background: var(--color-clay);
+}
+
+.step-label {
+  font-weight: 600;
+}
+
+.step.is-current .step-label {
+  font-weight: 600;
+}
+
+.step-state {
+  font-size: var(--text-caption);
+}
+
+.order-meta {
+  padding: 1rem;
+  border-radius: var(--radius-inner);
+  background: oklch(0.32 0.018 58.085);
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.item-list li,
+.fee-row,
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.fee-row {
+  margin-top: 0.85rem;
+}
+
+.total-row {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-linen);
+  font-weight: 600;
+}
+
+.section-heading {
+  margin-bottom: 0.9rem;
+}
+
+.section-heading p,
+.store-goods,
+.store-place,
+.order-meta-line {
+  text-wrap: pretty;
+}
+
+.section-heading p {
+  margin-top: 0.35rem;
+}
+
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+.store-card {
+  padding: 8px;
+  border-radius: var(--radius-outer);
+  background: var(--color-linen);
+  box-shadow: var(--shadow-card);
+}
+
+.store-card-inner {
+  padding: 16px;
+  border-radius: var(--radius-inner);
+  background: var(--color-cream);
+}
+
+.store-mark {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  background: var(--color-brown);
+  color: var(--color-cream);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.store-place {
+  margin-top: 0.35rem;
+}
+
+.store-goods {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 800px) {
+  .site-header-inner {
+    flex-wrap: wrap;
+  }
+
+  .wordmark,
+  .account-cluster {
+    width: 100%;
+  }
+
+  .account-cluster {
+    justify-content: flex-start;
+  }
+
+  .order-card {
+    grid-template-columns: 1fr;
+  }
+
+  .steps {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
