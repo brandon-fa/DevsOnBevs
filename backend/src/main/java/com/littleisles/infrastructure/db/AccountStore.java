@@ -1,6 +1,7 @@
 package com.littleisles.infrastructure.db;
 
 import com.littleisles.domain.reg.Account;
+import com.littleisles.domain.reg.AccountCredentials;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,7 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public final class AccountStore {
+public final class AccountStore implements AccountRepository {
     private final String jdbcUrl;
 
     public AccountStore() {
@@ -48,6 +49,22 @@ public final class AccountStore {
             }
         }
     }
+
+    @Override
+    public AccountCredentials findByEmail(String email) throws SQLException {
+        String sql = "SELECT id, role, full_name, email, phone, password_hash FROM users WHERE lower(email) = lower(?)";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, email.trim());
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) return null;
+                return new AccountCredentials(result.getLong("id"), result.getString("role"),
+                        result.getString("full_name"), result.getString("email"),
+                        result.getString("phone"), result.getString("password_hash"));
+            }
+        }
+    }
+
 
     public static boolean isDuplicateEmail(SQLException exception) {
         String message = exception.getMessage();

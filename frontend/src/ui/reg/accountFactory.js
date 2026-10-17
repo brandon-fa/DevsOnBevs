@@ -12,6 +12,10 @@ export const ROLE_LABELS = Object.freeze({
   operator: "Operator",
 });
 
+export function dashboardPathForRole(role) {
+  return ROLES.includes(role) ? `/dashboard/${role}` : "/login";
+}
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function accountIssues(draft) {

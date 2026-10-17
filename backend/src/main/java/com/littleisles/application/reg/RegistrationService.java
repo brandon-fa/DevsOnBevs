@@ -10,6 +10,16 @@ import com.littleisles.domain.reg.RestaurantCreator;
 import com.littleisles.domain.reg.Role;
 
 public final class RegistrationService {
+    private RegistrationService() {}
+
+    private static class InstanceHolder {
+        private static final RegistrationService INSTANCE = new RegistrationService();
+    }
+
+    public static RegistrationService getInstance() {
+        return InstanceHolder.INSTANCE;
+    }
+
     public Account register(String roleLabel, AccountDraft draft) {
         Role role = Role.fromLabel(roleLabel == null ? "" : roleLabel.trim());
         Account account = creatorFor(role).register(draft);
