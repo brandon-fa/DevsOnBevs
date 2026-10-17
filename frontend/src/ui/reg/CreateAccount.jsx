@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ROLE_LABELS, ROLES, accountIssues, factoryFor } from "./accountFactory.js";
+import { ROLE_LABELS, ROLES, accountIssues, dashboardPathForRole, factoryFor } from "./accountFactory.js";
 import { saveAccount } from "./accountSession.js";
 import "./create-account.css";
 
@@ -57,8 +57,19 @@ export default function CreateAccount() {
         setErrors({ form: payload.error || "The account could not be saved." });
         return;
       }
-      saveAccount(payload);
-      navigate("/dashboard");
+      const loginResponse = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email.trim(), password: form.password }),
+      });
+      const authenticatedAccount = await loginResponse.json().catch(() => ({}));
+      if (!loginResponse.ok) {
+        setErrors({ form: authenticatedAccount.error || "Account created. Please log in." });
+        navigate("/login");
+        return;
+      }
+      saveAccount(authenticatedAccount);
+      navigate(dashboardPathForRole(authenticatedAccount.role));
     } catch (error) {
       setErrors(error.issues ?? { form: error.message || "The account could not be saved." });
     }
@@ -90,6 +101,7 @@ export default function CreateAccount() {
           <div className="form-card">
             <h2 id="create-account-title">Create an account</h2>
             <p className="form-intro">Same form for every role. This account holds one.</p>
+            <p className="form-intro"><a href="/login">Already have an account? Log in</a></p>
 
             <form className="account-form" onSubmit={handleSubmit} noValidate>
               {messages.length > 0 && (

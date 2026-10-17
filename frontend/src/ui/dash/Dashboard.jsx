@@ -1,27 +1,49 @@
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { ORDER_STEPS, activeOrder, formatMoney, stores } from "../../data/mockData.js";
 import { ROLE_LABELS } from "../reg/accountFactory.js";
-import { clearAccount, loadAccount } from "../reg/accountSession.js";
+import { clearAccount, saveAccount } from "../reg/accountSession.js";
+import { dashboardPathForRole } from "../reg/accountFactory.js";
+import RoleDashboardView from "./RoleDashboardView.jsx";
 import "./dashboard.css";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [account] = useState(() => loadAccount());
+  const { role: routeRole } = useParams();
+  const [account, setAccount] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     document.title = "Dashboard · Little Isles";
+    fetch("/api/session")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((currentAccount) => {
+        if (currentAccount) {
+          saveAccount(currentAccount);
+          setAccount(currentAccount);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
+  if (loading) return <main className="dash-main" aria-live="polite">Loading your dashboard…</main>;
   if (!account) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
+  }
+  if (routeRole !== account.role) {
+    return <Navigate to={dashboardPathForRole(account.role)} replace />;
   }
 
   const currentStep = ORDER_STEPS.findIndex(([key]) => key === activeOrder.status);
 
-  function signOut() {
+  async function signOut() {
+    await fetch("/api/logout", { method: "POST" }).catch(() => {});
     clearAccount();
-    navigate("/");
+    navigate("/login");
   }
 
   return (
@@ -43,6 +65,8 @@ export default function Dashboard() {
       </header>
 
       <main id="main" className="dash-main">
+        {account.role === "customer" ? (
+          <>
         <div className="dash-intro dash-section">
           <h1>Your market</h1>
           <p className="lede">
@@ -120,6 +144,10 @@ export default function Dashboard() {
             ))}
           </ul>
         </section>
+          </>
+        ) : (
+          <RoleDashboardView role={account.role} />
+        )}
       </main>
     </div>
   );

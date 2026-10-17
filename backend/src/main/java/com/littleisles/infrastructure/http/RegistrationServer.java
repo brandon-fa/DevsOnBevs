@@ -1,6 +1,8 @@
 package com.littleisles.infrastructure.http;
 
 import com.littleisles.application.reg.RegistrationService;
+import com.littleisles.application.reg.AuthController;
+import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountDraft;
 import com.littleisles.infrastructure.db.AccountStore;
@@ -18,17 +20,70 @@ import java.util.Map;
 public final class RegistrationServer {
     private final RegistrationService registrationService;
     private final AccountStore accountStore;
+    private final AuthController authController;
 
-    public RegistrationServer(RegistrationService registrationService, AccountStore accountStore) {
+    public RegistrationServer(RegistrationService registrationService, AccountStore accountStore, AuthController authController) {
         this.registrationService = registrationService;
         this.accountStore = accountStore;
+        this.authController = authController;
     }
 
     public HttpServer start(int port) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/api/accounts", this::handle);
+        server.createContext("/api/login", this::handleLogin);
+        server.createContext("/api/session", this::handleSession);
+        server.createContext("/api/logout", this::handleLogout);
         server.start();
         return server;
+    }
+
+    private void handleLogin(HttpExchange exchange) throws IOException {
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) { send(exchange, 204, ""); return; }
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            send(exchange, 405, "{\"error\":\"Use POST to log in.\"}"); return;
+        }
+        Map<String, String> fields = readFields(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+        try {
+            AuthController.LoginResult result = authController.login(fields.get("email"), fields.get("password"));
+            if (result == null) {
+                send(exchange, 401, "{\"error\":\"Email or password is incorrect.\"}"); return;
+            }
+            exchange.getResponseHeaders().add("Set-Cookie", "littleisle.session=" + result.sessionId() + "; Path=/; HttpOnly; SameSite=Lax");
+            send(exchange, 200, accountJson(result.account()));
+        } catch (SQLException exception) {
+            send(exchange, 500, "{\"error\":\"Login is temporarily unavailable.\"}");
+        }
+    }
+
+    private void handleSession(HttpExchange exchange) throws IOException {
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) { send(exchange, 405, "{}"); return; }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) { send(exchange, 401, "{\"error\":\"Log in to continue.\"}"); return; }
+        send(exchange, 200, accountJson(account));
+    }
+
+    private void handleLogout(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) { send(exchange, 405, "{}"); return; }
+        authController.logout(sessionCookie(exchange));
+        exchange.getResponseHeaders().add("Set-Cookie", "littleisle.session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
+        send(exchange, 204, "");
+    }
+
+    private static String sessionCookie(HttpExchange exchange) {
+        String cookie = exchange.getRequestHeaders().getFirst("Cookie");
+        if (cookie == null) return null;
+        for (String part : cookie.split(";")) {
+            String[] pair = part.trim().split("=", 2);
+            if (pair.length == 2 && pair[0].equals("littleisle.session")) return pair[1];
+        }
+        return null;
+    }
+
+    private static String accountJson(AuthenticatedAccount account) {
+        return "{\"id\":" + account.id() + ",\"fullName\":" + quote(account.fullName())
+                + ",\"email\":" + quote(account.email()) + ",\"phone\":" + quote(account.phone())
+                + ",\"role\":" + quote(account.role().label()) + "}";
     }
 
     private void handle(HttpExchange exchange) throws IOException {
@@ -141,9 +196,9 @@ public final class RegistrationServer {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
-        exchange.sendResponseHeaders(status, bytes.length);
+        exchange.sendResponseHeaders(status, status == 204 ? -1 : bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
             output.write(bytes);
         }
