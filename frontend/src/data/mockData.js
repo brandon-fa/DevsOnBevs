@@ -42,16 +42,20 @@ export const stores = [
 ];
 
 export const ORDER_STEPS = [
+  ["placed", "Placed"],
+  ["accepted", "Accepted"],
   ["preparing", "Preparing"],
+  ["ready", "Ready"],
   ["picked_up", "Picked up"],
-  ["on_the_way", "On the way"],
   ["delivered", "Delivered"],
 ];
 
 export const STATUS_LABELS = {
+  placed: "Placed",
+  accepted: "Accepted",
   preparing: "Preparing",
+  ready: "Ready",
   picked_up: "Picked up",
-  on_the_way: "On the way",
   delivered: "Delivered",
 };
 

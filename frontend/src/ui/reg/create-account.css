@@ -1,6 +1,6 @@
 .create-page {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+  grid-template-columns: 1fr 1fr;
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -35,7 +35,11 @@
 }
 
 .brand-copy {
-  max-width: 36rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  max-width: none;
 }
 
 .eyebrow {
@@ -46,8 +50,10 @@
 }
 
 .brand-title {
-  margin-top: 0.75rem;
-  font-size: clamp(2.75rem, 6vw, 4.5rem);
+  margin-top: 0.5rem;
+  font-size: clamp(5.5rem, 9vw, 10.5rem);
+  line-height: 0.86;
+  letter-spacing: -0.05em;
 }
 
 .lede {

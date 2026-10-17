@@ -29,7 +29,7 @@ export default function CreateAccount() {
     };
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const issues = accountIssues(form);
     if (!ROLES.includes(form.role)) issues.role = "Choose a role.";
@@ -40,11 +40,27 @@ export default function CreateAccount() {
     }
 
     try {
-      const account = factoryFor(form.role).register(form);
-      saveAccount(account);
+      factoryFor(form.role).register(form);
+      const response = await fetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: form.fullName.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          phone: form.phone.trim(),
+          role: form.role,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setErrors({ form: payload.error || "The account could not be saved." });
+        return;
+      }
+      saveAccount(payload);
       navigate("/dashboard");
     } catch (error) {
-      setErrors(error.issues ?? { form: error.message });
+      setErrors(error.issues ?? { form: error.message || "The account could not be saved." });
     }
   }
 

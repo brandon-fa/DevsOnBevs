@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import {
-  ORDER_STEPS,
-  STATUS_LABELS,
-  activeOrder,
-  formatMoney,
-  recentOrders,
-  stores,
-} from "../../data/mockData.js";
+import { ORDER_STEPS, activeOrder, formatMoney, stores } from "../../data/mockData.js";
 import { ROLE_LABELS } from "../reg/accountFactory.js";
 import { clearAccount, loadAccount } from "../reg/accountSession.js";
 import "./dashboard.css";
@@ -105,53 +98,28 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <div className="dash-columns dash-section">
-          <section aria-labelledby="nearby-title">
-            <div className="section-heading">
-              <h2 id="nearby-title">Nearby groceries</h2>
-              <p>Markets stocking the foods people cook at home.</p>
-            </div>
-            <ul className="store-grid">
-              {stores.map((store) => (
-                <li key={store.id} className="store-card">
-                  <div className="store-card-inner">
-                    <p className="store-mark" aria-hidden="true">
-                      {store.mark}
-                    </p>
-                    <h3>{store.name}</h3>
-                    <p className="store-place">
-                      {store.cuisine} · {store.neighborhood}
-                    </p>
-                    <p className="store-goods">{store.goods}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="recent-card" aria-labelledby="recent-title">
-            <div className="recent-card-inner">
-              <h2 id="recent-title">Recent orders</h2>
-              <ul className="order-list">
-                {recentOrders.map((order) => (
-                  <li key={order.id}>
-                    <div>
-                      <p className="order-store">{order.store}</p>
-                      <p className="order-meta-line">
-                        <span className="order-id">{order.id}</span>
-                        {" · "}
-                        {order.date}
-                        {" · "}
-                        {STATUS_LABELS[order.status]}
-                      </p>
-                    </div>
-                    <p className="money">{formatMoney(order.totalCents)}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        </div>
+        <section className="dash-section" aria-labelledby="nearby-title">
+          <div className="section-heading">
+            <h2 id="nearby-title">Nearby groceries</h2>
+            <p>Markets stocking the foods people cook at home.</p>
+          </div>
+          <ul className="store-grid">
+            {stores.map((store) => (
+              <li key={store.id} className="store-card">
+                <div className="store-card-inner">
+                  <p className="store-mark" aria-hidden="true">
+                    {store.mark}
+                  </p>
+                  <h3>{store.name}</h3>
+                  <p className="store-place">
+                    {store.cuisine} · {store.neighborhood}
+                  </p>
+                  <p className="store-goods">{store.goods}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       </main>
     </div>
   );

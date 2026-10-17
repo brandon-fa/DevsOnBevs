@@ -42,7 +42,7 @@ CREATE TABLE orders (
     customer_id INTEGER NOT NULL REFERENCES users (id),
     restaurant_id INTEGER NOT NULL REFERENCES users (id),
     courier_id INTEGER REFERENCES users (id),
-    status TEXT NOT NULL CHECK (status IN ('preparing', 'picked_up', 'on_the_way', 'delivered', 'cancelled')),
+    status TEXT NOT NULL CHECK (status IN ('placed', 'accepted', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled')),
     delivery_address TEXT NOT NULL,
     subtotal_cents INTEGER NOT NULL CHECK (subtotal_cents >= 0),
     delivery_fee_cents INTEGER NOT NULL CHECK (delivery_fee_cents >= 0),
