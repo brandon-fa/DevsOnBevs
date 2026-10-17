@@ -2,6 +2,7 @@ package com.littleisles.infrastructure.db;
 
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountCredentials;
+import com.littleisles.technicalservices.reg.AccountRepository;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,7 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public final class AccountStore implements SeedAccountRepository {
+public final class AccountStore implements AccountRepository {
     private final String jdbcUrl;
 
     public AccountStore() {

@@ -1,4 +1,4 @@
-package com.littleisles.infrastructure.db;
+package com.littleisles.technicalservices.reg;
 
 import com.littleisles.application.reg.RegistrationService;
 import com.littleisles.domain.reg.Account;
@@ -6,6 +6,7 @@ import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.AccountService;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.Role;
+import com.littleisles.infrastructure.db.AccountStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -110,7 +111,7 @@ class SeedAccountLoaderTest {
                 + "account." + id + ".phone=514-555-0200\n\n";
     }
 
-    private static final class InMemorySeedAccountRepository implements SeedAccountRepository {
+    private static final class InMemorySeedAccountRepository implements AccountRepository {
         private final Map<String, AccountCredentials> accounts = new HashMap<>();
 
         @Override

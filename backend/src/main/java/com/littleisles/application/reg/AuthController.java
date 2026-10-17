@@ -2,7 +2,7 @@ package com.littleisles.application.reg;
 
 import com.littleisles.domain.reg.AccountService;
 import com.littleisles.domain.reg.AuthenticatedAccount;
-import com.littleisles.infrastructure.db.AccountRepository;
+import com.littleisles.technicalservices.reg.AccountRepository;
 
 import java.sql.SQLException;
 

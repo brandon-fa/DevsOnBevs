@@ -1,4 +1,4 @@
-package com.littleisles.infrastructure.db;
+package com.littleisles.technicalservices.reg;
 
 import com.littleisles.application.reg.RegistrationService;
 import com.littleisles.domain.reg.Account;
@@ -23,11 +23,11 @@ import java.util.TreeSet;
 public final class SeedAccountLoader {
     private static final String PREFIX = "account.";
 
-    private final SeedAccountRepository accountRepository;
+    private final AccountRepository accountRepository;
     private final RegistrationService registrationService;
     private final Path configFile;
 
-    public SeedAccountLoader(SeedAccountRepository accountRepository, RegistrationService registrationService, Path configFile) {
+    public SeedAccountLoader(AccountRepository accountRepository, RegistrationService registrationService, Path configFile) {
         this.accountRepository = accountRepository;
         this.registrationService = registrationService;
         this.configFile = configFile;
