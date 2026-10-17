@@ -62,5 +62,20 @@ npm run dev
 
 backend:
 cd backend
-npm install
+mvn compile exec:java
+
+## Seeded demonstration accounts
+
+The backend reads `config/seeded-accounts.properties` during startup and ensures there is a demonstration account for each role in `database/littleisle.sqlite`. It prints the role and email for each loaded account in the backend console.
+
+Credentials to use for the seeded accounts based on its respective role:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Customer | demo.customer@littleisles.example | DemoPass123! |
+| Restaurant | demo.restaurant@littleisles.example | DemoPass123! |
+| Courier | demo.courier@littleisles.example | DemoPass123! |
+| Operator | demo.operator@littleisles.example | DemoPass123! |
+
+Note that these are only for demonstration purposes.
 
