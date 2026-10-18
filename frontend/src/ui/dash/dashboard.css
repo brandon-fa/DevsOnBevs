@@ -284,6 +284,18 @@
   margin-top: 0.5rem;
 }
 
+.role-empty-view {
+  display: grid;
+  min-height: 20rem;
+  place-items: center;
+  text-align: center;
+}
+
+.role-empty-view h1 {
+  font-size: var(--text-h1);
+  text-transform: uppercase;
+}
+
 @media (max-width: 800px) {
   .site-header-inner {
     flex-wrap: wrap;
