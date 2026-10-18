@@ -10,7 +10,7 @@ assignees: ''
 ## User Story
 <!-- One sentence in this format:
 As a [role], I want [goal], so that [benefit].
-- Role: customer, restaurant owner/staff, courier, or operator.
+- Role: customer, groceries owner/staff, courier, or operator.
 - Goal: the action the user wants to perform. Describe what, not how.
 - Benefit: why it matters to them. -->
 

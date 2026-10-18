@@ -1,13 +1,13 @@
 export const ROLES = Object.freeze([
   "customer",
-  "restaurant",
+  "groceries",
   "courier",
   "operator",
 ]);
 
 export const ROLE_LABELS = Object.freeze({
   customer: "Customer",
-  restaurant: "Restaurant",
+  groceries: "Groceries",
   courier: "Courier",
   operator: "Operator",
 });
@@ -56,9 +56,9 @@ class CustomerAccount extends Account {
   }
 }
 
-class RestaurantAccount extends Account {
+class GroceriesAccount extends Account {
   constructor(draft) {
-    super({ ...draft, role: "restaurant" });
+    super({ ...draft, role: "groceries" });
   }
 }
 
@@ -110,13 +110,13 @@ class CustomerAccountFactory extends AccountFactory {
   }
 }
 
-class RestaurantAccountFactory extends AccountFactory {
+class GroceriesAccountFactory extends AccountFactory {
   createAccount(draft) {
-    return new RestaurantAccount(cleaned(draft));
+    return new GroceriesAccount(cleaned(draft));
   }
 
   role() {
-    return "restaurant";
+    return "groceries";
   }
 }
 
@@ -144,8 +144,8 @@ export function factoryFor(role) {
   switch (role) {
     case "customer":
       return new CustomerAccountFactory();
-    case "restaurant":
-      return new RestaurantAccountFactory();
+    case "groceries":
+      return new GroceriesAccountFactory();
     case "courier":
       return new CourierAccountFactory();
     case "operator":

@@ -1,5 +1,5 @@
 const VIEW_LABELS = {
-  restaurant: "Restaurant View",
+  groceries: "Groceries View",
   courier: "Courier View",
   operator: "Operator View",
 };

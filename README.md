@@ -73,7 +73,7 @@ Credentials to use for the seeded accounts based on its respective role:
 | Role | Email | Password |
 | --- | --- | --- |
 | Customer | demo.customer@littleisles.example | DemoPass123! |
-| Restaurant | demo.restaurant@littleisles.example | DemoPass123! |
+| Groceries | demo.groceries@littleisles.example | DemoPass123! |
 | Courier | demo.courier@littleisles.example | DemoPass123! |
 | Operator | demo.operator@littleisles.example | DemoPass123! |
 

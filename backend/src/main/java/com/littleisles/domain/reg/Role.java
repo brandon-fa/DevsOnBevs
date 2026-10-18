@@ -2,7 +2,7 @@ package com.littleisles.domain.reg;
 
 public enum Role {
     CUSTOMER("customer"),
-    RESTAURANT("restaurant"),
+    GROCERIES("groceries"),
     COURIER("courier"),
     OPERATOR("operator");
 

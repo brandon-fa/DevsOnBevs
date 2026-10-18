@@ -1,16 +1,16 @@
 INSERT INTO users (id, role, full_name, email, password_hash, phone, created_at) VALUES
-    (1, 'restaurant', 'Leila Mansour', 'leila@oliveandrye.example', 'sha256:placeholder', '514-555-0101', '2026-09-01 10:00:00'),
-    (2, 'restaurant', 'Marcus Grant', 'marcus@islandpantry.example', 'sha256:placeholder', '514-555-0102', '2026-09-01 10:05:00'),
-    (3, 'restaurant', 'Priya Shah', 'priya@spiceroute.example', 'sha256:placeholder', '514-555-0103', '2026-09-01 10:10:00'),
-    (4, 'restaurant', 'Hana Khoury', 'hana@cedarbasket.example', 'sha256:placeholder', '514-555-0104', '2026-09-01 10:15:00'),
-    (5, 'restaurant', 'Mei Lin', 'mei@pearlmarket.example', 'sha256:placeholder', '514-555-0105', '2026-09-01 10:20:00'),
+    (1, 'groceries', 'Leila Mansour', 'leila@oliveandrye.example', 'sha256:placeholder', '514-555-0101', '2026-09-01 10:00:00'),
+    (2, 'groceries', 'Marcus Grant', 'marcus@islandpantry.example', 'sha256:placeholder', '514-555-0102', '2026-09-01 10:05:00'),
+    (3, 'groceries', 'Priya Shah', 'priya@spiceroute.example', 'sha256:placeholder', '514-555-0103', '2026-09-01 10:10:00'),
+    (4, 'groceries', 'Hana Khoury', 'hana@cedarbasket.example', 'sha256:placeholder', '514-555-0104', '2026-09-01 10:15:00'),
+    (5, 'groceries', 'Mei Lin', 'mei@pearlmarket.example', 'sha256:placeholder', '514-555-0105', '2026-09-01 10:20:00'),
     (6, 'courier', 'Samir Haddad', 'samir@couriers.littleisle.example', 'sha256:placeholder', '514-555-0106', '2026-09-02 09:00:00'),
     (7, 'courier', 'Nadia Pelletier', 'nadia@couriers.littleisle.example', 'sha256:placeholder', '514-555-0107', '2026-09-02 09:05:00'),
     (8, 'customer', 'Amira Benali', 'amira@customers.littleisle.example', 'sha256:placeholder', '514-555-0108', '2026-09-03 14:00:00'),
     (9, 'customer', 'Leo Chen', 'leo@customers.littleisle.example', 'sha256:placeholder', '514-555-0109', '2026-09-03 14:10:00'),
     (10, 'operator', 'Jordan Hale', 'jordan@littleisle.example', 'sha256:placeholder', '514-555-0110', '2026-09-01 08:00:00');
 
-INSERT INTO restaurant_profiles (user_id, store_name, cuisine, address) VALUES
+INSERT INTO groceries_profiles (user_id, store_name, cuisine, address) VALUES
     (1, 'Olive & Rye', 'Mediterranean', '120 Avenue du Mont-Royal E, Montreal'),
     (2, 'Island Pantry', 'Caribbean', '5400 Avenue de Monkland, Montreal'),
     (3, 'Spice Route', 'South Asian', '800 Rue Jean-Talon Ouest, Montreal'),
@@ -25,7 +25,7 @@ INSERT INTO customer_profiles (user_id, delivery_address) VALUES
     (8, '418 Avenue Duluth, Montreal'),
     (9, '88 Rue Jean-Talon Ouest, Montreal');
 
-INSERT INTO products (id, restaurant_id, name, description, price_cents, category, stock) VALUES
+INSERT INTO products (id, groceries_id, name, description, price_cents, category, stock) VALUES
     (1, 1, 'Castelvetrano olives', 'Jar of mild green olives', 650, 'Pantry', 40),
     (2, 1, 'Halloumi', 'Grilling cheese', 890, 'Dairy', 24),
     (3, 1, 'Sesame bread', 'Fresh loaf', 425, 'Bakery', 18),
@@ -43,7 +43,7 @@ INSERT INTO products (id, restaurant_id, name, description, price_cents, categor
     (15, 5, 'Baby bok choy', 'Fresh bunch', 325, 'Produce', 22);
 
 INSERT INTO orders (
-    id, customer_id, restaurant_id, courier_id, status, delivery_address,
+    id, customer_id, groceries_id, courier_id, status, delivery_address,
     subtotal_cents, delivery_fee_cents, total_cents, created_at
 ) VALUES
     (1042, 8, 4, 7, 'on_the_way', '418 Avenue Duluth, Montreal', 1495, 399, 1894, '2026-10-16 16:10:00'),

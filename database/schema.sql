@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY,
-    role TEXT NOT NULL CHECK (role IN ('customer', 'restaurant', 'courier', 'operator')),
+    role TEXT NOT NULL CHECK (role IN ('customer', 'groceries', 'courier', 'operator')),
     full_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE customer_profiles (
     delivery_address TEXT NOT NULL
 );
 
-CREATE TABLE restaurant_profiles (
+CREATE TABLE groceries_profiles (
     user_id INTEGER PRIMARY KEY REFERENCES users (id),
     store_name TEXT NOT NULL,
     cuisine TEXT NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE courier_profiles (
 
 CREATE TABLE products (
     id INTEGER PRIMARY KEY,
-    restaurant_id INTEGER NOT NULL REFERENCES users (id),
+    groceries_id INTEGER NOT NULL REFERENCES users (id),
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     price_cents INTEGER NOT NULL CHECK (price_cents >= 0),
@@ -40,7 +40,7 @@ CREATE TABLE products (
 CREATE TABLE orders (
     id INTEGER PRIMARY KEY,
     customer_id INTEGER NOT NULL REFERENCES users (id),
-    restaurant_id INTEGER NOT NULL REFERENCES users (id),
+    groceries_id INTEGER NOT NULL REFERENCES users (id),
     courier_id INTEGER REFERENCES users (id),
     status TEXT NOT NULL CHECK (status IN ('placed', 'accepted', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled')),
     delivery_address TEXT NOT NULL,
@@ -66,12 +66,12 @@ BEGIN
     SELECT RAISE(ABORT, 'customer_profiles.user_id must be a customer');
 END;
 
-CREATE TRIGGER restaurant_profiles_role
-BEFORE INSERT ON restaurant_profiles
+CREATE TRIGGER groceries_profiles_role
+BEFORE INSERT ON groceries_profiles
 FOR EACH ROW
-WHEN (SELECT role FROM users WHERE id = NEW.user_id) IS NOT 'restaurant'
+WHEN (SELECT role FROM users WHERE id = NEW.user_id) IS NOT 'groceries'
 BEGIN
-    SELECT RAISE(ABORT, 'restaurant_profiles.user_id must be a restaurant');
+    SELECT RAISE(ABORT, 'groceries_profiles.user_id must be a groceries');
 END;
 
 CREATE TRIGGER courier_profiles_role
@@ -82,19 +82,19 @@ BEGIN
     SELECT RAISE(ABORT, 'courier_profiles.user_id must be a courier');
 END;
 
-CREATE TRIGGER products_restaurant_role
+CREATE TRIGGER products_groceries_role
 BEFORE INSERT ON products
 FOR EACH ROW
-WHEN (SELECT role FROM users WHERE id = NEW.restaurant_id) IS NOT 'restaurant'
+WHEN (SELECT role FROM users WHERE id = NEW.groceries_id) IS NOT 'groceries'
 BEGIN
-    SELECT RAISE(ABORT, 'products.restaurant_id must be a restaurant');
+    SELECT RAISE(ABORT, 'products.groceries_id must be a groceries');
 END;
 
 CREATE TRIGGER orders_party_roles
 BEFORE INSERT ON orders
 FOR EACH ROW
 WHEN (SELECT role FROM users WHERE id = NEW.customer_id) IS NOT 'customer'
-  OR (SELECT role FROM users WHERE id = NEW.restaurant_id) IS NOT 'restaurant'
+  OR (SELECT role FROM users WHERE id = NEW.groceries_id) IS NOT 'groceries'
   OR (
       NEW.courier_id IS NOT NULL
       AND (SELECT role FROM users WHERE id = NEW.courier_id) IS NOT 'courier'

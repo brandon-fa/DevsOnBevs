@@ -73,6 +73,9 @@ class SeedAccountLoaderTest {
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + database);
              Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, role TEXT NOT NULL, full_name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, phone TEXT NOT NULL)");
+            statement.execute("CREATE TABLE customer_profiles (user_id INTEGER PRIMARY KEY, delivery_address TEXT NOT NULL)");
+            statement.execute("CREATE TABLE groceries_profiles (user_id INTEGER PRIMARY KEY, store_name TEXT NOT NULL, cuisine TEXT NOT NULL, address TEXT NOT NULL)");
+            statement.execute("CREATE TABLE courier_profiles (user_id INTEGER PRIMARY KEY, vehicle_type TEXT NOT NULL)");
         }
         AccountStore store = new AccountStore(database);
         SeedAccountLoader loader = new SeedAccountLoader(store, RegistrationService.getInstance(), config);
@@ -98,7 +101,7 @@ class SeedAccountLoaderTest {
 
     private static String allRolesConfig() {
         return accountBlock("customer", "customer")
-                + accountBlock("restaurant", "restaurant")
+                + accountBlock("groceries", "groceries")
                 + accountBlock("courier", "courier")
                 + accountBlock("operator", "operator");
     }

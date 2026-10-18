@@ -1,4 +1,7 @@
 node_modules/
 dist/
 backend/target/
+<<<<<<< HEAD
+=======
 .idea/
+>>>>>>> origin/phase-2
