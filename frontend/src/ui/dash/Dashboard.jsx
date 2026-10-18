@@ -4,6 +4,7 @@ import { ORDER_STEPS, activeOrder, formatMoney, stores } from "../../data/mockDa
 import { ROLE_LABELS } from "../reg/accountFactory.js";
 import { clearAccount, saveAccount } from "../reg/accountSession.js";
 import { dashboardPathForRole } from "../reg/accountFactory.js";
+import CityMap from "./CityMap.jsx";
 import RoleDashboardView from "./RoleDashboardView.jsx";
 import "./dashboard.css";
 
@@ -15,7 +16,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     document.title = "Dashboard · Little Isles";
-    fetch("/api/session")
+    fetch("/api/session", { credentials: "include" })
       .then(async (response) => {
         if (!response.ok) return null;
         return response.json();
@@ -41,7 +42,7 @@ export default function Dashboard() {
   const currentStep = ORDER_STEPS.findIndex(([key]) => key === activeOrder.status);
 
   async function signOut() {
-    await fetch("/api/logout", { method: "POST" }).catch(() => {});
+    await fetch("/api/logout", { method: "POST", credentials: "include" }).catch(() => {});
     clearAccount();
     navigate("/login");
   }
@@ -65,6 +66,7 @@ export default function Dashboard() {
       </header>
 
       <main id="main" className="dash-main">
+        <CityMap />
         {account.role === "customer" ? (
           <>
         <div className="dash-intro dash-section">
