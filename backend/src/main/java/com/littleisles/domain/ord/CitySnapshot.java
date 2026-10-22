@@ -1,5 +1,6 @@
 package com.littleisles.domain.ord;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -20,6 +21,50 @@ public record CitySnapshot(
 
     public boolean isEmpty() {
         return restaurants.isEmpty() && couriers.isEmpty() && customers.isEmpty();
+    }
+
+    public static Builder builder(CityBounds bounds) {
+        return new Builder(bounds);
+    }
+
+    public static final class Builder {
+        private final CityBounds bounds;
+        private final List<Restaurant> restaurants = new ArrayList<>();
+        private final List<CourierPin> couriers = new ArrayList<>();
+        private final List<CustomerPin> customers = new ArrayList<>();
+
+        private Builder(CityBounds bounds) {
+            if (bounds == null) {
+                throw new IllegalArgumentException("The city needs display bounds.");
+            }
+            this.bounds = bounds;
+        }
+
+        public Builder addRestaurant(Restaurant restaurant) {
+            restaurants.add(requireValue(restaurant, "A city restaurant cannot be null."));
+            return this;
+        }
+
+        public Builder addCourier(CourierPin courier) {
+            couriers.add(requireValue(courier, "A city courier cannot be null."));
+            return this;
+        }
+
+        public Builder addCustomer(CustomerPin customer) {
+            customers.add(requireValue(customer, "A city customer cannot be null."));
+            return this;
+        }
+
+        public CitySnapshot build() {
+            return new CitySnapshot(bounds, restaurants, couriers, customers);
+        }
+
+        private static <T> T requireValue(T value, String message) {
+            if (value == null) {
+                throw new IllegalArgumentException(message);
+            }
+            return value;
+        }
     }
 
     public String toJson() {

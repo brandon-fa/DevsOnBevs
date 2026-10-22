@@ -50,10 +50,11 @@ public final class CityConfigLoader {
         }
 
         CityBounds bounds = readBounds(properties);
-        List<Restaurant> restaurants = readRestaurants(properties);
-        List<CourierPin> couriers = readCouriers(properties);
-        List<CustomerPin> customers = readCustomers(properties);
-        return new CitySnapshot(bounds, restaurants, couriers, customers);
+        CitySnapshot.Builder city = CitySnapshot.builder(bounds);
+        readRestaurants(properties).forEach(city::addRestaurant);
+        readCouriers(properties).forEach(city::addCourier);
+        readCustomers(properties).forEach(city::addCustomer);
+        return city.build();
     }
 
     public static Path locateConfigFile() {

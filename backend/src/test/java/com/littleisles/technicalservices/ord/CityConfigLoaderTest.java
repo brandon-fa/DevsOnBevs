@@ -1,8 +1,12 @@
 package com.littleisles.technicalservices.ord;
 
+import com.littleisles.domain.ord.CityBounds;
 import com.littleisles.domain.ord.CitySnapshot;
+import com.littleisles.domain.ord.CourierPin;
 import com.littleisles.domain.ord.CourierStatus;
+import com.littleisles.domain.ord.CustomerPin;
 import com.littleisles.domain.ord.MenuItemStatus;
+import com.littleisles.domain.ord.Restaurant;
 import com.littleisles.domain.ord.RestaurantStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,6 +57,20 @@ class CityConfigLoaderTest {
         assertTrue(city.restaurants().isEmpty());
         assertTrue(city.couriers().isEmpty());
         assertTrue(city.customers().isEmpty());
+    }
+
+    @Test
+    void cityBuilderCollectsMapEntitiesIntoAnImmutableSnapshot() {
+        CitySnapshot city = CitySnapshot.builder(new CityBounds(45.47, 45.54, -73.64, -73.54))
+                .addRestaurant(new Restaurant("market", "Market", RestaurantStatus.OPEN, 45.5, -73.6, null))
+                .addCourier(new CourierPin("courier", 45.51, -73.59, CourierStatus.IDLE))
+                .addCustomer(new CustomerPin("customer", "Customer", 45.52, -73.58))
+                .build();
+
+        assertEquals(1, city.restaurants().size());
+        assertEquals(1, city.couriers().size());
+        assertEquals(1, city.customers().size());
+        assertThrows(UnsupportedOperationException.class, () -> city.restaurants().clear());
     }
 
     @Test

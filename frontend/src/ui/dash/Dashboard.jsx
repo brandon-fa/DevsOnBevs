@@ -66,7 +66,7 @@ export default function Dashboard() {
       </header>
 
       <main id="main" className="dash-main">
-        <CityMap />
+        <CityMap role={account.role} account={account} order={activeOrder} />
         {account.role === "customer" ? (
           <>
         <div className="dash-intro dash-section">
@@ -85,6 +85,7 @@ export default function Dashboard() {
               <span className="order-id">{activeOrder.id}</span> to {activeOrder.address}, arriving
               around {activeOrder.eta}
             </p>
+            <p className="order-copy">The map shows the courier after pickup.</p>
             <ol className="steps" aria-label="Delivery progress">
               {ORDER_STEPS.map(([key, label], index) => {
                 const state = index < currentStep ? "is-done" : index === currentStep ? "is-current" : "";

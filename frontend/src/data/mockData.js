@@ -61,8 +61,10 @@ export const STATUS_LABELS = {
 
 export const activeOrder = {
   id: 1042,
+  customerName: "Demo Customer",
   store: "Cedar Basket",
-  status: "on_the_way",
+  status: "picked_up",
+  courierId: "nadia",
   courier: "Nadia Pelletier",
   address: "418 Avenue Duluth, Montreal",
   eta: "6:40 p.m.",

@@ -23,8 +23,13 @@
 }
 
 .city-map-status,
-.city-item-status {
+.city-item-status,
+.city-map-note {
   font-size: var(--text-caption);
+}
+
+.city-map-note {
+  margin-top: 1rem;
 }
 
 .city-map-empty {
