@@ -79,7 +79,7 @@ export default function Dashboard() {
         <section className="order-card dash-section" aria-labelledby="active-order-title">
           <div>
             <p className="section-kicker">Active order</p>
-            <h2 id="active-order-title">On the way from {activeOrder.store}</h2>
+            <h2 id="active-order-title">Picked up from {activeOrder.store}</h2>
             <p className="order-copy">
               {activeOrder.courier} is bringing order{" "}
               <span className="order-id">{activeOrder.id}</span> to {activeOrder.address}, arriving
