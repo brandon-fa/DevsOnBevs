@@ -1,0 +1,106 @@
+.city-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(14rem, 0.8fr);
+  gap: 0.75rem;
+  min-height: 22rem;
+}
+
+.city-map-canvas {
+  min-height: 22rem;
+  border-radius: var(--radius-inner);
+  overflow: hidden;
+  background: var(--color-linen);
+}
+
+.city-map-details {
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-inner);
+  background: var(--color-linen);
+}
+
+.city-map-details h3 {
+  margin-top: 0.35rem;
+}
+
+.city-map-status,
+.city-item-status,
+.city-map-note {
+  font-size: var(--text-caption);
+}
+
+.city-map-note {
+  margin-top: 1rem;
+}
+
+.city-map-empty {
+  padding: 2rem 1.25rem;
+  border-radius: var(--radius-inner);
+  background: var(--color-linen);
+  text-wrap: pretty;
+}
+
+.city-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.city-menu-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.city-marker {
+  background: transparent;
+  border: 0;
+}
+
+.city-marker-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 3px;
+  border: 2px solid var(--color-cream);
+  box-shadow: 0 1px 4px oklch(0.369 0.02 58.085 / 0.35);
+}
+
+.city-marker-dot.is-restaurant {
+  border-radius: 4px;
+  background: var(--color-brown);
+}
+
+.city-marker-dot.is-restaurant.is-paused {
+  background: var(--color-clay-deep);
+}
+
+.city-marker-dot.is-restaurant.is-closed {
+  background: var(--color-taupe);
+}
+
+.city-marker-dot.is-courier {
+  border-radius: 999px;
+  background: var(--color-clay);
+}
+
+.city-marker-dot.is-courier.is-offline {
+  background: var(--color-taupe);
+}
+
+.city-marker-dot.is-customer {
+  border-radius: 999px 999px 4px 999px;
+  transform: rotate(45deg);
+  background: var(--color-clay-deep);
+}
+
+.leaflet-container {
+  font-family: var(--font-body);
+  background: var(--color-linen);
+}
+
+@media (max-width: 800px) {
+  .city-map-layout {
+    grid-template-columns: 1fr;
+  }
+}
