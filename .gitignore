@@ -1,7 +1,6 @@
 node_modules/
 dist/
 backend/target/
-<<<<<<< HEAD
-=======
 .idea/
->>>>>>> origin/phase-2
+settings.json
+database/

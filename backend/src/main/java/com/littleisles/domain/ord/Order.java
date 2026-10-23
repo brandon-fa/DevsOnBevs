@@ -4,13 +4,18 @@ import java.util.*;
 import com.littleisles.domain.common.Billing;
 
 public class Order {
+    private static int nextOrderId = 1;
+    private int orderId;
     private GroceryStore store;
     private OrderState state;
     private ArrayList<OrderLine> orderLines;
     private String destination;
-    private double tip;
+    //private double tip;
 
-    public Order() {
+    public Order(GroceryStore store, String destination) {
+        this.orderId = nextOrderId++;
+        this.store = store;
+        this.destination = destination;
         this.state = new OpenOrderState(this);
         this.orderLines = new ArrayList<OrderLine>();
     }
@@ -55,6 +60,7 @@ public class Order {
         state.handoffOrder();
     }
 
+    /*
     public double[] getTotalPrice(){
         double subtotal = 0.0;
         for (OrderLine orderLine : orderLines) {
@@ -66,6 +72,7 @@ public class Order {
         double totalPrice = subtotal + tax + deliveryFee + platformFee + tip;
         return new double[]{totalPrice, subtotal, tax, deliveryFee, platformFee, tip};
     }
+    */
 
     public GroceryStore getStore() {
         return store;
@@ -91,6 +98,7 @@ public class Order {
         return destination;
     }
 
+    /*
     public double getTip() {
         return tip;
     }
@@ -98,6 +106,12 @@ public class Order {
     public void setTip(double tip) {
         this.tip = tip;
     }
-
+    */
     
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Order order = (Order) obj;
+        return orderId == order.orderId;
+    }
 }
