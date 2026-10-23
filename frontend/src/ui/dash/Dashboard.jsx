@@ -4,6 +4,7 @@ import { ORDER_STEPS, activeOrder, formatMoney, stores } from "../../data/mockDa
 import { ROLE_LABELS } from "../reg/accountFactory.js";
 import { clearAccount, saveAccount } from "../reg/accountSession.js";
 import { dashboardPathForRole } from "../reg/accountFactory.js";
+import CityMap from "./CityMap.jsx";
 import RoleDashboardView from "./RoleDashboardView.jsx";
 import "./dashboard.css";
 
@@ -15,7 +16,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     document.title = "Dashboard · Little Isles";
-    fetch("/api/session")
+    fetch("/api/session", { credentials: "include" })
       .then(async (response) => {
         if (!response.ok) return null;
         return response.json();
@@ -41,7 +42,7 @@ export default function Dashboard() {
   const currentStep = ORDER_STEPS.findIndex(([key]) => key === activeOrder.status);
 
   async function signOut() {
-    await fetch("/api/logout", { method: "POST" }).catch(() => {});
+    await fetch("/api/logout", { method: "POST", credentials: "include" }).catch(() => {});
     clearAccount();
     navigate("/login");
   }
@@ -65,6 +66,7 @@ export default function Dashboard() {
       </header>
 
       <main id="main" className="dash-main">
+        <CityMap role={account.role} account={account} order={activeOrder} />
         {account.role === "customer" ? (
           <>
         <div className="dash-intro dash-section">
@@ -77,12 +79,13 @@ export default function Dashboard() {
         <section className="order-card dash-section" aria-labelledby="active-order-title">
           <div>
             <p className="section-kicker">Active order</p>
-            <h2 id="active-order-title">On the way from {activeOrder.store}</h2>
+            <h2 id="active-order-title">Picked up from {activeOrder.store}</h2>
             <p className="order-copy">
               {activeOrder.courier} is bringing order{" "}
               <span className="order-id">{activeOrder.id}</span> to {activeOrder.address}, arriving
               around {activeOrder.eta}
             </p>
+            <p className="order-copy">The map shows the courier after pickup.</p>
             <ol className="steps" aria-label="Delivery progress">
               {ORDER_STEPS.map(([key, label], index) => {
                 const state = index < currentStep ? "is-done" : index === currentStep ? "is-current" : "";
