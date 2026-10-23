@@ -4,7 +4,10 @@ import { ORDER_STEPS, activeOrder, formatMoney, stores } from "../../data/mockDa
 import { ROLE_LABELS } from "../reg/accountFactory.js";
 import { clearAccount, saveAccount } from "../reg/accountSession.js";
 import { dashboardPathForRole } from "../reg/accountFactory.js";
+import StoreOrders from "../ord/StoreOrders.jsx";
+import StoreList from "../ord/StoreList.jsx";
 import CityMap from "./CityMap.jsx";
+import ConsolePanel from "./ConsolePanel.jsx";
 import RoleDashboardView from "./RoleDashboardView.jsx";
 import "./dashboard.css";
 
@@ -147,11 +150,16 @@ export default function Dashboard() {
             ))}
           </ul>
         </section>
-          </>
-        ) : (
+        <StoreList />
+        </>
+        ): account.role === "groceries" ? (
+          <StoreOrders />
+        ): (
           <RoleDashboardView role={account.role} />
         )}
+        <ConsolePanel />
       </main>
+      
     </div>
   );
 }
