@@ -45,12 +45,19 @@ public final class SeedAccountLoader {
         }
 
         List<Account> accounts = new ArrayList<>();
+        List<SeededAccount> seededAccounts = new ArrayList<>();
         Set<Role> roles = EnumSet.noneOf(Role.class);
         Set<String> emails = new HashSet<>();
         for (String accountId : accountIds) {
             String prefix = PREFIX + accountId + ".";
             String roleLabel = required(properties, prefix + "role");
             Role role = Role.fromLabel(roleLabel);
+            String storeId = null;
+            if (role == Role.GROCERIES) {
+                storeId = required(properties, prefix + "storeId");
+            } else if (properties.containsKey(prefix + "storeId")) {
+                throw new IllegalArgumentException("Only groceries accounts can have a storeId.");
+            }
             AccountDraft draft = new AccountDraft(
                     required(properties, prefix + "fullName"),
                     required(properties, prefix + "email"),
@@ -66,6 +73,7 @@ public final class SeedAccountLoader {
                 throw new IllegalStateException("A seeded account must hold exactly one configured role.");
             }
             accounts.add(account);
+            seededAccounts.add(new SeededAccount(role, account.getEmail(), storeId));
             roles.add(role);
         }
 
@@ -78,9 +86,7 @@ public final class SeedAccountLoader {
         for (Account account : accounts) {
             accountRepository.saveSeededAccount(account);
         }
-        return accounts.stream()
-                .map(account -> new SeededAccount(account.getRole(), account.getEmail()))
-                .toList();
+        return List.copyOf(seededAccounts);
     }
 
     public static Path locateConfigFile() {
@@ -106,7 +112,7 @@ public final class SeedAccountLoader {
                 throw new IllegalArgumentException("Invalid seeded account setting: " + key);
             }
             String field = remainder.substring(separator + 1);
-            if (!Set.of("role", "fullName", "email", "password", "phone").contains(field)) {
+            if (!Set.of("role", "fullName", "email", "password", "phone", "storeId").contains(field)) {
                 throw new IllegalArgumentException("Unknown seeded account field: " + field);
             }
             ids.add(remainder.substring(0, separator));
@@ -126,5 +132,5 @@ public final class SeedAccountLoader {
         return trim ? value.trim() : value;
     }
 
-    public record SeededAccount(Role role, String email) {}
+    public record SeededAccount(Role role, String email, String storeId) {}
 }

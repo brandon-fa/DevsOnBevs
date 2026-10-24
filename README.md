@@ -68,8 +68,6 @@ mvn compile exec:java
 
 The backend reads `config/seeded-accounts.properties` during startup and ensures there is a demonstration account for each role in `database/littleisle.sqlite`. It prints the role and email for each loaded account in the backend console.
 
-ORD also loads `config/initial-city.properties` (restaurants, menus, courier pins, and customer delivery pins) and serves that snapshot at `GET /api/city` after login. `CityConfigLoader` uses the `CitySnapshot.Builder` to assemble the initialized map data. The dashboard gives customers their matching delivery pin and shows the demo courier after pickup; groceries and courier accounts see city stops, while operators see the full city overview. Courier tracking currently uses seeded coordinates and is not live.
-
 Credentials to use for the seeded accounts based on its respective role:
 
 | Role | Email | Password |

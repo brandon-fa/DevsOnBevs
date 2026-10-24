@@ -39,14 +39,14 @@
   text-wrap: pretty;
 }
 
-.city-menu-list {
+.city-product-list {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
   margin-top: 0.9rem;
 }
 
-.city-menu-list li {
+.city-product-list li {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -66,16 +66,12 @@
   box-shadow: 0 1px 4px oklch(0.369 0.02 58.085 / 0.35);
 }
 
-.city-marker-dot.is-restaurant {
+.city-marker-dot.is-groceryStore {
   border-radius: 4px;
   background: var(--color-brown);
 }
 
-.city-marker-dot.is-restaurant.is-paused {
-  background: var(--color-clay-deep);
-}
-
-.city-marker-dot.is-restaurant.is-closed {
+.city-marker-dot.is-groceryStore.is-closed {
   background: var(--color-taupe);
 }
 

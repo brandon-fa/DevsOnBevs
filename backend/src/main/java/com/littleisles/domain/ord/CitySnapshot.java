@@ -2,11 +2,13 @@ package com.littleisles.domain.ord;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 public record CitySnapshot(
         CityBounds bounds,
-        List<Restaurant> restaurants,
+        List<GroceryStore> groceryStores,
         List<CourierPin> couriers,
         List<CustomerPin> customers
 ) {
@@ -14,13 +16,16 @@ public record CitySnapshot(
         if (bounds == null) {
             throw new IllegalArgumentException("The city needs display bounds.");
         }
-        restaurants = List.copyOf(restaurants == null ? List.of() : restaurants);
-        couriers = List.copyOf(couriers == null ? List.of() : couriers);
-        customers = List.copyOf(customers == null ? List.of() : customers);
+        if (groceryStores == null) groceryStores = List.of();
+        if (couriers == null) couriers = List.of();
+        if (customers == null) customers = List.of();
+        groceryStores = List.copyOf(groceryStores);
+        couriers = List.copyOf(couriers);
+        customers = List.copyOf(customers);
     }
 
     public boolean isEmpty() {
-        return restaurants.isEmpty() && couriers.isEmpty() && customers.isEmpty();
+        return groceryStores.isEmpty() && couriers.isEmpty() && customers.isEmpty();
     }
 
     public static Builder builder(CityBounds bounds) {
@@ -29,7 +34,7 @@ public record CitySnapshot(
 
     public static final class Builder {
         private final CityBounds bounds;
-        private final List<Restaurant> restaurants = new ArrayList<>();
+        private final List<GroceryStore> groceryStores = new ArrayList<>();
         private final List<CourierPin> couriers = new ArrayList<>();
         private final List<CustomerPin> customers = new ArrayList<>();
 
@@ -40,91 +45,89 @@ public record CitySnapshot(
             this.bounds = bounds;
         }
 
-        public Builder addRestaurant(Restaurant restaurant) {
-            restaurants.add(requireValue(restaurant, "A city restaurant cannot be null."));
+        public Builder addGroceryStore(GroceryStore groceryStore) {
+            if (groceryStore == null) {
+                throw new IllegalArgumentException("A city grocery store cannot be null.");
+            }
+            groceryStores.add(groceryStore);
             return this;
         }
 
         public Builder addCourier(CourierPin courier) {
-            couriers.add(requireValue(courier, "A city courier cannot be null."));
+            if (courier == null) {
+                throw new IllegalArgumentException("A city courier cannot be null.");
+            }
+            couriers.add(courier);
             return this;
         }
 
         public Builder addCustomer(CustomerPin customer) {
-            customers.add(requireValue(customer, "A city customer cannot be null."));
+            if (customer == null) {
+                throw new IllegalArgumentException("A city customer cannot be null.");
+            }
+            customers.add(customer);
             return this;
         }
 
         public CitySnapshot build() {
-            return new CitySnapshot(bounds, restaurants, couriers, customers);
+            return new CitySnapshot(bounds, groceryStores, couriers, customers);
         }
 
-        private static <T> T requireValue(T value, String message) {
-            if (value == null) {
-                throw new IllegalArgumentException(message);
-            }
-            return value;
-        }
     }
 
     public String toJson() {
-        StringJoiner restaurantJson = new StringJoiner(",");
-        for (Restaurant restaurant : restaurants) {
-            StringJoiner menuJson = new StringJoiner(",");
-            for (MenuItem item : restaurant.menu()) {
-                menuJson.add("{"
-                        + "\"id\":" + quote(item.id())
-                        + ",\"name\":" + quote(item.name())
-                        + ",\"priceCents\":" + item.priceCents()
-                        + ",\"status\":" + quote(item.status().label())
-                        + "}");
-            }
-            restaurantJson.add("{"
-                    + "\"id\":" + quote(restaurant.id())
-                    + ",\"name\":" + quote(restaurant.name())
-                    + ",\"status\":" + quote(restaurant.status().label())
-                    + ",\"lat\":" + restaurant.lat()
-                    + ",\"lon\":" + restaurant.lon()
-                    + ",\"menu\":[" + menuJson + "]"
-                    + "}");
-        }
-        StringJoiner courierJson = new StringJoiner(",");
-        for (CourierPin courier : couriers) {
-            courierJson.add("{"
-                    + "\"id\":" + quote(courier.id())
-                    + ",\"lat\":" + courier.lat()
-                    + ",\"lon\":" + courier.lon()
-                    + ",\"status\":" + quote(courier.status().label())
-                    + "}");
-        }
-        StringJoiner customerJson = new StringJoiner(",");
-        for (CustomerPin customer : customers) {
-            customerJson.add("{"
-                    + "\"id\":" + quote(customer.id())
-                    + ",\"name\":" + quote(customer.name())
-                    + ",\"lat\":" + customer.lat()
-                    + ",\"lon\":" + customer.lon()
-                    + "}");
-        }
-        return "{"
-                + "\"bounds\":{"
-                + "\"minLat\":" + bounds.minLat()
-                + ",\"maxLat\":" + bounds.maxLat()
-                + ",\"minLon\":" + bounds.minLon()
-                + ",\"maxLon\":" + bounds.maxLon()
-                + "}"
-                + ",\"restaurants\":[" + restaurantJson + "]"
-                + ",\"couriers\":[" + courierJson + "]"
-                + ",\"customers\":[" + customerJson + "]"
-                + "}";
-    }
+        JsonObject city = new JsonObject();
+        JsonObject boundsJson = new JsonObject();
+        boundsJson.addProperty("minLat", bounds.minLat());
+        boundsJson.addProperty("maxLat", bounds.maxLat());
+        boundsJson.addProperty("minLon", bounds.minLon());
+        boundsJson.addProperty("maxLon", bounds.maxLon());
+        city.add("bounds", boundsJson);
 
-    private static String quote(String value) {
-        return "\"" + value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                + "\"";
+        JsonArray storesJson = new JsonArray();
+        for (GroceryStore store : groceryStores) {
+            JsonObject storeJson = new JsonObject();
+            storeJson.addProperty("id", store.getId());
+            storeJson.addProperty("name", store.getName());
+            storeJson.addProperty("open", store.isOpen());
+            storeJson.addProperty("lat", store.getLat());
+            storeJson.addProperty("lon", store.getLon());
+
+            JsonArray productsJson = new JsonArray();
+            for (Product product : store.getProducts()) {
+                JsonObject productJson = new JsonObject();
+                productJson.addProperty("id", product.getId());
+                productJson.addProperty("name", product.getName());
+                productJson.addProperty("priceCents", Math.round(product.getPrice() * 100));
+                productJson.addProperty("soldOut", product.isSoldOut());
+                productsJson.add(productJson);
+            }
+            storeJson.add("products", productsJson);
+            storesJson.add(storeJson);
+        }
+        city.add("groceryStores", storesJson);
+
+        JsonArray couriersJson = new JsonArray();
+        for (CourierPin courier : couriers) {
+            JsonObject courierJson = new JsonObject();
+            courierJson.addProperty("id", courier.id());
+            courierJson.addProperty("lat", courier.lat());
+            courierJson.addProperty("lon", courier.lon());
+            courierJson.addProperty("status", courier.status().label());
+            couriersJson.add(courierJson);
+        }
+        city.add("couriers", couriersJson);
+
+        JsonArray customersJson = new JsonArray();
+        for (CustomerPin customer : customers) {
+            JsonObject customerJson = new JsonObject();
+            customerJson.addProperty("id", customer.id());
+            customerJson.addProperty("name", customer.name());
+            customerJson.addProperty("lat", customer.lat());
+            customerJson.addProperty("lon", customer.lon());
+            customersJson.add(customerJson);
+        }
+        city.add("customers", customersJson);
+        return new Gson().toJson(city);
     }
 }
