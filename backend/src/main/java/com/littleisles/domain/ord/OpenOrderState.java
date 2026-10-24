@@ -5,10 +5,14 @@ public class OpenOrderState extends OrderState {
     public OpenOrderState(Order order) {
         super(order);
     }
+
+    public String getStatus() {
+        return "open";
+    }
     
     public void addOrderLine(Product product, int quantity){
         for (OrderLine orderLine : order.getOrderLines()) {
-            if (orderLine.getProduct().equals(product)) {
+            if (orderLine.getProduct().getId().equals(product.getId())) {
                 orderLine.setQuantity(orderLine.getQuantity() + quantity);
                 return;
             }
@@ -18,7 +22,7 @@ public class OpenOrderState extends OrderState {
 
     public void removeOrderLine(Product product, int quantity){
         for (OrderLine orderLine : order.getOrderLines()) {
-            if (orderLine.getProduct().equals(product)) {
+            if (orderLine.getProduct().getId().equals(product.getId())) {
                 int newQuantity = orderLine.getQuantity() - quantity;
                 if (newQuantity <= 0) {
                     order.getOrderLines().remove(orderLine);
@@ -37,6 +41,7 @@ public class OpenOrderState extends OrderState {
     public void placeOrder(){
         order.getStore().addPendingOrder(order);
         order.setState(new PlacedOrderState(order));
+        order.addTransitionEvent(new TransitionEvent("open", "placed"));
     }
 
     public void cancelOrder(){

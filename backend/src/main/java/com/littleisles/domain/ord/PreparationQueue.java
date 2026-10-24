@@ -1,6 +1,7 @@
 package com.littleisles.domain.ord;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class PreparationQueue {
     private ArrayList<Order> orders;
@@ -10,6 +11,9 @@ public class PreparationQueue {
     }
 
     public void addOrder(Order order) {
+        if (order == null || !(order.getState() instanceof PreparingOrderState) || orders.contains(order)) {
+            throw new IllegalStateException("Only an accepted order can be added to the preparation queue once.");
+        }
         orders.add(order);
     }
 
@@ -26,6 +30,10 @@ public class PreparationQueue {
             return orders.get(0);
         }
         return null;
+    }
+
+    public List<Order> getOrders() {
+        return List.copyOf(orders);
     }
 
 }

@@ -7,6 +7,8 @@ public abstract class OrderState {
         this.order = order;
     }
 
+    public abstract String getStatus();
+
     public abstract void addOrderLine(Product product, int quantity);
 
     public abstract void removeOrderLine(Product product, int quantity);
@@ -16,6 +18,10 @@ public abstract class OrderState {
     public abstract void placeOrder();
 
     public abstract void cancelOrder();
+
+    public void rejectOrder(String reason) {
+        throw new IllegalStateException("Only a pending order can be rejected.");
+    }
 
     public abstract void acceptOrder();
 

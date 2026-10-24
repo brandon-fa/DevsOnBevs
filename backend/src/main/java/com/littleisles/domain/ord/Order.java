@@ -1,23 +1,27 @@
 package com.littleisles.domain.ord;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import com.littleisles.domain.common.Billing;
 
 public class Order {
-    private static int nextOrderId = 1;
+    private static final AtomicInteger nextOrderId = new AtomicInteger(1);
     private int orderId;
     private GroceryStore store;
     private OrderState state;
     private ArrayList<OrderLine> orderLines;
+    private ArrayList<TransitionEvent> transitionEvents;
     private String destination;
+    private String rejectionReason;
     //private double tip;
 
     public Order(GroceryStore store, String destination) {
-        this.orderId = nextOrderId++;
+        this.orderId = nextOrderId.getAndIncrement();
         this.store = store;
         this.destination = destination;
         this.state = new OpenOrderState(this);
         this.orderLines = new ArrayList<OrderLine>();
+        this.transitionEvents = new ArrayList<TransitionEvent>();
     }
 
     public void setState(OrderState state) {
@@ -42,6 +46,18 @@ public class Order {
 
     public void cancelOrder() {
         state.cancelOrder();
+    }
+
+    public void rejectOrder(String reason) {
+        state.rejectOrder(reason);
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    void setRejectionReason(String reason) {
+        rejectionReason = reason;
     }
 
     public void acceptOrder() {
@@ -78,12 +94,20 @@ public class Order {
         return store;
     }
 
+    public int getOrderId() {
+        return orderId;
+    }
+
     public void setStore(GroceryStore store) {
         this.store = store;
     }
 
     public OrderState getState() {
         return state;
+    }
+
+    public String getStatus() {
+        return state.getStatus();
     }
 
     public ArrayList<OrderLine> getOrderLines() {
@@ -107,6 +131,14 @@ public class Order {
         this.tip = tip;
     }
     */
+
+    public ArrayList<TransitionEvent> getTransitionEvents() {
+        return transitionEvents;
+    }
+
+    public void addTransitionEvent(TransitionEvent event) {
+        transitionEvents.add(Objects.requireNonNull(event, "A transition event cannot be null."));
+    }
     
     public boolean equals(Object obj) {
         if (this == obj) return true;

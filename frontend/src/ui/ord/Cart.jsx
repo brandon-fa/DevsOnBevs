@@ -1,6 +1,6 @@
-export default function Cart({ cart, onPlaceOrder, message }) {
+export default function Cart({ cart, onPlaceOrder, destination, onDestinationChange, submitting }) {
   return (
-    <section>
+    <section aria-busy={submitting}>
       <h3>Your cart</h3>
       {cart.length === 0 && <p>Your cart is empty.</p>}
       <ul>
@@ -10,10 +10,12 @@ export default function Cart({ cart, onPlaceOrder, message }) {
           </li>
         ))}
       </ul>
-      <button type="button" onClick={onPlaceOrder} disabled={cart.length === 0}>
-        Place order
+      <label htmlFor="delivery-address">Delivery address</label>
+      <input id="delivery-address" name="deliveryAddress" type="text" autoComplete="street-address"
+        required value={destination} onChange={(event) => onDestinationChange(event.target.value)} disabled={submitting} />
+      <button type="button" onClick={onPlaceOrder} disabled={submitting}>
+        {submitting ? "Placing order…" : "Place order"}
       </button>
-      {message && <p>{message}</p>}
     </section>
   );
 }

@@ -5,6 +5,10 @@ public class ReadyOrderState extends OrderState {
     public ReadyOrderState(Order order) {
         super(order);
     }
+
+    public String getStatus() {
+        return "ready";
+    }
     
     public void addOrderLine(Product product, int quantity){
     }
@@ -21,6 +25,7 @@ public class ReadyOrderState extends OrderState {
     public void cancelOrder(){
         order.getStore().cancelPendingOrder(order);
         order.setState(new CanceledOrderState(order));
+        order.addTransitionEvent(new TransitionEvent("ready", "canceled"));
     }
 
     public void acceptOrder(){

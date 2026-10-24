@@ -5,7 +5,7 @@ import { formatMoney } from "../../data/mockData.js";
 import "./city-map.css";
 
 const KIND_LABEL = {
-  restaurant: "Market",
+  groceryStore: "Market",
   courier: "Courier",
   customer: "Customer",
 };
@@ -43,7 +43,7 @@ function normalizedName(value) {
   return value?.trim().toLocaleLowerCase() ?? "";
 }
 
-export default function CityMap({ role, account, order }) {
+export default function CityMap({ role, account, order, onFeedback }) {
   const mapNode = useRef(null);
   const mapRef = useRef(null);
   const [city, setCity] = useState(null);
@@ -65,12 +65,15 @@ export default function CityMap({ role, account, order }) {
         if (!cancelled) setCity(payload);
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "The city could not be loaded.");
+        if (!cancelled) {
+          setError(loadError.message || "The city could not be loaded.");
+          onFeedback(loadError.message || "The city could not be loaded.", "error");
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [onFeedback]);
 
   const visibleCity = useMemo(() => {
     if (!city) return null;
@@ -79,9 +82,8 @@ export default function CityMap({ role, account, order }) {
     const customer = city.customers.find(
       (pin) => normalizedName(pin.name) === normalizedName(account?.fullName),
     );
-    const isOrderCustomer = normalizedName(account?.fullName) === normalizedName(order?.customerName);
-    const isPickedUp = ["picked_up", "on_the_way"].includes(order?.status);
-    const courier = isOrderCustomer && isPickedUp
+    const isPickedUp = ["transit", "picked_up", "on_the_way"].includes(order?.status);
+    const courier = order?.courierId && isPickedUp
       ? city.couriers.find((pin) => pin.id === order?.courierId)
       : null;
 
@@ -90,11 +92,11 @@ export default function CityMap({ role, account, order }) {
       couriers: courier ? [courier] : [],
       customers: customer ? [customer] : [],
     };
-  }, [account?.fullName, city, order?.courierId, order?.customerName, order?.status, role]);
+  }, [account?.fullName, city, order?.courierId, order?.status, role]);
 
   const isEmpty = useMemo(() => {
     if (!visibleCity) return false;
-    return visibleCity.restaurants.length + visibleCity.couriers.length + visibleCity.customers.length === 0;
+    return visibleCity.groceryStores.length + visibleCity.couriers.length + visibleCity.customers.length === 0;
   }, [visibleCity]);
 
   useEffect(() => {
@@ -113,13 +115,13 @@ export default function CityMap({ role, account, order }) {
     );
     map.fitBounds(bounds, { padding: [24, 24] });
 
-    visibleCity.restaurants.forEach((restaurant) => {
-      const marker = L.marker([restaurant.lat, restaurant.lon], {
-        icon: markerIcon("restaurant", restaurant.status),
-        title: restaurant.name,
+    visibleCity.groceryStores.forEach((groceryStore) => {
+      const marker = L.marker([groceryStore.lat, groceryStore.lon], {
+        icon: markerIcon("groceryStore", groceryStore.open ? "open" : "closed"),
+        title: groceryStore.name,
       }).addTo(map);
-      marker.bindPopup(`${restaurant.name} · ${restaurant.status}`);
-      marker.on("click", () => setSelected({ kind: "restaurant", ...restaurant }));
+      marker.bindPopup(`${groceryStore.name} · ${groceryStore.open ? "open" : "closed"}`);
+      marker.on("click", () => setSelected({ kind: "groceryStore", ...groceryStore }));
     });
 
     visibleCity.couriers.forEach((courier) => {
@@ -161,11 +163,7 @@ export default function CityMap({ role, account, order }) {
         <h2 id="city-map-title">{mapCopy.title}</h2>
         <p>{mapCopy.description}</p>
       </div>
-      {error ? (
-        <p className="city-map-empty" role="alert">
-          {error}
-        </p>
-      ) : !city ? (
+      {error ? null : !city ? (
         <p className="city-map-empty">Loading the city…</p>
       ) : isEmpty ? (
         <p className="city-map-empty">No map locations are available for this account.</p>
@@ -188,20 +186,20 @@ export default function CityMap({ role, account, order }) {
 }
 
 function SelectedDetails({ selected }) {
-  if (selected.kind === "restaurant") {
+  if (selected.kind === "groceryStore") {
     return (
       <>
-        <p className="section-kicker">{KIND_LABEL.restaurant}</p>
+        <p className="section-kicker">{KIND_LABEL.groceryStore}</p>
         <h3>{selected.name}</h3>
-        <p className="city-map-status">Status: {selected.status}</p>
-        <ul className="city-menu-list">
-          {selected.menu.map((item) => (
-            <li key={item.id}>
+        <p className="city-map-status">Status: {selected.open ? "open" : "closed"}</p>
+        <ul className="city-product-list">
+          {selected.products.map((product) => (
+            <li key={product.id}>
               <span>
-                {item.name}
-                <span className="city-item-status"> · {item.status}</span>
+                {product.name}
+                <span className="city-item-status"> · {product.soldOut ? "sold out" : "available"}</span>
               </span>
-              <span className="money">{formatMoney(item.priceCents)}</span>
+              <span className="money">{formatMoney(product.priceCents)}</span>
             </li>
           ))}
         </ul>

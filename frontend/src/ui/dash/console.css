@@ -1,0 +1,52 @@
+.dashboard-console {
+  padding: 1.25rem;
+  border-radius: var(--radius-outer);
+  background: var(--color-linen);
+}
+
+.console-empty {
+  margin-top: 0.75rem;
+}
+
+.console-log {
+  max-height: 18rem;
+  margin-top: 0.75rem;
+  overflow-y: auto;
+}
+
+.console-row {
+  display: grid;
+  grid-template-columns: 6.5rem 4.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.7rem;
+  border-inline-start: 3px solid var(--color-brown);
+  background: var(--color-cream);
+  overflow-wrap: anywhere;
+}
+
+.console-row + .console-row {
+  margin-top: 0.35rem;
+}
+
+.console-row.is-error {
+  border-inline-start-color: var(--color-clay-deep);
+}
+
+.console-row time {
+  font-variant-numeric: tabular-nums;
+}
+
+.console-message-type {
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .console-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.3rem 0.75rem;
+  }
+
+  .console-row > span:last-child {
+    grid-column: 1 / -1;
+  }
+}
