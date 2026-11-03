@@ -29,13 +29,19 @@ const MAP_COPY = {
   },
 };
 
+const MARKER_GLYPH = {
+  groceryStore: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.5 5.2 6h13.6l1.7 4.5"/><path d="M4 10.5h16V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M10 20v-5h4v5"/></svg>`,
+  customer: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M6.2 19.2c.8-3 2.9-4.5 5.8-4.5s5 1.5 5.8 4.5"/></svg>`,
+  courier: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/></svg>`,
+};
+
 function markerIcon(kind, status) {
   return L.divIcon({
     className: "city-marker",
-    html: `<span class="city-marker-dot is-${kind} is-${status || "default"}"></span>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -12],
+    html: `<span class="city-marker-dot is-${kind} is-${status || "default"}">${MARKER_GLYPH[kind] || ""}</span>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
   });
 }
 
@@ -191,7 +197,9 @@ function SelectedDetails({ selected }) {
       <>
         <p className="section-kicker">{KIND_LABEL.groceryStore}</p>
         <h3>{selected.name}</h3>
-        <p className="city-map-status">Status: {selected.open ? "open" : "closed"}</p>
+        <p className={`city-status-label ${selected.open ? "is-open" : "is-closed"}`}>
+          {selected.open ? "Open" : "Closed"}
+        </p>
         <ul className="city-product-list">
           {selected.products.map((product) => (
             <li key={product.id}>

@@ -23,6 +23,9 @@ class AuthControllerTest {
 
             @Override
             public void saveSeededAccount(com.littleisles.domain.reg.Account account) {}
+
+            @Override
+            public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash) {}
         };
 
         AuthController first = AuthController.getInstance(repository);

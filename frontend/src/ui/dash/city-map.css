@@ -22,6 +22,25 @@
   margin-top: 0.35rem;
 }
 
+.city-status-label {
+  display: inline-block;
+  margin: 0.15rem 0 0.4rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-cream);
+}
+
+.city-status-label.is-open {
+  background: #2f7d4a;
+}
+
+.city-status-label.is-closed {
+  background: #b42318;
+}
+
 .city-map-status,
 .city-item-status,
 .city-map-note {
@@ -58,25 +77,35 @@
 }
 
 .city-marker-dot {
-  display: block;
-  width: 16px;
-  height: 16px;
-  margin: 3px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
   border: 2px solid var(--color-cream);
   box-shadow: 0 1px 4px oklch(0.369 0.02 58.085 / 0.35);
+  color: var(--color-cream);
+}
+
+.city-marker-dot svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .city-marker-dot.is-groceryStore {
-  border-radius: 4px;
-  background: var(--color-brown);
+  background: #2f7d4a;
 }
 
 .city-marker-dot.is-groceryStore.is-closed {
-  background: var(--color-taupe);
+  background: #b42318;
 }
 
 .city-marker-dot.is-courier {
-  border-radius: 999px;
   background: var(--color-clay);
 }
 
@@ -85,8 +114,6 @@
 }
 
 .city-marker-dot.is-customer {
-  border-radius: 999px 999px 4px 999px;
-  transform: rotate(45deg);
   background: var(--color-clay-deep);
 }
 

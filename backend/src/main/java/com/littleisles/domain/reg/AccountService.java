@@ -20,6 +20,10 @@ public final class AccountService {
         return new AuthenticatedAccount(account.id(), account.fullName(), account.email(), account.phone(), role);
     }
 
+    public String hashPassword(String password) {
+        return hash(password);
+    }
+
     private static String hash(String password) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")

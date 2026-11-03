@@ -121,6 +121,31 @@ public final class AccountStore implements AccountRepository {
     }
 
     @Override
+    public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash) throws SQLException {
+        boolean changePassword = passwordHash != null;
+        String sql = changePassword
+                ? "UPDATE users SET phone = ?, password_hash = ? WHERE id = ? AND password_hash = ?"
+                : "UPDATE users SET phone = ? WHERE id = ?";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, phone);
+            if (changePassword) {
+                statement.setString(2, passwordHash);
+                statement.setLong(3, id);
+                statement.setString(4, currentPasswordHash);
+            } else {
+                statement.setLong(2, id);
+            }
+            if (statement.executeUpdate() != 1) {
+                if (changePassword) {
+                    throw new IllegalArgumentException("Current password is incorrect.");
+                }
+                throw new SQLException("The account could not be updated.");
+            }
+        }
+    }
+
+    @Override
     public AccountCredentials findByEmail(String email) throws SQLException {
         String sql = "SELECT id, role, full_name, email, phone, password_hash FROM users WHERE lower(email) = lower(?)";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);

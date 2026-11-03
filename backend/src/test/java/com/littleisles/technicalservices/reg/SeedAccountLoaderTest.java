@@ -124,6 +124,8 @@ class SeedAccountLoaderTest {
         }
 
         @Override
+        public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash) {}
+
         public void saveSeededAccount(Account account) {
             String key = account.getEmail().toLowerCase(Locale.ROOT);
             accounts.put(key, new AccountCredentials(0, account.getRole().label(), account.getFullName(),

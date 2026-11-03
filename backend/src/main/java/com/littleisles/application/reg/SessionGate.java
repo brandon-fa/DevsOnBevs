@@ -32,6 +32,10 @@ public final class SessionGate {
         return sessionId == null ? null : sessions.get(sessionId);
     }
 
+    public void replace(String sessionId, AuthenticatedAccount account) {
+        if (sessionId != null && sessions.containsKey(sessionId)) sessions.put(sessionId, account);
+    }
+
     public void invalidate(String sessionId) {
         if (sessionId != null) sessions.remove(sessionId);
     }

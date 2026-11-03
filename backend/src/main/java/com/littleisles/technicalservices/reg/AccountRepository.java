@@ -7,4 +7,5 @@ import java.sql.SQLException;
 public interface AccountRepository {
     AccountCredentials findByEmail(String email) throws SQLException;
     void saveSeededAccount(Account account) throws SQLException;
+    void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash) throws SQLException;
 }

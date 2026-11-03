@@ -43,5 +43,29 @@ public final class AuthController {
         sessionGate.invalidate(sessionId);
     }
 
+    public AuthenticatedAccount updateProfile(String sessionId, String phone, String currentPassword, String newPassword) throws SQLException {
+        AuthenticatedAccount current = sessionGate.find(sessionId);
+        if (current == null) return null;
+        String cleanedPhone = phone == null ? "" : phone.trim();
+        if (cleanedPhone.isEmpty()) throw new IllegalArgumentException("Enter a phone number.");
+        String nextHash = null;
+        String currentHash = null;
+        if (newPassword != null && !newPassword.isEmpty()) {
+            if (currentPassword == null || currentPassword.isEmpty()) {
+                throw new IllegalArgumentException("Enter your current password to set a new one.");
+            }
+            currentHash = accountService.hashPassword(currentPassword);
+            if (accountService.authenticate(accountRepository.findByEmail(current.email()), currentPassword) == null) {
+                throw new IllegalArgumentException("Current password is incorrect.");
+            }
+            nextHash = accountService.hashPassword(newPassword);
+        }
+        accountRepository.updatePhoneAndPassword(current.id(), cleanedPhone, nextHash, currentHash);
+        AuthenticatedAccount updated = new AuthenticatedAccount(
+                current.id(), current.fullName(), current.email(), cleanedPhone, current.role());
+        sessionGate.replace(sessionId, updated);
+        return updated;
+    }
+
     public record LoginResult(String sessionId, AuthenticatedAccount account) {}
 }

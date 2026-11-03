@@ -34,6 +34,7 @@ public final class RegistrationServer {
         server.createContext("/api/login", this::handleLogin);
         server.createContext("/api/session", this::handleSession);
         server.createContext("/api/logout", this::handleLogout);
+        server.createContext("/api/account", this::handleAccount);
         server.start();
         return server;
     }
@@ -68,6 +69,27 @@ public final class RegistrationServer {
         authController.logout(sessionCookie(exchange));
         exchange.getResponseHeaders().add("Set-Cookie", "littleisle.session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
         send(exchange, 204, "");
+    }
+
+    private void handleAccount(HttpExchange exchange) throws IOException {
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) { send(exchange, 204, ""); return; }
+        if (!"PATCH".equalsIgnoreCase(exchange.getRequestMethod())) {
+            send(exchange, 405, "{\"error\":\"Use PATCH to update the account.\"}"); return;
+        }
+        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        try {
+            AuthenticatedAccount account = authController.updateProfile(
+                    sessionCookie(exchange),
+                    stringField(body, "phone"),
+                    stringField(body, "currentPassword"),
+                    stringField(body, "newPassword"));
+            if (account == null) { send(exchange, 401, "{\"error\":\"Log in to continue.\"}"); return; }
+            send(exchange, 200, accountJson(account));
+        } catch (IllegalArgumentException exception) {
+            send(exchange, 400, errorJson(exception.getMessage()));
+        } catch (SQLException exception) {
+            send(exchange, 500, "{\"error\":\"The account could not be saved.\"}");
+        }
     }
 
     private static String sessionCookie(HttpExchange exchange) {
@@ -196,7 +218,7 @@ public final class RegistrationServer {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
         exchange.sendResponseHeaders(status, status == 204 ? -1 : bytes.length);
         try (OutputStream output = exchange.getResponseBody()) {
