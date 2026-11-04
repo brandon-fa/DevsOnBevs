@@ -3,10 +3,10 @@ import { createContext, createElement, useContext, useMemo, useState } from "rea
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [cart, setCart] = useState([]);
-  const [store, setStore] = useState(null);
+  const [baskets, setBaskets] = useState([]);
 
-  const value = useMemo(() => ({ cart, setCart, store, setStore }), [cart, store]);
+  const cart = baskets.flatMap((basket) => basket.lines);
+  const value = useMemo(() => ({ baskets, setBaskets, cart }), [baskets, cart]);
 
   return createElement(CartContext.Provider, { value }, children);
 }

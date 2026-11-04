@@ -5,6 +5,8 @@ import com.littleisles.application.reg.AuthController;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountDraft;
+import com.littleisles.domain.reg.CustomerAccount;
+import com.littleisles.domain.reg.GroceriesAccount;
 import com.littleisles.infrastructure.db.AccountStore;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -82,7 +84,8 @@ public final class RegistrationServer {
                     sessionCookie(exchange),
                     stringField(body, "phone"),
                     stringField(body, "currentPassword"),
-                    stringField(body, "newPassword"));
+                    stringField(body, "newPassword"),
+                    stringField(body, "defaultAddress"));
             if (account == null) { send(exchange, 401, "{\"error\":\"Log in to continue.\"}"); return; }
             send(exchange, 200, accountJson(account));
         } catch (IllegalArgumentException exception) {
@@ -105,7 +108,8 @@ public final class RegistrationServer {
     private static String accountJson(AuthenticatedAccount account) {
         return "{\"id\":" + account.id() + ",\"fullName\":" + quote(account.fullName())
                 + ",\"email\":" + quote(account.email()) + ",\"phone\":" + quote(account.phone())
-                + ",\"role\":" + quote(account.role().label()) + "}";
+                + ",\"role\":" + quote(account.role().label())
+                + ",\"defaultAddress\":" + quote(account.defaultAddress() == null ? "" : account.defaultAddress()) + "}";
     }
 
     private void handle(HttpExchange exchange) throws IOException {
@@ -130,6 +134,19 @@ public final class RegistrationServer {
                             fields.get("phone")
                     )
             );
+            if (account instanceof CustomerAccount customer) {
+                customer.setDefaultAddress(fields.get("defaultAddress"));
+            }
+            if (account instanceof GroceriesAccount groceries) {
+                String storeCode = fields.get("storeCode");
+                if (storeCode == null || storeCode.isBlank()) {
+                    throw new IllegalArgumentException("Enter the store code.");
+                }
+                if (!accountStore.storeCodeExists(storeCode)) {
+                    throw new IllegalArgumentException("That store code does not match an existing grocery store.");
+                }
+                groceries.setStoreCode(storeCode.trim());
+            }
             long id = accountStore.insert(account);
             send(exchange, 201, accountJson(id, account));
         } catch (IllegalArgumentException | IllegalStateException exception) {
@@ -149,7 +166,8 @@ public final class RegistrationServer {
                 + "\"fullName\":" + quote(account.getFullName()) + ","
                 + "\"email\":" + quote(account.getEmail()) + ","
                 + "\"phone\":" + quote(account.getPhone()) + ","
-                + "\"role\":" + quote(account.getRole().label())
+                + "\"role\":" + quote(account.getRole().label()) + ","
+                + "\"defaultAddress\":" + quote(account instanceof CustomerAccount customer && customer.getDefaultAddress() != null ? customer.getDefaultAddress() : "")
                 + "}";
     }
 
@@ -159,7 +177,7 @@ public final class RegistrationServer {
 
     private static Map<String, String> readFields(String body) {
         Map<String, String> fields = new LinkedHashMap<>();
-        for (String key : new String[] {"fullName", "email", "password", "phone", "role"}) {
+        for (String key : new String[] {"fullName", "email", "password", "phone", "role", "storeCode", "defaultAddress"}) {
             fields.put(key, stringField(body, key));
         }
         return fields;

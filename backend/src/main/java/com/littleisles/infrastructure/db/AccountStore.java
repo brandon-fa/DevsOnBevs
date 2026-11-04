@@ -2,7 +2,8 @@ package com.littleisles.infrastructure.db;
 
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountCredentials;
-import com.littleisles.domain.reg.Role;
+import com.littleisles.domain.reg.CustomerAccount;
+import com.littleisles.domain.reg.GroceriesAccount;
 import com.littleisles.technicalservices.reg.AccountRepository;
 
 import java.nio.file.Files;
@@ -27,12 +28,13 @@ public final class AccountStore implements AccountRepository {
         } catch (ClassNotFoundException exception) {
             throw new IllegalStateException("SQLite JDBC driver is not on the classpath.", exception);
         }
+        ensureStoreCodes();
     }
 
     public long insert(Account account) throws SQLException {
         String sql = """
-                INSERT INTO users (role, full_name, email, password_hash, phone)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO users (role, full_name, email, password_hash, phone, store_code, default_address)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
             connection.setAutoCommit(false);
@@ -48,7 +50,6 @@ public final class AccountStore implements AccountRepository {
                 }
                 id = keys.getLong(1);
             }
-            ensureProfile(connection, id, account);
             connection.commit();
             return id;
         }
@@ -57,8 +58,8 @@ public final class AccountStore implements AccountRepository {
     @Override
     public void saveSeededAccount(Account account) throws SQLException {
         String findSql = "SELECT id FROM users WHERE lower(email) = lower(?) ORDER BY id LIMIT 1";
-        String updateSql = "UPDATE users SET role = ?, full_name = ?, email = ?, password_hash = ?, phone = ? WHERE id = ?";
-        String insertSql = "INSERT INTO users (role, full_name, email, password_hash, phone) VALUES (?, ?, ?, ?, ?)";
+        String updateSql = "UPDATE users SET role = ?, full_name = ?, email = ?, password_hash = ?, phone = ?, store_code = ?, default_address = ? WHERE id = ?";
+        String insertSql = "INSERT INTO users (role, full_name, email, password_hash, phone, store_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement find = connection.prepareStatement(findSql)) {
             find.setString(1, account.getEmail());
@@ -72,7 +73,7 @@ public final class AccountStore implements AccountRepository {
                 userId = existingId;
                 try (PreparedStatement update = connection.prepareStatement(updateSql)) {
                     bindUser(update, account);
-                    update.setLong(6, existingId);
+                    update.setLong(8, existingId);
                     update.executeUpdate();
                 }
             } else {
@@ -88,7 +89,6 @@ public final class AccountStore implements AccountRepository {
                     userId = keys.getLong(1);
                 }
             }
-            ensureProfile(connection, userId, account);
             connection.commit();
         }
     }
@@ -99,43 +99,25 @@ public final class AccountStore implements AccountRepository {
         statement.setString(3, account.getEmail());
         statement.setString(4, account.getPasswordHash());
         statement.setString(5, account.getPhone());
-    }
-
-    private static void ensureProfile(Connection connection, long userId, Account account) throws SQLException {
-        String sql = switch (account.getRole()) {
-            case CUSTOMER -> "INSERT OR IGNORE INTO customer_profiles (user_id, delivery_address) VALUES (?, '')";
-            case GROCERIES -> "INSERT OR IGNORE INTO groceries_profiles (user_id, store_name, cuisine, address) VALUES (?, ?, 'Groceries', '')";
-            case COURIER -> "INSERT OR IGNORE INTO courier_profiles (user_id, vehicle_type) VALUES (?, '')";
-            case OPERATOR -> null;
-        };
-        if (sql == null) {
-            return;
-        }
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setLong(1, userId);
-            if (account.getRole() == Role.GROCERIES) {
-                statement.setString(2, account.getFullName());
-            }
-            statement.executeUpdate();
-        }
+        statement.setString(6, account instanceof GroceriesAccount groceries ? groceries.getStoreCode() : null);
+        statement.setString(7, account instanceof CustomerAccount customer ? customer.getDefaultAddress() : null);
     }
 
     @Override
-    public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash) throws SQLException {
+    public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash, String defaultAddress, boolean updateAddress) throws SQLException {
         boolean changePassword = passwordHash != null;
+        String addressSql = updateAddress ? ", default_address = ?" : "";
         String sql = changePassword
-                ? "UPDATE users SET phone = ?, password_hash = ? WHERE id = ? AND password_hash = ?"
-                : "UPDATE users SET phone = ? WHERE id = ?";
+                ? "UPDATE users SET phone = ?, password_hash = ?" + addressSql + " WHERE id = ? AND password_hash = ?"
+                : "UPDATE users SET phone = ?" + addressSql + " WHERE id = ?";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, phone);
-            if (changePassword) {
-                statement.setString(2, passwordHash);
-                statement.setLong(3, id);
-                statement.setString(4, currentPasswordHash);
-            } else {
-                statement.setLong(2, id);
-            }
+            int index = 1;
+            statement.setString(index++, phone);
+            if (changePassword) statement.setString(index++, passwordHash);
+            if (updateAddress) statement.setString(index++, defaultAddress);
+            statement.setLong(index++, id);
+            if (changePassword) statement.setString(index, currentPasswordHash);
             if (statement.executeUpdate() != 1) {
                 if (changePassword) {
                     throw new IllegalArgumentException("Current password is incorrect.");
@@ -146,8 +128,25 @@ public final class AccountStore implements AccountRepository {
     }
 
     @Override
+    public void saveDefaultAddress(long id, String defaultAddress) throws SQLException {
+        String sql = "UPDATE users SET default_address = ? WHERE id = ?";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            if (defaultAddress == null || defaultAddress.isBlank()) {
+                statement.setNull(1, java.sql.Types.VARCHAR);
+            } else {
+                statement.setString(1, defaultAddress.trim());
+            }
+            statement.setLong(2, id);
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("The default address could not be saved.");
+            }
+        }
+    }
+
+    @Override
     public AccountCredentials findByEmail(String email) throws SQLException {
-        String sql = "SELECT id, role, full_name, email, phone, password_hash FROM users WHERE lower(email) = lower(?)";
+        String sql = "SELECT id, role, full_name, email, phone, password_hash, default_address FROM users WHERE lower(email) = lower(?)";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, email.trim());
@@ -155,11 +154,73 @@ public final class AccountStore implements AccountRepository {
                 if (!result.next()) return null;
                 return new AccountCredentials(result.getLong("id"), result.getString("role"),
                         result.getString("full_name"), result.getString("email"),
-                        result.getString("phone"), result.getString("password_hash"));
+                        result.getString("phone"), result.getString("password_hash"),
+                        result.getString("default_address"));
             }
         }
     }
 
+
+    public boolean storeCodeExists(String storeCode) throws SQLException {
+        if (storeCode == null || storeCode.isBlank()) return false;
+        String sql = "SELECT 1 FROM grocery_stores WHERE upper(store_code) = upper(?)";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, storeCode.trim());
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next();
+            }
+        }
+    }
+
+    private void ensureStoreCodes() {
+        String[][] stores = {
+                {"olive-rye", "Olive & Rye", "OLIVE"},
+                {"island-pantry", "Island Pantry", "ISLAND"},
+                {"spice-route", "Spice Route", "SPICE"},
+                {"cedar-basket", "Cedar Basket", "CEDAR"},
+                {"pearl-market", "Pearl Market", "PEARL"},
+        };
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             java.sql.Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS grocery_stores (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        store_code TEXT NOT NULL UNIQUE
+                    )
+                    """);
+            boolean hasStoreCode = false;
+            try (ResultSet columns = statement.executeQuery("PRAGMA table_info(users)")) {
+                while (columns.next()) {
+                    if ("store_code".equalsIgnoreCase(columns.getString("name"))) hasStoreCode = true;
+                }
+            }
+            if (!hasStoreCode) {
+                statement.execute("ALTER TABLE users ADD COLUMN store_code TEXT");
+            }
+            boolean hasDefaultAddress = false;
+            try (ResultSet columns = statement.executeQuery("PRAGMA table_info(users)")) {
+                while (columns.next()) {
+                    if ("default_address".equalsIgnoreCase(columns.getString("name"))) hasDefaultAddress = true;
+                }
+            }
+            if (!hasDefaultAddress) {
+                statement.execute("ALTER TABLE users ADD COLUMN default_address TEXT");
+            }
+            try (PreparedStatement upsert = connection.prepareStatement(
+                    "INSERT INTO grocery_stores (id, name, store_code) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, store_code = excluded.store_code")) {
+                for (String[] store : stores) {
+                    upsert.setString(1, store[0]);
+                    upsert.setString(2, store[1]);
+                    upsert.setString(3, store[2]);
+                    upsert.executeUpdate();
+                }
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Grocery store codes could not be prepared.", exception);
+        }
+    }
 
     public static boolean isDuplicateEmail(SQLException exception) {
         String message = exception.getMessage();

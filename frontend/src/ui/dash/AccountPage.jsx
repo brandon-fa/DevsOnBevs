@@ -34,12 +34,18 @@ export default function AccountPage() {
 
 function AccountForm({ account, onUpdated }) {
   const [phone, setPhone] = useState(account.phone);
+  const [defaultAddress, setDefaultAddress] = useState(account.defaultAddress || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [passwordNotice, setPasswordNotice] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState("");
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    setDefaultAddress(account.defaultAddress || "");
+  }, [account.defaultAddress]);
 
   useEffect(() => {
     if (!passwordNotice) return undefined;
@@ -51,13 +57,21 @@ function AccountForm({ account, onUpdated }) {
     event.preventDefault();
     setError("");
     setPasswordNotice("");
-    setSaved(false);
+    setSaved("");
     if (!phone.trim()) {
       setError("Enter a phone number.");
       return;
     }
+    if (currentPassword && !newPassword) {
+      setError("Enter a new password. Filling in only the current password does not change it.");
+      return;
+    }
     if (newPassword && !currentPassword) {
       setError("Enter your current password to set a new one.");
+      return;
+    }
+    if (newPassword && newPassword !== confirmPassword) {
+      setError("New password and confirm password do not match.");
       return;
     }
     setPending(true);
@@ -70,12 +84,19 @@ function AccountForm({ account, onUpdated }) {
           phone: phone.trim(),
           currentPassword,
           newPassword,
+          defaultAddress: account.role === "customer" ? defaultAddress.trim() : "",
         }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         const message = body.error || "The account could not be saved.";
-        if (message.toLowerCase().includes("password")) {
+        if (newPassword && currentPassword) {
+          setPasswordNotice(
+            message.toLowerCase().includes("incorrect")
+              ? "Current password is incorrect."
+              : message,
+          );
+        } else if (message.toLowerCase().includes("password")) {
           setPasswordNotice(message);
         } else {
           setError(message);
@@ -86,7 +107,8 @@ function AccountForm({ account, onUpdated }) {
       onUpdated(body);
       setCurrentPassword("");
       setNewPassword("");
-      setSaved(true);
+      setConfirmPassword("");
+      setSaved(newPassword ? "password" : "profile");
     } catch {
       setError("The account could not be saved.");
     } finally {
@@ -97,7 +119,12 @@ function AccountForm({ account, onUpdated }) {
   return (
     <section className="dash-section account-page">
       <h1>Account</h1>
-      <p className="lede">Update your phone number or password. Your role stays the same.</p>
+      <p className="lede">
+        {account.role === "customer"
+          ? "Update your phone number, default address, or password. A default address is optional."
+          : "Update your phone number or password. Your role stays the same."}
+      </p>
+      <div className="account-layout">
       <dl className="account-facts">
         <div>
           <dt>Name</dt>
@@ -117,16 +144,43 @@ function AccountForm({ account, onUpdated }) {
           Phone
           <input id="account-phone" name="phone" type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
         </label>
+        {account.role === "customer" && (
+          <label className="field" htmlFor="account-address">
+            Default address
+            <input
+              id="account-address"
+              name="defaultAddress"
+              type="text"
+              autoComplete="street-address"
+              value={defaultAddress}
+              onChange={(event) => setDefaultAddress(event.target.value)}
+              aria-describedby="account-address-hint"
+            />
+            <span className="field-hint" id="account-address-hint">
+              Leave this blank if you prefer to enter a different address for each order.
+            </span>
+          </label>
+        )}
         <label className="field" htmlFor="account-current-password">
           Current password
           <input id="account-current-password" name="currentPassword" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
         </label>
         <label className="field" htmlFor="account-new-password">
           New password
-          <input id="account-new-password" name="newPassword" type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+          <input id="account-new-password" name="newPassword" type="password" autoComplete="new-password" value={newPassword} onChange={(event) => {
+            setNewPassword(event.target.value);
+            if (!event.target.value) setConfirmPassword("");
+          }} />
         </label>
+        {newPassword && (
+          <label className="field" htmlFor="account-confirm-password">
+            Confirm password
+            <input id="account-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+          </label>
+        )}
         {error && <p className="form-alert" role="alert">{error}</p>}
-        {saved && <p className="form-alert" role="status">Account updated.</p>}
+        {saved === "profile" && <p className="form-alert" role="status">Account saved. Your password was not changed.</p>}
+        {saved === "password" && <p className="form-alert" role="status">Password updated.</p>}
         {passwordNotice && createPortal(
           <p className="password-toast" role="alert">{passwordNotice}</p>,
           document.body,
@@ -135,6 +189,7 @@ function AccountForm({ account, onUpdated }) {
           {pending ? "Saving…" : "Save changes"}
         </button>
       </form>
+      </div>
     </section>
   );
 }

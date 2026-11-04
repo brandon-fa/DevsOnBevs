@@ -159,7 +159,7 @@
   position: fixed;
   right: 1.25rem;
   bottom: 1.25rem;
-  z-index: 5;
+  z-index: 50;
   max-width: min(22rem, calc(100vw - 2rem));
   padding: 0.85rem 1rem;
   border-radius: var(--radius-control);
@@ -170,14 +170,34 @@
 }
 
 .account-page {
-  max-width: 28rem;
+  width: 100%;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: 2rem 3rem;
+  align-items: start;
+  margin-top: 1.75rem;
 }
 
 .account-facts {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin: 1.25rem 0;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin: 0;
+  text-align: left;
+}
+
+.account-facts div {
+  text-align: left;
+}
+
+.account-facts dt,
+.account-facts dd {
+  margin: 0;
+  text-align: left;
 }
 
 .account-facts dt {
@@ -187,10 +207,30 @@
   text-transform: uppercase;
 }
 
-.account-form {
+.account-page .account-form {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+  width: 100%;
+}
+
+.account-page .account-form .field,
+.account-page .account-form .field input,
+.account-page .account-form .button-primary {
+  width: 100%;
+}
+
+.account-page .field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--text-caption);
+  opacity: 0.8;
+}
+
+@media (max-width: 720px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .role-badge {

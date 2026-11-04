@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { loadStoreOrders, updateStoreOrder } from "./orderApi.js";
 import { formatMoney } from "../../data/mockData.js";
+import { storeFontClass } from "./storeFonts.js";
+import "./shopping.css";
 import "./store-orders.css";
 
 const ORDER_SECTIONS = [
@@ -18,10 +21,9 @@ export default function StoreOrders({ onFeedback }) {
     const [orders, setOrders] = useState(null);
     const [loadError, setLoadError] = useState("");
     const [updating, setUpdating] = useState(false);
-    const [refresh, setRefresh] = useState(0);
     const [rejectionReasons, setRejectionReasons] = useState({});
+    const [toast, setToast] = useState(null);
     const lastLoadError = useRef("");
-    const refreshRequested = useRef(false);
 
     useEffect(() => {
         if (updating) return;
@@ -29,21 +31,18 @@ export default function StoreOrders({ onFeedback }) {
         let cancelled = false;
         let timer;
         async function load() {
-            const reportRefresh = refreshRequested.current;
-            refreshRequested.current = false;
             try {
                 const data = await loadStoreOrders(controller.signal);
                 if (!cancelled) {
                     setOrders(data);
                     setLoadError("");
                     lastLoadError.current = "";
-                    if (reportRefresh) onFeedback(`Orders refreshed for ${data.storeName}.`, "success");
                 }
             } catch (error) {
                 if (!cancelled) {
                     const message = error.message || "Store orders could not be loaded.";
                     setLoadError(message);
-                    if (reportRefresh || lastLoadError.current !== message) onFeedback(message, "error");
+                    if (lastLoadError.current !== message) onFeedback(message, "error");
                     lastLoadError.current = message;
                 }
             } finally {
@@ -56,18 +55,29 @@ export default function StoreOrders({ onFeedback }) {
             controller.abort();
             clearTimeout(timer);
         };
-    }, [refresh, updating, onFeedback]);
+    }, [updating, onFeedback]);
+
+    useEffect(() => {
+        if (!toast) return undefined;
+        const timer = window.setTimeout(() => setToast(null), 4000);
+        return () => window.clearTimeout(timer);
+    }, [toast]);
+
+    function showFailure(message) {
+        setToast({ id: Date.now(), text: message });
+        onFeedback(message, "error");
+    }
 
     async function act(orderId, action, reason = "") {
         if (updating) return;
         if (action === "reject" && !reason.trim()) {
-            onFeedback("Enter a reason for rejecting the order.", "error");
+            showFailure("You cannot reject an order without providing a reason.");
             return;
         }
         if (action === "ready") {
             const nextOrder = orders.preparing[0];
             if (!nextOrder || nextOrder.orderId !== orderId) {
-                onFeedback("Only the next order in the preparation queue can be marked ready.", "error");
+                showFailure("Only the next order in the preparation queue can be marked ready.");
                 return;
             }
         }
@@ -86,15 +96,10 @@ export default function StoreOrders({ onFeedback }) {
                 return remaining;
             });
         } catch (error) {
-            onFeedback(error.message || "The order could not be updated. Refresh before trying again.", "error");
+            showFailure(error.message || "The order could not be updated. Refresh before trying again.");
         } finally {
             setUpdating(false);
         }
-    }
-
-    function refreshOrders() {
-        refreshRequested.current = true;
-        setRefresh((value) => value + 1);
     }
 
     function changeRejectionReason(orderId, value) {
@@ -108,12 +113,10 @@ export default function StoreOrders({ onFeedback }) {
     return (
         <section className="store-orders dash-section" aria-labelledby="store-orders-title">
             <div className="store-orders-heading">
-                <div>
-                    <h1 id="store-orders-title">{orders?.storeName || "Your grocery store"}</h1>
-                    <p>Accept pending orders or reject them with a reason. Prepare accepted orders in queue order.</p>
-                </div>
-                <button type="button" className="store-order-button" disabled={updating}
-                    onClick={refreshOrders}>Refresh orders</button>
+                <h1 id="store-orders-title" className={storeFontClass(orders?.storeId)}>
+                    {orders?.storeName || "Your grocery store"}
+                </h1>
+                <p>Accept pending orders or reject them with a reason. Prepare accepted orders in queue order.</p>
             </div>
             {!orders && !loadError && <p role="status">Loading store orders…</p>}
             {orders && (
@@ -163,6 +166,10 @@ export default function StoreOrders({ onFeedback }) {
                         </section>
                     ))}
                 </div>
+            )}
+            {toast && createPortal(
+                <p key={toast.id} className="password-toast store-order-toast" role="alert">{toast.text}</p>,
+                document.body,
             )}
         </section>
     );

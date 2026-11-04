@@ -11,7 +11,7 @@ class SessionGateTest {
     void establishesFindsAndInvalidatesSession() {
         SessionGate gate = SessionGate.getInstance();
         assertSame(gate, SessionGate.getInstance());
-        AuthenticatedAccount account = new AuthenticatedAccount(7, "Rae Chen", "rae@example.com", "555-0100", Role.OPERATOR);
+        AuthenticatedAccount account = new AuthenticatedAccount(7, "Rae Chen", "rae@example.com", "555-0100", Role.OPERATOR, null);
 
         String sessionId = gate.establish(account);
 

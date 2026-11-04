@@ -2,6 +2,7 @@ package com.littleisles.application.reg;
 
 import com.littleisles.domain.reg.AccountService;
 import com.littleisles.domain.reg.AuthenticatedAccount;
+import com.littleisles.domain.reg.Role;
 import com.littleisles.technicalservices.reg.AccountRepository;
 
 import java.sql.SQLException;
@@ -36,18 +37,35 @@ public final class AuthController {
     }
 
     public AuthenticatedAccount currentAccount(String sessionId) {
-        return sessionGate.find(sessionId);
+        AuthenticatedAccount current = sessionGate.find(sessionId);
+        if (current == null) return null;
+        try {
+            var stored = accountRepository.findByEmail(current.email());
+            if (stored == null) return current;
+            AuthenticatedAccount fresh = new AuthenticatedAccount(
+                    current.id(), current.fullName(), current.email(), stored.phone(), current.role(),
+                    stored.defaultAddress());
+            sessionGate.replace(sessionId, fresh);
+            return fresh;
+        } catch (SQLException exception) {
+            return current;
+        }
     }
 
     public void logout(String sessionId) {
         sessionGate.invalidate(sessionId);
     }
 
-    public AuthenticatedAccount updateProfile(String sessionId, String phone, String currentPassword, String newPassword) throws SQLException {
+    public AuthenticatedAccount updateProfile(String sessionId, String phone, String currentPassword, String newPassword, String defaultAddress) throws SQLException {
         AuthenticatedAccount current = sessionGate.find(sessionId);
         if (current == null) return null;
         String cleanedPhone = phone == null ? "" : phone.trim();
         if (cleanedPhone.isEmpty()) throw new IllegalArgumentException("Enter a phone number.");
+        boolean updateAddress = current.role() == Role.CUSTOMER;
+        String cleanedAddress = null;
+        if (updateAddress && defaultAddress != null && !defaultAddress.isBlank()) {
+            cleanedAddress = defaultAddress.trim();
+        }
         String nextHash = null;
         String currentHash = null;
         if (newPassword != null && !newPassword.isEmpty()) {
@@ -60,9 +78,10 @@ public final class AuthController {
             }
             nextHash = accountService.hashPassword(newPassword);
         }
-        accountRepository.updatePhoneAndPassword(current.id(), cleanedPhone, nextHash, currentHash);
+        accountRepository.updatePhoneAndPassword(current.id(), cleanedPhone, nextHash, currentHash, cleanedAddress, updateAddress);
         AuthenticatedAccount updated = new AuthenticatedAccount(
-                current.id(), current.fullName(), current.email(), cleanedPhone, current.role());
+                current.id(), current.fullName(), current.email(), cleanedPhone, current.role(),
+                updateAddress ? cleanedAddress : current.defaultAddress());
         sessionGate.replace(sessionId, updated);
         return updated;
     }

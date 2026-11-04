@@ -32,7 +32,7 @@ const MAP_COPY = {
 const MARKER_GLYPH = {
   groceryStore: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.5 5.2 6h13.6l1.7 4.5"/><path d="M4 10.5h16V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M10 20v-5h4v5"/></svg>`,
   customer: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M6.2 19.2c.8-3 2.9-4.5 5.8-4.5s5 1.5 5.8 4.5"/></svg>`,
-  courier: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/></svg>`,
+  courier: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.2 12 4.4l7.5 3.8v8.4L12 20.4l-7.5-3.8z"/><path d="M4.5 8.2 12 12l7.5-3.8"/><path d="M12 12v8.4"/><path d="M12 12 8.2 10.1"/></svg>`,
 };
 
 function markerIcon(kind, status) {
@@ -132,7 +132,7 @@ export default function CityMap({ role, account, order, onFeedback }) {
 
     visibleCity.couriers.forEach((courier) => {
       const marker = L.marker([courier.lat, courier.lon], {
-        icon: markerIcon("courier", courier.status),
+        icon: markerIcon("courier"),
         title: `Courier ${courier.id}`,
       }).addTo(map);
       marker.bindPopup(`Courier ${courier.id} · ${courier.status}`);

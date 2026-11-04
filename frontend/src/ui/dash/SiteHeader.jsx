@@ -79,6 +79,11 @@ export default function SiteHeader({ account }) {
             </button>
             {open && (
               <div className="account-menu" id={menuId} role="menu">
+                {account.role === "customer" && (
+                  <button className="account-menu-item" type="button" role="menuitem" onClick={() => go(`${home}/orders`)}>
+                    Track order
+                  </button>
+                )}
                 <button className="account-menu-item" type="button" role="menuitem" onClick={() => go(`${home}/account`)}>
                   Manage account
                 </button>

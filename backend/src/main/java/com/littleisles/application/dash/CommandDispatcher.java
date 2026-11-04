@@ -18,9 +18,9 @@ public final class CommandDispatcher {
     }
 
     public Order placeOrder(AuthenticatedAccount account, String storeId, String destination,
-                            Map<String, Integer> products) throws SQLException {
+                            Map<String, Integer> products, boolean saveAsDefault) throws SQLException {
         requireCustomer(account);
-        return orderController.placeOrder(account, storeId, destination, products);
+        return orderController.placeOrder(account, storeId, destination, products, saveAsDefault);
     }
 
     public List<Order> customerOrders(AuthenticatedAccount account) throws SQLException {
@@ -28,15 +28,15 @@ public final class CommandDispatcher {
         return orderController.customerOrders(account);
     }
 
-    public GroceryStore acceptPendingOrder(AuthenticatedAccount account, int orderId) {
+    public GroceryStore acceptPendingOrder(AuthenticatedAccount account, int orderId) throws SQLException {
         return orderController.acceptPendingOrder(account, orderId);
     }
 
-    public GroceryStore readyNextOrder(AuthenticatedAccount account, int orderId) {
+    public GroceryStore readyNextOrder(AuthenticatedAccount account, int orderId) throws SQLException {
         return orderController.readyNextOrder(account, orderId);
     }
 
-    public GroceryStore rejectPendingOrder(AuthenticatedAccount account, int orderId, String reason) {
+    public GroceryStore rejectPendingOrder(AuthenticatedAccount account, int orderId, String reason) throws SQLException {
         return orderController.rejectPendingOrder(account, orderId, reason);
     }
 

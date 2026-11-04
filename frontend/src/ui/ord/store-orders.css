@@ -1,9 +1,9 @@
 .store-orders-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
   margin-bottom: 1.25rem;
+}
+
+.store-orders-heading p {
+  margin-top: 0.4rem;
 }
 
 .store-order-columns {
@@ -87,6 +87,12 @@
   color: var(--color-brown);
   font: inherit;
   resize: vertical;
+}
+
+.store-order-toast {
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .store-order-button-secondary {

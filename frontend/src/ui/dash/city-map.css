@@ -24,7 +24,7 @@
 
 .city-status-label {
   display: inline-block;
-  margin: 0.15rem 0 0.4rem;
+  margin: 1rem 0 0.4rem;
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
   font-size: var(--text-caption);
@@ -109,12 +109,8 @@
   background: var(--color-clay);
 }
 
-.city-marker-dot.is-courier.is-offline {
-  background: var(--color-taupe);
-}
-
 .city-marker-dot.is-customer {
-  background: var(--color-clay-deep);
+  background: #245c8a;
 }
 
 .leaflet-container {

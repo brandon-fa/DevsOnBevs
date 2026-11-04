@@ -10,6 +10,8 @@ const EMPTY_FORM = {
   password: "",
   phone: "",
   role: "",
+  storeCode: "",
+  defaultAddress: "",
 };
 
 export default function CreateAccount() {
@@ -50,6 +52,8 @@ export default function CreateAccount() {
           password: form.password,
           phone: form.phone.trim(),
           role: form.role,
+          storeCode: form.role === "groceries" ? form.storeCode.trim() : "",
+          defaultAddress: form.role === "customer" ? form.defaultAddress.trim() : "",
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -217,6 +221,49 @@ export default function CreateAccount() {
                   </span>
                 )}
               </fieldset>
+
+              {form.role === "customer" && (
+                <label className="field">
+                  <span>Default address</span>
+                  <input
+                    id="default-address"
+                    name="defaultAddress"
+                    type="text"
+                    autoComplete="street-address"
+                    value={form.defaultAddress}
+                    onChange={update("defaultAddress")}
+                    aria-describedby="default-address-hint"
+                  />
+                  <span className="field-hint" id="default-address-hint">
+                    Optional. You can add or change it later, or enter a different address each order.
+                  </span>
+                </label>
+              )}
+
+              {form.role === "groceries" && (
+                <label className="field">
+                  <span>Store code</span>
+                  <input
+                    id="store-code"
+                    name="storeCode"
+                    type="text"
+                    autoComplete="off"
+                    spellCheck="false"
+                    value={form.storeCode}
+                    onChange={update("storeCode")}
+                    aria-invalid={errors.storeCode ? "true" : "false"}
+                    aria-describedby={errors.storeCode ? "store-code-error" : "store-code-hint"}
+                  />
+                  <span className="field-hint" id="store-code-hint">
+                    Enter the code of an existing grocery store.
+                  </span>
+                  {errors.storeCode && (
+                    <span id="store-code-error" className="field-error">
+                      {errors.storeCode}
+                    </span>
+                  )}
+                </label>
+              )}
 
               <button className="button-primary" type="submit">
                 Create account

@@ -29,6 +29,9 @@ export function accountIssues(draft) {
   if (!EMAIL.test(email)) issues.email = "Enter a valid email address.";
   if (!password) issues.password = "Enter a password.";
   if (!phone) issues.phone = "Enter a phone number.";
+  if (draft.role === "groceries" && !(draft.storeCode?.trim())) {
+    issues.storeCode = "Enter the store code for your grocery store.";
+  }
   return issues;
 }
 

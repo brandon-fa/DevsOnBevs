@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { dashboardPathForRole } from "../reg/accountFactory.js";
 import StoreOrders from "../ord/StoreOrders.jsx";
 import StoreList from "../ord/StoreList.jsx";
-import CustomerOrders from "../ord/CustomerOrders.jsx";
 import CityMap from "./CityMap.jsx";
 import RoleDashboardView from "./RoleDashboardView.jsx";
 import SiteHeader from "./SiteHeader.jsx";
@@ -14,7 +13,6 @@ import "./dashboard.css";
 export default function Dashboard() {
   const { role: routeRole } = useParams();
   const { account, loading } = useSessionAccount();
-  const [trackedOrder, setTrackedOrder] = useState(null);
 
   // Console updates must not restart the child components' API polling.
   const addFeedback = useCallback((text, type = "info") => {
@@ -37,7 +35,7 @@ export default function Dashboard() {
 
   let view;
   if (account.role === "customer") {
-    view = <CustomerView onSelectOrder={setTrackedOrder} onFeedback={addFeedback} />;
+    view = <CustomerView onFeedback={addFeedback} />;
   } else if (account.role === "groceries") {
     view = <StoreOrders onFeedback={addFeedback} />;
   } else {
@@ -49,22 +47,24 @@ export default function Dashboard() {
       <a className="skip-link" href="#main">Skip to content</a>
       <SiteHeader account={account} />
       <main id="main" className="dash-main">
-        <CityMap role={account.role} account={account} order={trackedOrder} onFeedback={addFeedback} />
-        {view}
+        {account.role === "customer" ? (
+          <>
+            {view}
+            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+          </>
+        ) : (
+          <>
+            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+            {view}
+          </>
+        )}
       </main>
     </div>
   );
 }
 
-function CustomerView({ onSelectOrder, onFeedback }) {
+function CustomerView({ onFeedback }) {
   return (
-    <>
-      <div className="dash-intro dash-section">
-        <h1>Your market</h1>
-        <p className="lede">Browse nearby groceries and follow your orders as the store prepares them.</p>
-      </div>
-      <CustomerOrders onSelectOrder={onSelectOrder} onFeedback={onFeedback} />
-      <StoreList onFeedback={onFeedback} />
-    </>
+    <StoreList onFeedback={onFeedback} />
   );
 }

@@ -5,6 +5,7 @@ import Dashboard from "./ui/dash/Dashboard.jsx";
 import HistoryPage from "./ui/dash/HistoryPage.jsx";
 import Login from "./ui/reg/Login.jsx";
 import CartPage from "./ui/ord/Cart.jsx";
+import TrackOrdersPage from "./ui/ord/TrackOrdersPage.jsx";
 import { CartProvider } from "./ui/ord/cartContext.js";
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/dashboard/:role/account" element={<AccountPage />} />
         <Route path="/dashboard/:role/history" element={<HistoryPage />} />
         <Route path="/dashboard/:role/cart" element={<CartPage />} />
+        <Route path="/dashboard/:role/orders" element={<TrackOrdersPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </CartProvider>

@@ -17,7 +17,7 @@ public final class AccountService {
             return null;
         }
         if (!PermissionPolicy.hasDashboardAccess(role)) return null;
-        return new AuthenticatedAccount(account.id(), account.fullName(), account.email(), account.phone(), role);
+        return new AuthenticatedAccount(account.id(), account.fullName(), account.email(), account.phone(), role, account.defaultAddress());
     }
 
     public String hashPassword(String password) {

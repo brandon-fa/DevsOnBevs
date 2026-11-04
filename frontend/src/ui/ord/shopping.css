@@ -21,6 +21,56 @@
   line-height: 1.1;
 }
 
+@font-face {
+  font-family: "Greek Freak";
+  src: url("/fonts/Greek-Freak.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.store-font-greek,
+.store-mark.store-font-greek {
+  font-family: "Greek Freak", "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.store-font-caribbean,
+.store-mark.store-font-caribbean {
+  font-family: "Lilita One", "Arial Black", sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.store-font-indian,
+.store-mark.store-font-indian {
+  font-family: "Yatra One", "Georgia", serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.store-font-lebanese,
+.store-mark.store-font-lebanese {
+  font-family: "El Messiri", "Georgia", serif;
+  font-weight: 700;
+}
+
+.store-font-chinese,
+.store-mark.store-font-chinese {
+  font-family: "Ma Shan Zheng", "KaiTi", cursive;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.store-cuisine {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--color-clay-deep);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
 .store-open {
   display: inline-block;
   margin-top: 0.45rem;
@@ -36,21 +86,48 @@
   color: #b42318;
 }
 
+.store-back {
+  margin-bottom: 0.85rem;
+  padding: 0;
+  background: transparent;
+  color: var(--color-clay-deep);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .store-products {
-  margin-top: 1.25rem;
+  margin-top: 0;
   padding: 1rem 1.1rem;
   border-radius: var(--radius-outer);
   background: var(--color-linen);
 }
 
 .product-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0.85rem;
   margin-top: 1rem;
 }
 
-.product-row,
+.product-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-height: 100%;
+  padding: 0.7rem;
+  border-radius: var(--radius-inner);
+  background: var(--color-cream);
+}
+
+.product-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: calc(var(--radius-inner) - 2px);
+}
+
 .cart-line {
   display: flex;
   align-items: center;
@@ -65,17 +142,36 @@
   font-weight: 600;
 }
 
+.product-qty {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
 .product-price {
   font-variant-numeric: tabular-nums;
 }
 
 .product-sold-out {
-  font-size: var(--text-caption);
-  font-weight: 600;
+  margin: 0.35rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
   color: #b42318;
 }
 
-.product-add,
+.product-add {
+  align-self: flex-end;
+  width: 2.5rem;
+  min-height: 2.5rem;
+  margin-top: auto;
+  padding: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-clay-deep);
+  color: var(--color-cream);
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .retry-stores,
 .cart-remove,
 .qty-control button,
@@ -98,12 +194,100 @@
 .cart-page {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1rem;
-  max-width: 40rem;
+  width: 100%;
+  text-align: center;
 }
 
-.cart-store {
+.cart-page h1 {
+  align-self: flex-start;
+  text-align: left;
+}
+
+.cart-store-labels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.cart-basket {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.store-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: var(--text-caption);
   font-weight: 600;
+}
+
+.store-chip.is-open {
+  background: #e5f4eb;
+  color: #2f7d4a;
+}
+
+.store-chip.is-closed {
+  background: #fde8e6;
+  color: #b42318;
+}
+
+.cart-store-labels .store-chip {
+  background: var(--color-linen);
+  color: var(--color-brown);
+  border: 1px solid transparent;
+}
+
+.cart-store-labels .store-chip.is-selected {
+  background: var(--color-brown);
+  color: var(--color-cream);
+}
+
+.cart-empty {
+  margin: 0;
+  text-align: center;
+}
+
+.cart-total {
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.cart-total strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cart-add,
+.cart-place {
+  width: 16rem;
+}
+
+.cart-add {
+  min-height: 3rem;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--color-clay-deep);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-clay-deep);
+  font-weight: 600;
+}
+
+.cart-add:hover {
+  background: var(--color-linen);
 }
 
 .cart-place {
@@ -114,15 +298,23 @@
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  width: min(40rem, 100%);
   padding: 1rem;
   border-radius: var(--radius-outer);
   background: var(--color-linen);
+  text-align: left;
+}
+
+.cart-default-prompt p {
+  margin: 0;
 }
 
 .cart-lines {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+  width: min(40rem, 100%);
+  text-align: left;
 }
 
 .cart-line {
@@ -160,16 +352,55 @@
   color: var(--color-brown);
 }
 
+.order-sail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.order-sail img {
+  width: 16rem;
+  height: 16rem;
+  object-fit: contain;
+}
+
+.order-sail p {
+  margin: 0.75rem 0 0;
+  color: var(--color-brown);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
 .cart-toast {
   position: fixed;
   right: 1.25rem;
   bottom: 1.25rem;
   z-index: 40;
-  max-width: min(22rem, calc(100vw - 2rem));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.65rem;
+  width: max-content;
+  max-width: calc(100vw - 2.5rem);
   padding: 0.85rem 1rem;
   border-radius: var(--radius-control);
   background: #2f7d4a;
   color: var(--color-cream);
   font-weight: 600;
   box-shadow: var(--shadow-card);
+}
+
+.cart-toast p {
+  margin: 0;
+}
+
+.cart-toast-action {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-control);
+  background: var(--color-cream);
+  color: #2f7d4a;
+  font-weight: 700;
 }

@@ -72,7 +72,8 @@ public final class OrderHandler {
                 String storeId = requiredString(request, "storeId");
                 String destination = requiredString(request, "destination");
                 Map<String, Integer> products = readProducts(request);
-                Order order = dispatcher.placeOrder(account, storeId, destination, products);
+                boolean saveAsDefault = request.has("saveAsDefault") && request.get("saveAsDefault").getAsBoolean();
+                Order order = dispatcher.placeOrder(account, storeId, destination, products, saveAsDefault);
                 send(exchange, 201, orderJson(order));
             }
         } catch (SecurityException exception) {
@@ -84,7 +85,12 @@ public final class OrderHandler {
         } catch (IllegalStateException exception) {
             sendError(exchange, 409, exception.getMessage());
         } catch (SQLException exception) {
-            sendError(exchange, 500, "The customer account could not be loaded. Please try again.");
+            String message = exception.getMessage();
+            if (message != null && message.contains("linked to this store")) {
+                sendError(exchange, 409, message);
+            } else {
+                sendError(exchange, 500, "The order could not be saved. Please try again.");
+            }
         }
     }
 
@@ -148,6 +154,8 @@ public final class OrderHandler {
             sendError(exchange, 400, exception.getMessage());
         } catch (IllegalStateException exception) {
             sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The order could not be saved. Please try again.");
         }
     }
 

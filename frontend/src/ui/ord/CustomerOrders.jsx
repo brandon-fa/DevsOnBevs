@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { loadCustomerOrders } from "./orderApi.js";
 import { formatMoney } from "../../data/mockData.js";
+import { storeFontClass } from "./storeFonts.js";
+import "./shopping.css";
 import "./customer-orders.css";
 
 const STATUS_LABELS = {
@@ -47,17 +49,15 @@ function addNewOrder(orders, newOrder) {
   return result;
 }
 
-export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback }) {
+export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback, storeId = null }) {
   const [orders, setOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [refresh, setRefresh] = useState(0);
 
   // Remember the last response so background refreshes do not repeat console messages.
   const previousOrders = useRef(null);
   const lastError = useRef("");
-  const refreshRequested = useRef(false);
 
   let latestOrderId = null;
   if (latestOrder) latestOrderId = latestOrder.orderId;
@@ -79,8 +79,6 @@ export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback 
     let timer;
 
     async function load() {
-      const showRefreshMessage = refreshRequested.current;
-      refreshRequested.current = false;
       try {
         const received = await loadCustomerOrders(controller.signal);
         if (stopped) return;
@@ -110,13 +108,12 @@ export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback 
           return null;
         });
         setLoadFailed(false);
-        if (showRefreshMessage) onFeedback("Your order tracking has been refreshed.", "success");
       } catch (error) {
         if (stopped) return;
         let message = error.message || "Your orders could not be loaded.";
         if (error instanceof TypeError) message = "Your orders could not be loaded. Check your connection.";
         setLoadFailed(true);
-        if (showRefreshMessage || lastError.current !== message) onFeedback(message, "error");
+        if (lastError.current !== message) onFeedback(message, "error");
         lastError.current = message;
       } finally {
         if (!stopped) {
@@ -132,55 +129,52 @@ export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback 
       controller.abort();
       clearTimeout(timer);
     };
-  }, [latestOrderId, refresh, onFeedback]);
+  }, [latestOrderId, onFeedback]);
 
-  const selectedOrder = chooseOrder(orders, selectedId);
+  const visibleOrders = storeId == null
+    ? orders
+    : orders.filter((order) => String(order.storeId) === String(storeId));
+  const selectedOrder = chooseOrder(visibleOrders, selectedId);
   useEffect(() => {
-    onSelectOrder(selectedOrder);
+    if (onSelectOrder) onSelectOrder(selectedOrder);
   }, [selectedOrder, onSelectOrder]);
 
-  function refreshOrders() {
-    refreshRequested.current = true;
-    setRefresh((value) => value + 1);
-  }
-
-  function selectOrder(event) {
-    const orderId = Number(event.target.value);
-    setSelectedId(orderId);
-    onFeedback("Tracking order " + orderId + ".", "info");
+  function selectOrder(order) {
+    setSelectedId(order.orderId);
+    onFeedback("Tracking order " + order.orderId + " from " + order.storeName + ".", "info");
   }
 
   return (
     <section className="customer-orders dash-section" aria-labelledby="customer-orders-title">
       <div className="customer-orders-heading">
-        <div>
-          <h2 id="customer-orders-title">Track your orders</h2>
-          <p>Follow updates from your grocery store.</p>
-        </div>
-        <button type="button" className="tracking-refresh" onClick={refreshOrders}>Refresh orders</button>
+        <h2 id="customer-orders-title">Track your orders</h2>
+        <p>Each order stays labeled with the restaurant that is preparing it.</p>
       </div>
       {loading && <p>Loading your orders…</p>}
-      {!loading && !loadFailed && orders.length === 0 && (
-        <p className="customer-orders-empty">You have no orders yet. Choose a store and place your first order below.</p>
+      {!loading && !loadFailed && visibleOrders.length === 0 && (
+        <p className="customer-orders-empty">
+          {storeId == null
+            ? "You have no orders yet. Choose a store and place your first order."
+            : "You have no orders from this restaurant yet."}
+        </p>
       )}
-      {orders.length > 1 && (
-        <label className="customer-orders-selector" htmlFor="tracked-order">
-          Choose an order
-          <select id="tracked-order" value={selectedOrder.orderId} onChange={selectOrder}>
-            {orders.map((order) => (
-              <option key={order.orderId} value={order.orderId}>
-                Order {order.orderId} — {order.storeName} — {statusLabel(order.status, order.rejectionReason)}
-              </option>
-            ))}
-          </select>
-        </label>
+      {visibleOrders.length > 0 && (
+        <div className="customer-orders-list">
+          {visibleOrders.map((order) => (
+            <OrderTracking
+              key={order.orderId}
+              order={order}
+              selected={selectedOrder?.orderId === order.orderId}
+              onSelect={() => selectOrder(order)}
+            />
+          ))}
+        </div>
       )}
-      {selectedOrder && <OrderTracking order={selectedOrder} />}
     </section>
   );
 }
 
-function OrderTracking({ order }) {
+function OrderTracking({ order, selected, onSelect }) {
   let currentStep = -1;
   for (let index = 0; index < STEPS.length; index++) {
     if (STEPS[index].status === order.status) currentStep = index;
@@ -198,10 +192,19 @@ function OrderTracking({ order }) {
   }
 
   return (
-    <article className="order-card customer-order-card" aria-label={"Tracking order " + order.orderId}>
+    <article
+      className={`order-card customer-order-card${selected ? " is-selected" : ""}`}
+      aria-label={"Tracking order " + order.orderId + " from " + order.storeName}
+    >
       <div>
+        <button
+          type="button"
+          className={`store-chip ${storeFontClass(order.storeId)} ${order.status === "canceled" ? "is-closed" : "is-open"}`}
+          onClick={onSelect}
+        >
+          {order.storeName}
+        </button>
         <p className="section-kicker">Order {order.orderId} · {statusLabel(order.status, order.rejectionReason)}</p>
-        <h3>{order.storeName}</h3>
         <p className="order-copy">{description}</p>
         <p className="order-copy">Deliver to: {order.destination}</p>
         {order.rejectionReason && <p className="order-copy">Reason: {order.rejectionReason}</p>}

@@ -73,9 +73,6 @@ class SeedAccountLoaderTest {
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + database);
              Statement statement = connection.createStatement()) {
             statement.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, role TEXT NOT NULL, full_name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, phone TEXT NOT NULL)");
-            statement.execute("CREATE TABLE customer_profiles (user_id INTEGER PRIMARY KEY, delivery_address TEXT NOT NULL)");
-            statement.execute("CREATE TABLE groceries_profiles (user_id INTEGER PRIMARY KEY, store_name TEXT NOT NULL, cuisine TEXT NOT NULL, address TEXT NOT NULL)");
-            statement.execute("CREATE TABLE courier_profiles (user_id INTEGER PRIMARY KEY, vehicle_type TEXT NOT NULL)");
         }
         AccountStore store = new AccountStore(database);
         SeedAccountLoader loader = new SeedAccountLoader(store, RegistrationService.getInstance(), config);
@@ -124,12 +121,15 @@ class SeedAccountLoaderTest {
         }
 
         @Override
-        public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash) {}
+        public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash, String defaultAddress, boolean updateAddress) {}
+
+        @Override
+        public void saveDefaultAddress(long id, String defaultAddress) {}
 
         public void saveSeededAccount(Account account) {
             String key = account.getEmail().toLowerCase(Locale.ROOT);
             accounts.put(key, new AccountCredentials(0, account.getRole().label(), account.getFullName(),
-                    account.getEmail(), account.getPhone(), account.getPasswordHash()));
+                    account.getEmail(), account.getPhone(), account.getPasswordHash(), null));
         }
     }
 }

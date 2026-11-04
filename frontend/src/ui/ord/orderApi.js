@@ -40,7 +40,7 @@ function isOrderResponse(order) {
   return Number.isFinite(order.subtotalCents);
 }
 
-export async function placeOrder(storeId, cart, destination) {
+export async function placeOrder(storeId, cart, destination, saveAsDefault) {
   try {
     const lines = [];
     for (const product of cart) {
@@ -49,6 +49,7 @@ export async function placeOrder(storeId, cart, destination) {
     const body = {
       storeId: storeId,
       destination: destination.trim(),
+      saveAsDefault: saveAsDefault === true,
       lines: lines,
     };
     const order = await request("/api/orders", "POST", body);
@@ -80,7 +81,7 @@ export async function loadCustomerOrders(signal) {
   }
   for (const order of data.orders) {
     if (!isOrderResponse(order)) {
-      throw new Error("Your order details could not be loaded. Please refresh your orders.");
+      throw new Error("Your order details could not be loaded.");
     }
   }
   return data.orders;

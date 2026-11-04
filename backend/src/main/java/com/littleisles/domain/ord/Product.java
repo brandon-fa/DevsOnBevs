@@ -7,6 +7,7 @@ public class Product {
     private String name;
     private double price;
     private boolean soldOut;
+    private String image;
 
     public Product(String name, double price) {
         this(UUID.randomUUID().toString(), name, price);
@@ -51,6 +52,18 @@ public class Product {
 
     public void setSoldOut(boolean soldOut) {
         this.soldOut = soldOut;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        if (image == null || image.isBlank()) {
+            this.image = null;
+            return;
+        }
+        this.image = image.trim();
     }
 
     public boolean equals(Object obj) {

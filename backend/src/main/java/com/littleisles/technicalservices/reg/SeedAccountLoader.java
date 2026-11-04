@@ -3,6 +3,7 @@ package com.littleisles.technicalservices.reg;
 import com.littleisles.application.reg.RegistrationService;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountDraft;
+import com.littleisles.domain.reg.GroceriesAccount;
 import com.littleisles.domain.reg.Role;
 
 import java.io.IOException;
@@ -69,6 +70,9 @@ public final class SeedAccountLoader {
                 throw new IllegalArgumentException("Seeded account emails must be unique: " + draft.email());
             }
             Account account = registrationService.register(role.label(), draft);
+            if (account instanceof GroceriesAccount groceries && storeId != null) {
+                groceries.setStoreCode(storeId);
+            }
             if (account.getRole() != role) {
                 throw new IllegalStateException("A seeded account must hold exactly one configured role.");
             }

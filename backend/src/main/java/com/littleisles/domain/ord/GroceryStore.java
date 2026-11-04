@@ -60,6 +60,10 @@ public class GroceryStore {
         pendingOrders.add(order);
     }
 
+    public void restoreReadyOrder(Order order) {
+        readyOrders.add(order);
+    }
+
     public void acceptPendingOrder(Order order) {
         if (order == null || order.getStore() != this || !pendingOrders.contains(order)
                 || !(order.getState() instanceof PlacedOrderState)) {

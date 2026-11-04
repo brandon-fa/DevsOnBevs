@@ -33,6 +33,6 @@ class AccountServiceTest {
     private static AccountCredentials account(String role, String password) throws Exception {
         String hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                 .digest(password.getBytes(StandardCharsets.UTF_8)));
-        return new AccountCredentials(42, role, "Rae Chen", "rae@example.com", "555-0100", hash);
+        return new AccountCredentials(42, role, "Rae Chen", "rae@example.com", "555-0100", hash, null);
     }
 }

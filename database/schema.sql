@@ -7,24 +7,15 @@ CREATE TABLE users (
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     phone TEXT NOT NULL,
+    store_code TEXT,
+    default_address TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE customer_profiles (
-    user_id INTEGER PRIMARY KEY REFERENCES users (id),
-    delivery_address TEXT NOT NULL
-);
-
-CREATE TABLE groceries_profiles (
-    user_id INTEGER PRIMARY KEY REFERENCES users (id),
-    store_name TEXT NOT NULL,
-    cuisine TEXT NOT NULL,
-    address TEXT NOT NULL
-);
-
-CREATE TABLE courier_profiles (
-    user_id INTEGER PRIMARY KEY REFERENCES users (id),
-    vehicle_type TEXT NOT NULL
+CREATE TABLE grocery_stores (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    store_code TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE products (
@@ -57,30 +48,6 @@ CREATE TABLE order_items (
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0)
 );
-
-CREATE TRIGGER customer_profiles_role
-BEFORE INSERT ON customer_profiles
-FOR EACH ROW
-WHEN (SELECT role FROM users WHERE id = NEW.user_id) IS NOT 'customer'
-BEGIN
-    SELECT RAISE(ABORT, 'customer_profiles.user_id must be a customer');
-END;
-
-CREATE TRIGGER groceries_profiles_role
-BEFORE INSERT ON groceries_profiles
-FOR EACH ROW
-WHEN (SELECT role FROM users WHERE id = NEW.user_id) IS NOT 'groceries'
-BEGIN
-    SELECT RAISE(ABORT, 'groceries_profiles.user_id must be a groceries');
-END;
-
-CREATE TRIGGER courier_profiles_role
-BEFORE INSERT ON courier_profiles
-FOR EACH ROW
-WHEN (SELECT role FROM users WHERE id = NEW.user_id) IS NOT 'courier'
-BEGIN
-    SELECT RAISE(ABORT, 'courier_profiles.user_id must be a courier');
-END;
 
 CREATE TRIGGER products_groceries_role
 BEFORE INSERT ON products

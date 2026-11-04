@@ -8,6 +8,7 @@ export function saveAccount(account) {
     email: account.email,
     phone: account.phone,
     role: account.role,
+    defaultAddress: account.defaultAddress || "",
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 }

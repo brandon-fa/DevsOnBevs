@@ -20,7 +20,7 @@ import java.util.TreeSet;
 public final class CityConfigLoader {
     private static final Set<String> CITY_FIELDS = Set.of("minLat", "maxLat", "minLon", "maxLon");
     private static final Set<String> STORE_FIELDS = Set.of("name", "open", "lat", "lon");
-    private static final Set<String> PRODUCT_FIELDS = Set.of("name", "priceCents", "soldOut");
+    private static final Set<String> PRODUCT_FIELDS = Set.of("name", "priceCents", "soldOut", "image");
     private static final Set<String> COURIER_FIELDS = Set.of("lat", "lon", "status");
     private static final Set<String> CUSTOMER_FIELDS = Set.of("name", "lat", "lon");
 
@@ -78,6 +78,10 @@ public final class CityConfigLoader {
             double price = readInt(properties, productPrefix + "priceCents") / 100.0;
             Product product = new Product(productId, required(properties, productPrefix + "name"), price);
             product.setSoldOut(readBoolean(properties, productPrefix + "soldOut"));
+            String image = properties.getProperty(productPrefix + "image");
+            if (image != null && !image.isBlank()) {
+                product.setImage(image);
+            }
             store.addProduct(product);
         }
         return store;

@@ -18,14 +18,17 @@ class AuthControllerTest {
         AccountRepository repository = new AccountRepository() {
             @Override
             public AccountCredentials findByEmail(String email) {
-                return new AccountCredentials(1, "customer", "Rae Chen", email, "555-0100", hash);
+                return new AccountCredentials(1, "customer", "Rae Chen", email, "555-0100", hash, null);
             }
 
             @Override
             public void saveSeededAccount(com.littleisles.domain.reg.Account account) {}
 
             @Override
-            public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash) {}
+            public void updatePhoneAndPassword(long id, String phone, String passwordHash, String currentPasswordHash, String defaultAddress, boolean updateAddress) {}
+
+            @Override
+            public void saveDefaultAddress(long id, String defaultAddress) {}
         };
 
         AuthController first = AuthController.getInstance(repository);

@@ -100,6 +100,9 @@ public record CitySnapshot(
                 productJson.addProperty("name", product.getName());
                 productJson.addProperty("priceCents", Math.round(product.getPrice() * 100));
                 productJson.addProperty("soldOut", product.isSoldOut());
+                if (product.getImage() != null) {
+                    productJson.addProperty("image", product.getImage());
+                }
                 productsJson.add(productJson);
             }
             storeJson.add("products", productsJson);

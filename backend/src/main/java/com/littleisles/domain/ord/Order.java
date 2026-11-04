@@ -98,6 +98,29 @@ public class Order {
         return orderId;
     }
 
+    public void assignPersistedId(int persistedId) {
+        if (persistedId <= 0) {
+            throw new IllegalArgumentException("A saved order needs a positive id.");
+        }
+        this.orderId = persistedId;
+        nextOrderId.updateAndGet(current -> Math.max(current, persistedId + 1));
+    }
+
+    public void restoreSaved(int persistedId, String status, ArrayList<OrderLine> lines) {
+        assignPersistedId(persistedId);
+        this.orderLines = lines;
+        if ("preparing".equals(status)) {
+            this.state = new PreparingOrderState(this);
+        } else if ("ready".equals(status)) {
+            this.state = new ReadyOrderState(this);
+        } else if ("canceled".equals(status)) {
+            this.state = new CanceledOrderState(this);
+        } else {
+            this.state = new PlacedOrderState(this);
+        }
+        addTransitionEvent(new TransitionEvent("open", getStatus()));
+    }
+
     public void setStore(GroceryStore store) {
         this.store = store;
     }
