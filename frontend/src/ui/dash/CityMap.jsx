@@ -122,11 +122,14 @@ export default function CityMap({ role, account, order, onFeedback }) {
     map.fitBounds(bounds, { padding: [24, 24] });
 
     visibleCity.groceryStores.forEach((groceryStore) => {
+      const status = groceryStore.open ? "open" : "closed";
+      const band = groceryStore.queueBand || "short";
+      const queued = groceryStore.queued ?? 0;
       const marker = L.marker([groceryStore.lat, groceryStore.lon], {
-        icon: markerIcon("groceryStore", groceryStore.open ? "open" : "closed"),
-        title: groceryStore.name,
+        icon: markerIcon("groceryStore", `${status} is-band-${band}`),
+        title: `${groceryStore.name} · ${queued} queued`,
       }).addTo(map);
-      marker.bindPopup(`${groceryStore.name} · ${groceryStore.open ? "open" : "closed"}`);
+      marker.bindPopup(`${groceryStore.name} · ${queued} queued · ${status}`);
       marker.on("click", () => setSelected({ kind: "groceryStore", ...groceryStore }));
     });
 
