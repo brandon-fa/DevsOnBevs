@@ -135,6 +135,17 @@ public class GroceryStore {
         return preparationQueue;
     }
 
+    /** R-DASH-03: number of accepted orders waiting in the preparation queue. */
+    public int getQueuedOrderCount() {
+        return preparationQueue.getOrders().size();
+    }
+
+    /** R-DASH-03: the colour band of this store's queue. */
+    public QueueBand getQueueBand() {
+        // TODO: pass isPaused() once the store has a "paused" status (open | paused | closed).
+        return QueueBand.of(getQueuedOrderCount(), false);
+    }
+
     public String getLocation() {
         return location;
     }
