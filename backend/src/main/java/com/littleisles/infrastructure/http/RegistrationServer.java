@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public final class RegistrationServer {
     private static final String OPERATOR_AUTH_PASSCODE = "111";
@@ -37,7 +38,8 @@ public final class RegistrationServer {
     }
 
     public HttpServer start(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
+        server.setExecutor(Executors.newCachedThreadPool());
         server.createContext("/api/accounts", this::handle);
         server.createContext("/api/login", this::handleLogin);
         server.createContext("/api/session", this::handleSession);

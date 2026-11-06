@@ -381,7 +381,10 @@ public final class OrderController {
 
         List<CustomerPin> pins = new ArrayList<>();
         for (PinBuilder builder : builders.values()) {
-            pins.add(builder.build(bounds));
+            CustomerPin pin = builder.build(bounds);
+            if (pin != null) {
+                pins.add(pin);
+            }
         }
         return pins;
     }
@@ -485,7 +488,10 @@ public final class OrderController {
         }
 
         private CustomerPin build(CityBoundsHolder bounds) {
-            double[] point = AddressLocator.locate(address, bounds.bounds());
+            double[] point = AddressLocator.tryLocate(address, bounds.bounds());
+            if (point == null) {
+                return null;
+            }
             return new CustomerPin(
                     "customer-" + customerId + "-" + Integer.toHexString(AddressLocator.normalize(address).hashCode()),
                     name,

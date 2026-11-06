@@ -16,22 +16,31 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Resolves delivery addresses to map coordinates.
- * Prefers a local known-address table, then OpenStreetMap Nominatim, so pins
- * land on the real street instead of a hashed placeholder inside the city box.
+ * Resolves delivery addresses to real map coordinates.
+ * Unknown / fake addresses are rejected so orders are not pinned to a hash spot.
  */
 public final class AddressLocator {
     private static final Map<String, double[]> KNOWN_ADDRESSES = knownAddresses();
     private static final ConcurrentHashMap<String, double[]> GEOCODE_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> NEGATIVE_CACHE = new ConcurrentHashMap<>();
     private static final HttpClient HTTP = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(4))
             .build();
+    private static final Set<String> SKIP_TOKENS = Set.of(
+            "rue", "avenue", "ave", "av", "avene", "boulevard", "boul", "blvd",
+            "allee", "all", "chemin", "ch", "road", "rd", "street", "st",
+            "des", "de", "du", "la", "le", "les", "montreal", "quebec", "canada",
+            "brossard", "longueuil", "saint", "hubert");
 
     private AddressLocator() {
     }
@@ -45,39 +54,52 @@ public final class AddressLocator {
                 .replace('.', ' ')
                 .replaceAll("\\s+", " ")
                 .trim();
+        // Common typos seen in checkout.
+        folded = folded.replace("avene", "avenue");
         return folded;
     }
 
     public static double[] locate(String address, CityBounds bounds) {
+        double[] point = tryLocate(address, bounds);
+        if (point == null) {
+            throw new IllegalArgumentException(
+                    "\"" + (address == null ? "" : address.trim())
+                            + "\" is not a recognized Montreal-area street address. "
+                            + "Enter a real address to place your order.");
+        }
+        return point;
+    }
+
+    /** Same as {@link #locate} but returns null instead of throwing when unresolved. */
+    public static double[] tryLocate(String address, CityBounds bounds) {
         if (bounds == null) {
             throw new IllegalArgumentException("City bounds are required to place an address.");
         }
         String key = normalize(address);
-        if (key.isEmpty()) {
-            return new double[] {
-                    (bounds.minLat() + bounds.maxLat()) / 2.0,
-                    (bounds.minLon() + bounds.maxLon()) / 2.0
-            };
+        if (key.isEmpty() || houseNumber(key) == null || significantStreetTokens(key).isEmpty()) {
+            return null;
         }
 
         double[] known = lookupKnown(key);
         if (known != null) {
-            return clamp(known[0], known[1], bounds);
+            return new double[] {known[0], known[1]};
         }
 
         double[] cached = GEOCODE_CACHE.get(key);
         if (cached != null) {
-            return clamp(cached[0], cached[1], bounds);
+            return new double[] {cached[0], cached[1]};
+        }
+        if (Boolean.TRUE.equals(NEGATIVE_CACHE.get(key))) {
+            return null;
         }
 
-        double[] geocoded = geocode(address);
+        double[] geocoded = geocode(address, key);
         if (geocoded != null) {
             GEOCODE_CACHE.put(key, geocoded);
-            return clamp(geocoded[0], geocoded[1], bounds);
+            return new double[] {geocoded[0], geocoded[1]};
         }
-
-        throw new IllegalArgumentException(
-                "Could not place \"" + address.trim() + "\" on the map. Enter a real Montreal-area street address.");
+        NEGATIVE_CACHE.put(key, Boolean.TRUE);
+        return null;
     }
 
     private static double[] lookupKnown(String key) {
@@ -102,35 +124,83 @@ public final class AddressLocator {
     }
 
     private static boolean streetTokensMatch(String left, String right) {
-        String leftStreet = stripHouseNumber(left);
-        String rightStreet = stripHouseNumber(right);
-        if (leftStreet.isEmpty() || rightStreet.isEmpty()) return false;
-        if (leftStreet.equals(rightStreet)) return true;
-        return leftStreet.contains(rightStreet) || rightStreet.contains(leftStreet);
+        Set<String> leftTokens = significantStreetTokens(left);
+        Set<String> rightTokens = significantStreetTokens(right);
+        if (leftTokens.isEmpty() || rightTokens.isEmpty()) return false;
+        return leftTokens.containsAll(rightTokens) || rightTokens.containsAll(leftTokens);
     }
 
-    private static String stripHouseNumber(String key) {
+    private static Set<String> significantStreetTokens(String key) {
+        String street = key;
         String house = houseNumber(key);
-        if (house == null) return key;
-        return key.substring(house.length()).trim()
-                .replaceAll("\\b(rue|avenue|ave|av|boulevard|boul|blvd|allee|chemin|ch|road|rd|street|st)\\b", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
+        if (house != null) {
+            street = key.substring(house.length()).trim();
+        }
+        Set<String> tokens = new LinkedHashSet<>();
+        for (String part : street.split("\\s+")) {
+            if (part.length() < 3) continue;
+            if (SKIP_TOKENS.contains(part)) continue;
+            tokens.add(part);
+        }
+        return tokens;
     }
 
-    private static double[] geocode(String address) {
-        String query = address.trim();
-        String lowered = query.toLowerCase(Locale.ROOT);
-        if (!lowered.contains("montreal") && !lowered.contains("montréal")
-                && !lowered.contains("quebec") && !lowered.contains("québec")
-                && !lowered.contains("brossard") && !lowered.contains("longueuil")
-                && !lowered.contains("saint-hubert") && !lowered.contains("st-hubert")) {
-            query = query + ", Montreal, Quebec, Canada";
+    private static double[] geocode(String original, String normalizedKey) {
+        for (String query : searchQueries(original, normalizedKey)) {
+            JsonArray results = searchNominatim(query);
+            if (results == null) continue;
+            for (JsonElement element : results) {
+                if (!element.isJsonObject()) continue;
+                JsonObject hit = element.getAsJsonObject();
+                if (!hit.has("lat") || !hit.has("lon") || !hit.has("display_name")) continue;
+                String display = normalize(hit.get("display_name").getAsString());
+                if (!matchesRequestedStreet(normalizedKey, display)) continue;
+                double lat = hit.get("lat").getAsDouble();
+                double lon = hit.get("lon").getAsDouble();
+                if (!Double.isFinite(lat) || !Double.isFinite(lon)) continue;
+                return new double[] {lat, lon};
+            }
         }
+        return null;
+    }
+
+    private static List<String> searchQueries(String original, String key) {
+        String trimmed = original == null ? "" : original.trim();
+        List<String> queries = new ArrayList<>();
+        LinkedHashSet<String> localities = new LinkedHashSet<>();
+        Set<String> tokens = significantStreetTokens(key);
+        if (tokens.contains("sorbiers")) {
+            localities.add("Saint-Hubert, Quebec, Canada");
+            localities.add("Longueuil, Quebec, Canada");
+        }
+        if (tokens.contains("auteuil") || (tokens.contains("grande") && key.contains("grande allee"))) {
+            localities.add("Brossard, Quebec, Canada");
+            localities.add("Longueuil, Quebec, Canada");
+        }
+        localities.add("Montreal, Quebec, Canada");
+        localities.add("Quebec, Canada");
+
+        queries.add(trimmed);
+        for (String locality : localities) {
+            queries.add(trimmed + ", " + locality);
+        }
+        return queries;
+    }
+
+    private static boolean matchesRequestedStreet(String key, String display) {
+        Set<String> needed = significantStreetTokens(key);
+        if (needed.isEmpty()) return false;
+        for (String token : needed) {
+            if (!display.contains(token)) return false;
+        }
+        return true;
+    }
+
+    private static JsonArray searchNominatim(String query) {
         try {
             String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
             URI uri = URI.create(
-                    "https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&countrycodes=ca&q="
+                    "https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=0&countrycodes=ca&q="
                             + encoded);
             HttpRequest request = HttpRequest.newBuilder(uri)
                     .timeout(Duration.ofSeconds(6))
@@ -145,13 +215,7 @@ public final class AddressLocator {
             try (InputStreamReader reader = new InputStreamReader(response.body(), StandardCharsets.UTF_8)) {
                 JsonElement root = JsonParser.parseReader(reader);
                 if (!root.isJsonArray()) return null;
-                JsonArray results = root.getAsJsonArray();
-                if (results.isEmpty()) return null;
-                JsonObject first = results.get(0).getAsJsonObject();
-                double lat = first.get("lat").getAsDouble();
-                double lon = first.get("lon").getAsDouble();
-                if (!Double.isFinite(lat) || !Double.isFinite(lon)) return null;
-                return new double[] {lat, lon};
+                return root.getAsJsonArray();
             }
         } catch (IOException | InterruptedException | RuntimeException exception) {
             if (exception instanceof InterruptedException) {
@@ -161,17 +225,6 @@ public final class AddressLocator {
         }
     }
 
-    private static double[] clamp(double lat, double lon, CityBounds bounds) {
-        // Keep the real point when it already sits in the configured city box.
-        if (lat >= bounds.minLat() && lat <= bounds.maxLat()
-                && lon >= bounds.minLon() && lon <= bounds.maxLon()) {
-            return new double[] {lat, lon};
-        }
-        // Still return the real coordinates so the pin is correct even if slightly
-        // outside the seeded demo bounds; the map can still show it.
-        return new double[] {lat, lon};
-    }
-
     private static Map<String, double[]> knownAddresses() {
         Map<String, double[]> addresses = new LinkedHashMap<>();
         // 6700 Avenue Auteuil, Brossard (South Shore)
@@ -179,17 +232,24 @@ public final class AddressLocator {
                 "6700 avenue auteuil",
                 "6700 auteuil",
                 "6700 av auteuil",
-                "6700 ave auteuil");
+                "6700 ave auteuil",
+                "6700 avene auteuil");
         // 6700 Grande Allée, Brossard (South Shore)
         putAliases(addresses, new double[] {45.4631277, -73.4255244},
                 "6700 grande allee",
                 "6700 grande allée");
-        // 4918 Allée des Sorbiers, Saint-Hubert / Longueuil (South Shore)
+        // Allée des Sorbiers, Saint-Hubert / Longueuil (South Shore)
         putAliases(addresses, new double[] {45.4739591, -73.4186032},
                 "4918 allee des sorbiers",
                 "4918 all des sorbiers",
                 "4918 des sorbiers",
                 "4918 allee sorbiers");
+        // Nearby house number on the same street (OSM has the street, not every civic number).
+        putAliases(addresses, new double[] {45.4741076, -73.4182983},
+                "4818 allee des sorbiers",
+                "4818 all des sorbiers",
+                "4818 des sorbiers",
+                "4818 allee sorbiers");
         // 1819 Rue Baile, Ville-Marie / Shaughnessy Village
         putAliases(addresses, new double[] {45.4926516, -73.5781486},
                 "1819 rue baile",

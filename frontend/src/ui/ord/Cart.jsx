@@ -133,7 +133,9 @@ export default function CartPage() {
         setSuccess(message);
       } else {
         const message = result.error || "Your order could not be placed. Please try again.";
-        setOrderError(message);
+        const addressProblem = /address|recognized|place .* on the map/i.test(message);
+        if (addressProblem) setAddressError(message);
+        else setOrderError(message);
         appendConsoleMessage(message, "error");
       }
     } catch {
