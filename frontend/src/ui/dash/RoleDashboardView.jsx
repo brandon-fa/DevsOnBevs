@@ -14,9 +14,163 @@ export default function RoleDashboardView({ role, onFeedback }) {
   if (role === "courier") {
     return <CourierOffers onFeedback={onFeedback} />;
   }
+  if (role === "operator") {
+    return <OperatorCouriers onFeedback={onFeedback} />;
+  }
   return (
     <section className="role-empty-view" aria-label={VIEW_LABELS[role]}>
       <h1>{VIEW_LABELS[role]}</h1>
+    </section>
+  );
+}
+
+function statusLabel(order) {
+  if (order.status === "picked_up") return "Picked up";
+  if (order.courierAccepted || order.status === "accepted") return "Accepted";
+  return "Offered";
+}
+
+function OperatorCouriers({ onFeedback }) {
+  const [couriers, setCouriers] = useState(null);
+  const [storeName, setStoreName] = useState("Olive & Rye");
+  const [loadError, setLoadError] = useState("");
+  const [pendingId, setPendingId] = useState(null);
+  const [choices, setChoices] = useState({});
+  const [notice, setNotice] = useState(null);
+
+  useEffect(() => {
+    if (!notice) return undefined;
+    const timer = setTimeout(() => setNotice(null), 3500);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+    let timer;
+    async function load() {
+      try {
+        const response = await fetch("/api/operator/couriers", { credentials: "include", signal: controller.signal });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || "Couriers could not be loaded.");
+        if (!cancelled) {
+          setCouriers(body.couriers || []);
+          if (typeof body.storeName === "string" && body.storeName.trim()) {
+            setStoreName(body.storeName.trim());
+          }
+          setLoadError("");
+        }
+      } catch (error) {
+        if (!cancelled && error.name !== "AbortError") {
+          setLoadError(error.message || "Couriers could not be loaded.");
+        }
+      } finally {
+        if (!cancelled) timer = setTimeout(load, 5000);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, []);
+
+  async function reassign(orderId) {
+    const courierUserId = Number(choices[orderId]);
+    if (!Number.isInteger(courierUserId) || courierUserId <= 0) {
+      if (onFeedback) onFeedback("Choose a courier to receive this order.", "error");
+      return;
+    }
+    const courierName = (couriers || []).find((courier) => courier.userId === courierUserId)?.name || "the selected courier";
+    setPendingId(orderId);
+    try {
+      const response = await fetch("/api/operator/couriers/orders/" + orderId + "/reassign", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courierUserId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "The order could not be reassigned.");
+      setCouriers(body.couriers || []);
+      if (typeof body.storeName === "string" && body.storeName.trim()) {
+        setStoreName(body.storeName.trim());
+      }
+      setChoices((current) => ({ ...current, [orderId]: "" }));
+      const message = "Order " + orderId + " reassigned to " + courierName + ".";
+      setNotice({ id: Date.now(), text: message });
+      if (onFeedback) onFeedback(message, "success");
+    } catch (error) {
+      if (onFeedback) onFeedback(error.message || "The order could not be reassigned.", "error");
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  return (
+    <section className="dash-section" aria-label="Operator View">
+      <div className="store-orders-heading">
+        <h1>Operator View</h1>
+        <p>Courier deliveries for {storeName}. Only you can reassign an accepted order for this store.</p>
+      </div>
+      {loadError && <p className="form-alert" role="alert">{loadError}</p>}
+      {couriers && couriers.length === 0 && <p>No couriers are registered.</p>}
+      {couriers && couriers.length > 0 && (
+        <ul className="store-order-list operator-courier-list">
+          {couriers.map((courier) => (
+            <li key={courier.userId} className="store-order-card">
+              <p className="section-kicker">{courier.status}</p>
+              <p className="store-name">{courier.name}</p>
+              {(courier.orders || []).length === 0 && <p>No orders.</p>}
+              {(courier.orders || []).length > 0 && (
+                <ul className="operator-order-list">
+                  {(courier.orders || []).map((order) => {
+                    const accepted = order.courierAccepted || order.status === "accepted";
+                    const canReassign = accepted && order.status !== "picked_up" && order.status !== "delivered";
+                    return (
+                      <li key={order.orderId}>
+                        <p>Order {order.orderId} · {order.storeName}</p>
+                        <p>Deliver to {order.destination}</p>
+                        <p className="section-kicker">{statusLabel(order)}</p>
+                        {canReassign && (
+                          <div className="operator-reassign">
+                            <label htmlFor={"reassign-" + order.orderId}>Reassign to</label>
+                            <select
+                              id={"reassign-" + order.orderId}
+                              value={choices[order.orderId] || ""}
+                              onChange={(event) => setChoices((current) => ({ ...current, [order.orderId]: event.target.value }))}
+                            >
+                              <option value="">Choose a courier</option>
+                              {couriers.filter((candidate) => candidate.userId !== courier.userId).map((candidate) => (
+                                <option key={candidate.userId} value={candidate.userId}>{candidate.name}</option>
+                              ))}
+                            </select>
+                            <button
+                              className="store-order-button"
+                              type="button"
+                              disabled={pendingId === order.orderId}
+                              onClick={() => reassign(order.orderId)}
+                            >
+                              {pendingId === order.orderId ? "Reassigning…" : "Reassign"}
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {notice && createPortal(
+        <div key={notice.id} className="cart-toast" role="status">
+          <p>{notice.text}</p>
+        </div>,
+        document.body,
+      )}
     </section>
   );
 }

@@ -1,12 +1,14 @@
 package com.littleisles.infrastructure.db;
 
 import com.littleisles.domain.ord.CourierPin;
+import com.littleisles.domain.ord.CourierRosterEntry;
 import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.CourierAccount;
 import com.littleisles.domain.reg.CustomerAccount;
 import com.littleisles.domain.reg.GroceriesAccount;
+import com.littleisles.domain.reg.OperatorAccount;
 import com.littleisles.technicalservices.reg.AccountRepository;
 
 import java.util.ArrayList;
@@ -104,7 +106,13 @@ public final class AccountStore implements AccountRepository {
         statement.setString(3, account.getEmail());
         statement.setString(4, account.getPasswordHash());
         statement.setString(5, account.getPhone());
-        statement.setString(6, account instanceof GroceriesAccount groceries ? groceries.getStoreCode() : null);
+        String storeCode = null;
+        if (account instanceof GroceriesAccount groceries) {
+            storeCode = groceries.getStoreCode();
+        } else if (account instanceof OperatorAccount operator) {
+            storeCode = operator.getStoreCode();
+        }
+        statement.setString(6, storeCode);
         statement.setString(7, account instanceof CustomerAccount customer ? customer.getDefaultAddress() : null);
         statement.setString(8, account instanceof CourierAccount courier ? courier.getCourierPin() : null);
     }
@@ -143,6 +151,33 @@ public final class AccountStore implements AccountRepository {
     @Override
     public String linkedStoreId(long userId) throws SQLException {
         return groceryStoreField(userId, "id");
+    }
+
+    @Override
+    public List<CourierRosterEntry> listCouriers() throws SQLException {
+        String sql = """
+                SELECT id, full_name, courier_pin, courier_status
+                FROM users
+                WHERE role = 'courier'
+                ORDER BY full_name, id
+                """;
+        List<CourierRosterEntry> couriers = new ArrayList<>();
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                String statusLabel = result.getString("courier_status");
+                String status = statusLabel == null || statusLabel.isBlank()
+                        ? CourierStatus.IDLE.label()
+                        : statusLabel;
+                couriers.add(new CourierRosterEntry(
+                        result.getLong("id"),
+                        result.getString("full_name"),
+                        result.getString("courier_pin"),
+                        status));
+            }
+        }
+        return couriers;
     }
 
     public List<CourierPin> couriersWithLocation() throws SQLException {
@@ -202,7 +237,7 @@ public final class AccountStore implements AccountRepository {
                 FROM users u
                 JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
                     OR upper(u.store_code) = upper(gs.store_code)
-                WHERE u.id = ? AND u.role = 'groceries'
+                WHERE u.id = ? AND u.role IN ('groceries', 'operator')
                 """;
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement statement = connection.prepareStatement(sql)) {

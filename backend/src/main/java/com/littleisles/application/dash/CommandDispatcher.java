@@ -1,6 +1,7 @@
 package com.littleisles.application.dash;
 
 import com.littleisles.application.ord.OrderController;
+import com.littleisles.domain.ord.CourierRosterEntry;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.reg.AuthenticatedAccount;
@@ -58,6 +59,22 @@ public final class CommandDispatcher {
 
     public void deliverCourierOrder(AuthenticatedAccount account, int orderId) throws SQLException {
         orderController.deliverCourierOrder(account, orderId);
+    }
+
+    public GroceryStore operatorStore(AuthenticatedAccount account) throws SQLException {
+        return orderController.operatorStore(account);
+    }
+
+    public List<CourierRosterEntry> operatorCouriers(AuthenticatedAccount account) throws SQLException {
+        return orderController.operatorCouriers(account);
+    }
+
+    public List<Order> operatorOrders(AuthenticatedAccount account) throws SQLException {
+        return orderController.operatorOrders(account);
+    }
+
+    public void reassignAcceptedOrder(AuthenticatedAccount account, int orderId, long courierUserId) throws SQLException {
+        orderController.reassignAcceptedOrder(account, orderId, courierUserId);
     }
 
     private static void requireCustomer(AuthenticatedAccount account) {

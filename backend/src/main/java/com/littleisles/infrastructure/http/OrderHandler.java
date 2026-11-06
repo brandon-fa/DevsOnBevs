@@ -9,6 +9,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.Strictness;
 import com.littleisles.application.dash.CommandDispatcher;
 import com.littleisles.application.reg.AuthController;
+import com.littleisles.domain.ord.CourierRosterEntry;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
@@ -37,6 +38,7 @@ public final class OrderHandler {
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
         server.createContext("/api/courier/orders", this::handleCourierOrders);
+        server.createContext("/api/operator/couriers", this::handleOperatorCouriers);
     }
 
     private void handleCustomerOrders(HttpExchange exchange) throws IOException {
@@ -214,6 +216,78 @@ public final class OrderHandler {
         } catch (SQLException exception) {
             sendError(exchange, 500, "The delivery could not be updated. Please try again.");
         }
+    }
+
+    private void handleOperatorCouriers(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        boolean listing = path.equals("/api/operator/couriers");
+        if (!listing && !path.matches("/api/operator/couriers/orders/[1-9][0-9]*/reassign")) {
+            sendError(exchange, 404, "The operator endpoint does not exist.");
+            return;
+        }
+        String expectedMethod = listing ? "GET" : "POST";
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", expectedMethod + ", OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals(expectedMethod)) {
+            sendError(exchange, 405, "Use " + expectedMethod + " for this operator endpoint.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            if (!listing) {
+                int orderId = Integer.parseInt(path.split("/")[5]);
+                JsonElement courierId = readBody(exchange).get("courierUserId");
+                if (courierId == null || !courierId.isJsonPrimitive() || !courierId.getAsJsonPrimitive().isNumber()) {
+                    throw new IllegalArgumentException("Choose a courier.");
+                }
+                dispatcher.reassignAcceptedOrder(account, orderId, courierId.getAsLong());
+            }
+            send(exchange, 200, operatorBoard(account));
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (NumberFormatException | JsonParseException exception) {
+            sendError(exchange, 400, "Choose a valid order and courier.");
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        } catch (IllegalStateException exception) {
+            sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The courier board could not be updated. Please try again.");
+        }
+    }
+
+    private JsonObject operatorBoard(AuthenticatedAccount account) throws SQLException {
+        GroceryStore store = dispatcher.operatorStore(account);
+        JsonArray couriers = new JsonArray();
+        List<Order> orders = dispatcher.operatorOrders(account);
+        for (CourierRosterEntry courier : dispatcher.operatorCouriers(account)) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("userId", courier.userId());
+            entry.addProperty("name", courier.name());
+            entry.addProperty("pin", courier.pin());
+            entry.addProperty("status", courier.status());
+            JsonArray assigned = new JsonArray();
+            for (Order order : orders) {
+                if (Long.valueOf(courier.userId()).equals(order.getOfferedCourierUserId())) {
+                    assigned.add(orderJson(order));
+                }
+            }
+            entry.add("orders", assigned);
+            couriers.add(entry);
+        }
+        JsonObject response = new JsonObject();
+        response.addProperty("storeId", store.getId());
+        response.addProperty("storeName", store.getName());
+        response.add("couriers", couriers);
+        return response;
     }
 
     private static JsonObject readBody(HttpExchange exchange) throws IOException {

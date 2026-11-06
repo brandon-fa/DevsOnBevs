@@ -1,8 +1,10 @@
 package com.littleisles.technicalservices.reg;
 
+import com.littleisles.domain.ord.CourierRosterEntry;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountCredentials;
 import java.sql.SQLException;
+import java.util.List;
 
 public interface AccountRepository {
     AccountCredentials findByEmail(String email) throws SQLException;
@@ -31,5 +33,9 @@ public interface AccountRepository {
     }
 
     default void updateCourierStatus(long userId, String status) throws SQLException {
+    }
+
+    default List<CourierRosterEntry> listCouriers() throws SQLException {
+        return List.of();
     }
 }

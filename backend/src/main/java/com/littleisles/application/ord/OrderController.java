@@ -1,6 +1,7 @@
 package com.littleisles.application.ord;
 
 import com.littleisles.domain.ord.CourierPin;
+import com.littleisles.domain.ord.CourierRosterEntry;
 import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
@@ -191,6 +192,71 @@ public final class OrderController {
         }
     }
 
+    public synchronized List<CourierRosterEntry> operatorCouriers(AuthenticatedAccount account) throws SQLException {
+        requireOperator(account);
+        return accountRepository.listCouriers();
+    }
+
+    public synchronized GroceryStore operatorStore(AuthenticatedAccount account) throws SQLException {
+        requireOperator(account);
+        String storeId = accountRepository.linkedStoreId(account.id());
+        if (storeId == null || storeId.isBlank()) {
+            throw new SecurityException("Your operator account is not linked to a grocery store.");
+        }
+        return findStore(storeId);
+    }
+
+    public synchronized List<Order> operatorOrders(AuthenticatedAccount account) throws SQLException {
+        GroceryStore store = operatorStore(account);
+        List<Order> orders = new ArrayList<>();
+        for (Order order : store.getReadyOrders()) {
+            if (order.getOfferedCourierUserId() != null && !"delivered".equals(order.getStatus())) {
+                orders.add(order);
+            }
+        }
+        for (Order order : deliveries) {
+            if (order.getStore().getId().equals(store.getId())
+                    && order.getOfferedCourierUserId() != null
+                    && !"delivered".equals(order.getStatus())
+                    && !orders.contains(order)) {
+                orders.add(order);
+            }
+        }
+        return List.copyOf(orders);
+    }
+
+    public synchronized void reassignAcceptedOrder(AuthenticatedAccount account, int orderId, long targetCourierUserId) throws SQLException {
+        GroceryStore store = operatorStore(account);
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("Choose a valid order id.");
+        }
+        if (targetCourierUserId <= 0) {
+            throw new IllegalArgumentException("Choose a courier.");
+        }
+        Order order = findAssignedOrder(orderId);
+        if (order == null || !order.getStore().getId().equals(store.getId())) {
+            throw new SecurityException("You can only reassign deliveries for " + store.getName() + ".");
+        }
+        if (!order.isCourierAccepted() || !"ready".equals(order.getStatus())) {
+            throw new IllegalStateException("Only an accepted delivery can be reassigned.");
+        }
+        String targetPin = accountRepository.courierPinForUser(targetCourierUserId);
+        if (targetPin == null || targetPin.isBlank()) {
+            throw new IllegalArgumentException("Choose a courier on the city map.");
+        }
+        Long currentCourier = order.getOfferedCourierUserId();
+        if (currentCourier != null && currentCourier == targetCourierUserId) {
+            throw new IllegalArgumentException("This order is already assigned to that courier.");
+        }
+        order.setOfferedCourierUserId(targetCourierUserId);
+        orderStore.assignCourier(order.getOrderId(), targetCourierUserId);
+        rememberCourierStatus(targetCourierUserId, targetPin, statusAfterAssignment(targetCourierUserId));
+        cityCatalog.clearOpenOffer(targetPin);
+        if (currentCourier != null) {
+            releaseCourierIfFree(currentCourier);
+        }
+    }
+
     public synchronized void deliverCourierOrder(AuthenticatedAccount account, int orderId) throws SQLException {
         Order order = deliveryFor(account, orderId);
         if (!"picked_up".equals(order.getStatus())) {
@@ -248,6 +314,57 @@ public final class OrderController {
         order.setOfferedCourierUserId(nearestUserId);
         orderStore.assignCourier(order.getOrderId(), nearestUserId);
         cityCatalog.markOpenOffer(nearest.id());
+    }
+
+    private Order findAssignedOrder(int orderId) {
+        for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+            for (Order order : store.getReadyOrders()) {
+                if (order.getOrderId() == orderId) {
+                    return order;
+                }
+            }
+        }
+        for (Order order : deliveries) {
+            if (order.getOrderId() == orderId) {
+                return order;
+            }
+        }
+        return null;
+    }
+
+    private CourierStatus statusAfterAssignment(long courierUserId) {
+        for (Order order : deliveries) {
+            if (Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId()) && "picked_up".equals(order.getStatus())) {
+                return CourierStatus.CARRYING;
+            }
+        }
+        return CourierStatus.ASSIGNED;
+    }
+
+    private void releaseCourierIfFree(long courierUserId) throws SQLException {
+        for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+            for (Order order : store.getReadyOrders()) {
+                if (Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId()) && !"delivered".equals(order.getStatus())) {
+                    return;
+                }
+            }
+        }
+        for (Order order : deliveries) {
+            if (Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId()) && !"delivered".equals(order.getStatus())) {
+                return;
+            }
+        }
+        String pin = accountRepository.courierPinForUser(courierUserId);
+        rememberCourierStatus(courierUserId, pin, CourierStatus.IDLE);
+        if (pin != null && !pin.isBlank()) {
+            cityCatalog.clearOpenOffer(pin);
+        }
+    }
+
+    private void requireOperator(AuthenticatedAccount account) {
+        if (account == null || account.role() != Role.OPERATOR) {
+            throw new SecurityException("Only the operator can view couriers and reassign deliveries.");
+        }
     }
 
     private long requireCourier(AuthenticatedAccount account) {
