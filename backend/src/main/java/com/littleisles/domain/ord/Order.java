@@ -13,6 +13,8 @@ public class Order {
     private ArrayList<TransitionEvent> transitionEvents;
     private String destination;
     private String rejectionReason;
+    private Long offeredCourierUserId;
+    private boolean courierAccepted;
     //private double tip;
 
     public Order(GroceryStore store, String destination) {
@@ -76,6 +78,10 @@ public class Order {
         state.handoffOrder();
     }
 
+    public void deliverOrder() {
+        handoffOrder();
+    }
+
     /*
     public double[] getTotalPrice(){
         double subtotal = 0.0;
@@ -111,8 +117,12 @@ public class Order {
         this.orderLines = lines;
         if ("preparing".equals(status)) {
             this.state = new PreparingOrderState(this);
-        } else if ("ready".equals(status)) {
+        } else if ("ready".equals(status) || "accepted".equals(status)) {
             this.state = new ReadyOrderState(this);
+        } else if ("picked_up".equals(status)) {
+            this.state = new TransitOrderState(this);
+        } else if ("delivered".equals(status)) {
+            this.state = new CompletedOrderState(this);
         } else if ("canceled".equals(status)) {
             this.state = new CanceledOrderState(this);
         } else {
@@ -143,6 +153,22 @@ public class Order {
 
     public String getDestination() {
         return destination;
+    }
+
+    public Long getOfferedCourierUserId() {
+        return offeredCourierUserId;
+    }
+
+    public void setOfferedCourierUserId(Long offeredCourierUserId) {
+        this.offeredCourierUserId = offeredCourierUserId;
+    }
+
+    public boolean isCourierAccepted() {
+        return courierAccepted;
+    }
+
+    public void markCourierAccepted() {
+        this.courierAccepted = true;
     }
 
     /*

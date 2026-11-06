@@ -61,7 +61,7 @@ class CityConfigLoaderTest {
     void cityBuilderCollectsMapEntitiesIntoUnmodifiableLists() {
         CitySnapshot city = CitySnapshot.builder(new CityBounds(45.47, 45.54, -73.64, -73.54))
                 .addGroceryStore(new GroceryStore("market", "Market", 45.5, -73.6))
-                .addCourier(new CourierPin("courier", 45.51, -73.59, CourierStatus.IDLE))
+                .addCourier(new CourierPin("courier", "courier", 45.51, -73.59, CourierStatus.IDLE))
                 .addCustomer(new CustomerPin("customer", "Customer", 45.52, -73.58))
                 .build();
 

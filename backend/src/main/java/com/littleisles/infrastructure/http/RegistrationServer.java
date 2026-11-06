@@ -1,7 +1,9 @@
 package com.littleisles.infrastructure.http;
 
+import com.littleisles.application.ord.CityCatalog;
 import com.littleisles.application.reg.RegistrationService;
 import com.littleisles.application.reg.AuthController;
+import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountDraft;
@@ -23,11 +25,13 @@ public final class RegistrationServer {
     private final RegistrationService registrationService;
     private final AccountStore accountStore;
     private final AuthController authController;
+    private final CityCatalog cityCatalog;
 
-    public RegistrationServer(RegistrationService registrationService, AccountStore accountStore, AuthController authController) {
+    public RegistrationServer(RegistrationService registrationService, AccountStore accountStore, AuthController authController, CityCatalog cityCatalog) {
         this.registrationService = registrationService;
         this.accountStore = accountStore;
         this.authController = authController;
+        this.cityCatalog = cityCatalog;
     }
 
     public HttpServer start(int port) throws IOException {
@@ -105,11 +109,32 @@ public final class RegistrationServer {
         return null;
     }
 
-    private static String accountJson(AuthenticatedAccount account) {
+    private String accountJson(AuthenticatedAccount account) {
+        String storeCode = "";
+        String storeAddress = "";
+        if ("groceries".equals(account.role().label()) && cityCatalog != null) {
+            try {
+                String code = accountStore.registrationStoreCode(account.id());
+                String storeId = accountStore.linkedStoreId(account.id());
+                if (code != null) storeCode = code;
+                if (storeId != null) {
+                    for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+                        if (store.getId().equals(storeId) && store.getLocation() != null) {
+                            storeAddress = store.getLocation();
+                        }
+                    }
+                }
+            } catch (SQLException exception) {
+                storeCode = "";
+                storeAddress = "";
+            }
+        }
         return "{\"id\":" + account.id() + ",\"fullName\":" + quote(account.fullName())
                 + ",\"email\":" + quote(account.email()) + ",\"phone\":" + quote(account.phone())
                 + ",\"role\":" + quote(account.role().label())
-                + ",\"defaultAddress\":" + quote(account.defaultAddress() == null ? "" : account.defaultAddress()) + "}";
+                + ",\"defaultAddress\":" + quote(account.defaultAddress() == null ? "" : account.defaultAddress())
+                + ",\"storeCode\":" + quote(storeCode)
+                + ",\"storeAddress\":" + quote(storeAddress) + "}";
     }
 
     private void handle(HttpExchange exchange) throws IOException {

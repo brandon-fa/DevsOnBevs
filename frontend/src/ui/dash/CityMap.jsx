@@ -133,9 +133,9 @@ export default function CityMap({ role, account, order, onFeedback }) {
     visibleCity.couriers.forEach((courier) => {
       const marker = L.marker([courier.lat, courier.lon], {
         icon: markerIcon("courier"),
-        title: `Courier ${courier.id}`,
+        title: courier.name || `Courier ${courier.id}`,
       }).addTo(map);
-      marker.bindPopup(`Courier ${courier.id} · ${courier.status}`);
+      marker.bindPopup(`${courier.name || courier.id} · ${courier.status}`);
       marker.on("click", () => setSelected({ kind: "courier", ...courier }));
     });
 
@@ -218,7 +218,7 @@ function SelectedDetails({ selected }) {
     return (
       <>
         <p className="section-kicker">{KIND_LABEL.courier}</p>
-        <h3>{selected.id}</h3>
+        <h3>{selected.name || selected.id}</h3>
         <p className="city-map-status">Status: {selected.status}</p>
       </>
     );

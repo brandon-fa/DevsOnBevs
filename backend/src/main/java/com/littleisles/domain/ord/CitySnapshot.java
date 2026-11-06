@@ -114,6 +114,7 @@ public record CitySnapshot(
         for (CourierPin courier : couriers) {
             JsonObject courierJson = new JsonObject();
             courierJson.addProperty("id", courier.id());
+            courierJson.addProperty("name", courier.name());
             courierJson.addProperty("lat", courier.lat());
             courierJson.addProperty("lon", courier.lon());
             courierJson.addProperty("status", courier.status().label());

@@ -44,6 +44,22 @@ public final class CommandDispatcher {
         return orderController.storeOrders(account);
     }
 
+    public List<Order> courierOffers(AuthenticatedAccount account) throws SQLException {
+        return orderController.courierOffers(account);
+    }
+
+    public void acceptCourierOffer(AuthenticatedAccount account, int orderId) throws SQLException {
+        orderController.acceptCourierOffer(account, orderId);
+    }
+
+    public void pickupCourierOrder(AuthenticatedAccount account, int orderId) throws SQLException {
+        orderController.pickupCourierOrder(account, orderId);
+    }
+
+    public void deliverCourierOrder(AuthenticatedAccount account, int orderId) throws SQLException {
+        orderController.deliverCourierOrder(account, orderId);
+    }
+
     private static void requireCustomer(AuthenticatedAccount account) {
         if (account == null || account.role() != Role.CUSTOMER) {
             throw new SecurityException("Only customers can place or view their orders.");

@@ -10,12 +10,16 @@ const STATUS_LABELS = {
   placed: "Placed",
   preparing: "Preparing",
   ready: "Ready for pickup",
+  picked_up: "Picked up",
+  delivered: "Delivered",
   canceled: "Canceled",
 };
 const STEPS = [
   { status: "placed", label: "Placed" },
   { status: "preparing", label: "Preparing" },
   { status: "ready", label: "Ready for pickup" },
+  { status: "picked_up", label: "Picked up" },
+  { status: "delivered", label: "Delivered" },
 ];
 
 function statusLabel(status, reason) {
@@ -184,6 +188,8 @@ function OrderTracking({ order, selected, onSelect }) {
     placed: "Your order is waiting for the grocery store to accept it.",
     preparing: "The grocery store accepted your order and added it to the preparation queue.",
     ready: "Your order has been prepared and is ready for pickup.",
+    picked_up: "The courier picked up your order.",
+    delivered: "Your order has been delivered.",
     canceled: "This order was canceled.",
   };
   let description = descriptions[order.status];

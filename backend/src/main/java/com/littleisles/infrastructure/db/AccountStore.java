@@ -1,11 +1,16 @@
 package com.littleisles.infrastructure.db;
 
+import com.littleisles.domain.ord.CourierPin;
+import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountCredentials;
+import com.littleisles.domain.reg.CourierAccount;
 import com.littleisles.domain.reg.CustomerAccount;
 import com.littleisles.domain.reg.GroceriesAccount;
 import com.littleisles.technicalservices.reg.AccountRepository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -33,8 +38,8 @@ public final class AccountStore implements AccountRepository {
 
     public long insert(Account account) throws SQLException {
         String sql = """
-                INSERT INTO users (role, full_name, email, password_hash, phone, store_code, default_address)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO users (role, full_name, email, password_hash, phone, store_code, default_address, courier_pin)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
             connection.setAutoCommit(false);
@@ -58,8 +63,8 @@ public final class AccountStore implements AccountRepository {
     @Override
     public void saveSeededAccount(Account account) throws SQLException {
         String findSql = "SELECT id FROM users WHERE lower(email) = lower(?) ORDER BY id LIMIT 1";
-        String updateSql = "UPDATE users SET role = ?, full_name = ?, email = ?, password_hash = ?, phone = ?, store_code = ?, default_address = ? WHERE id = ?";
-        String insertSql = "INSERT INTO users (role, full_name, email, password_hash, phone, store_code, default_address) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String updateSql = "UPDATE users SET role = ?, full_name = ?, email = ?, password_hash = ?, phone = ?, store_code = ?, default_address = ?, courier_pin = ? WHERE id = ?";
+        String insertSql = "INSERT INTO users (role, full_name, email, password_hash, phone, store_code, default_address, courier_pin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement find = connection.prepareStatement(findSql)) {
             find.setString(1, account.getEmail());
@@ -73,7 +78,7 @@ public final class AccountStore implements AccountRepository {
                 userId = existingId;
                 try (PreparedStatement update = connection.prepareStatement(updateSql)) {
                     bindUser(update, account);
-                    update.setLong(8, existingId);
+                    update.setLong(9, existingId);
                     update.executeUpdate();
                 }
             } else {
@@ -101,6 +106,112 @@ public final class AccountStore implements AccountRepository {
         statement.setString(5, account.getPhone());
         statement.setString(6, account instanceof GroceriesAccount groceries ? groceries.getStoreCode() : null);
         statement.setString(7, account instanceof CustomerAccount customer ? customer.getDefaultAddress() : null);
+        statement.setString(8, account instanceof CourierAccount courier ? courier.getCourierPin() : null);
+    }
+
+    @Override
+    public Long courierUserId(String courierPin) throws SQLException {
+        if (courierPin == null || courierPin.isBlank()) return null;
+        String sql = "SELECT id FROM users WHERE role = 'courier' AND lower(courier_pin) = lower(?) ORDER BY id LIMIT 1";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, courierPin.trim());
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? result.getLong("id") : null;
+            }
+        }
+    }
+
+    @Override
+    public String courierPinForUser(long userId) throws SQLException {
+        String sql = "SELECT courier_pin FROM users WHERE id = ? AND role = 'courier'";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) return null;
+                return result.getString("courier_pin");
+            }
+        }
+    }
+
+    @Override
+    public String registrationStoreCode(long userId) throws SQLException {
+        return groceryStoreField(userId, "store_code");
+    }
+
+    @Override
+    public String linkedStoreId(long userId) throws SQLException {
+        return groceryStoreField(userId, "id");
+    }
+
+    public List<CourierPin> couriersWithLocation() throws SQLException {
+        String sql = """
+                SELECT id, full_name, courier_pin, courier_status, latitude, longitude
+                FROM users
+                WHERE role = 'courier' AND latitude IS NOT NULL AND longitude IS NOT NULL
+                ORDER BY id
+                """;
+        List<CourierPin> pins = new ArrayList<>();
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                String pin = result.getString("courier_pin");
+                String id = pin == null || pin.isBlank() ? "courier-" + result.getLong("id") : pin.trim();
+                String statusLabel = result.getString("courier_status");
+                CourierStatus status = statusLabel == null || statusLabel.isBlank()
+                        ? CourierStatus.IDLE
+                        : CourierStatus.fromLabel(statusLabel);
+                pins.add(new CourierPin(id, result.getString("full_name"),
+                        result.getDouble("latitude"), result.getDouble("longitude"), status));
+            }
+        }
+        return pins;
+    }
+
+    @Override
+    public String courierStatusForPin(String courierPin) throws SQLException {
+        if (courierPin == null || courierPin.isBlank()) return null;
+        String sql = "SELECT courier_status FROM users WHERE role = 'courier' AND lower(courier_pin) = lower(?) ORDER BY id LIMIT 1";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, courierPin.trim());
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next() ? result.getString("courier_status") : null;
+            }
+        }
+    }
+
+    @Override
+    public void updateCourierStatus(long userId, String status) throws SQLException {
+        String sql = "UPDATE users SET courier_status = ? WHERE id = ? AND role = 'courier'";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status);
+            statement.setLong(2, userId);
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("The courier status could not be saved.");
+            }
+        }
+    }
+
+    private String groceryStoreField(long userId, String column) throws SQLException {
+        String sql = """
+                SELECT gs.id, gs.store_code
+                FROM users u
+                JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
+                    OR upper(u.store_code) = upper(gs.store_code)
+                WHERE u.id = ? AND u.role = 'groceries'
+                """;
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) return null;
+                return result.getString(column);
+            }
+        }
     }
 
     @Override
@@ -207,6 +318,46 @@ public final class AccountStore implements AccountRepository {
             }
             if (!hasDefaultAddress) {
                 statement.execute("ALTER TABLE users ADD COLUMN default_address TEXT");
+            }
+            boolean hasCourierPin = false;
+            try (ResultSet columns = statement.executeQuery("PRAGMA table_info(users)")) {
+                while (columns.next()) {
+                    if ("courier_pin".equalsIgnoreCase(columns.getString("name"))) hasCourierPin = true;
+                }
+            }
+            if (!hasCourierPin) {
+                statement.execute("ALTER TABLE users ADD COLUMN courier_pin TEXT");
+            }
+            boolean hasCourierStatus = false;
+            try (ResultSet columns = statement.executeQuery("PRAGMA table_info(users)")) {
+                while (columns.next()) {
+                    if ("courier_status".equalsIgnoreCase(columns.getString("name"))) hasCourierStatus = true;
+                }
+            }
+            if (!hasCourierStatus) {
+                statement.execute("ALTER TABLE users ADD COLUMN courier_status TEXT");
+            }
+            boolean hasLatitude = false;
+            boolean hasLongitude = false;
+            try (ResultSet columns = statement.executeQuery("PRAGMA table_info(users)")) {
+                while (columns.next()) {
+                    String name = columns.getString("name");
+                    if ("latitude".equalsIgnoreCase(name)) hasLatitude = true;
+                    if ("longitude".equalsIgnoreCase(name)) hasLongitude = true;
+                }
+            }
+            if (!hasLatitude) {
+                statement.execute("ALTER TABLE users ADD COLUMN latitude REAL");
+            }
+            if (!hasLongitude) {
+                statement.execute("ALTER TABLE users ADD COLUMN longitude REAL");
+            }
+            try (PreparedStatement place = connection.prepareStatement(
+                    "UPDATE users SET latitude = ?, longitude = ? WHERE lower(email) = lower(?) AND role = 'courier' AND latitude IS NULL")) {
+                place.setDouble(1, 45.5210);
+                place.setDouble(2, -73.5850);
+                place.setString(3, "demo.courier@littleisles.example");
+                place.executeUpdate();
             }
             try (PreparedStatement upsert = connection.prepareStatement(
                     "INSERT INTO grocery_stores (id, name, store_code) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, store_code = excluded.store_code")) {

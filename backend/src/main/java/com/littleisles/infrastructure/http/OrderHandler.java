@@ -36,6 +36,7 @@ public final class OrderHandler {
     public void bind(HttpServer server) {
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
+        server.createContext("/api/courier/orders", this::handleCourierOrders);
     }
 
     private void handleCustomerOrders(HttpExchange exchange) throws IOException {
@@ -159,6 +160,62 @@ public final class OrderHandler {
         }
     }
 
+    private void handleCourierOrders(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        boolean listing = path.equals("/api/courier/orders");
+        if (!listing && !path.matches("/api/courier/orders/[1-9][0-9]*/(accept|pickup|deliver)")) {
+            sendError(exchange, 404, "The courier order endpoint does not exist.");
+            return;
+        }
+        String expectedMethod = listing ? "GET" : "POST";
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", expectedMethod + ", OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals(expectedMethod)) {
+            sendError(exchange, 405, "Use " + expectedMethod + " for this courier order endpoint.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            if (listing) {
+                JsonObject response = new JsonObject();
+                response.add("orders", ordersJson(dispatcher.courierOffers(account)));
+                send(exchange, 200, response);
+            } else {
+                String[] parts = path.split("/");
+                int orderId = Integer.parseInt(parts[4]);
+                String action = parts[5];
+                if (action.equals("accept")) {
+                    dispatcher.acceptCourierOffer(account, orderId);
+                } else if (action.equals("pickup")) {
+                    dispatcher.pickupCourierOrder(account, orderId);
+                } else {
+                    dispatcher.deliverCourierOrder(account, orderId);
+                }
+                JsonObject response = new JsonObject();
+                response.add("orders", ordersJson(dispatcher.courierOffers(account)));
+                send(exchange, 200, response);
+            }
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (NumberFormatException exception) {
+            sendError(exchange, 400, "Choose a valid order id.");
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        } catch (IllegalStateException exception) {
+            sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The delivery could not be updated. Please try again.");
+        }
+    }
+
     private static JsonObject readBody(HttpExchange exchange) throws IOException {
         String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject request = JSON.fromJson(body, JsonObject.class);
@@ -231,6 +288,7 @@ public final class OrderHandler {
         result.addProperty("storeName", order.getStore().getName());
         result.addProperty("status", order.getStatus());
         result.addProperty("destination", order.getDestination());
+        result.addProperty("courierAccepted", order.isCourierAccepted());
         if (order.getRejectionReason() != null) {
             result.addProperty("rejectionReason", order.getRejectionReason());
         }
