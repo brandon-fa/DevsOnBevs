@@ -92,6 +92,8 @@ public record CitySnapshot(
             storeJson.addProperty("open", store.isOpen());
             storeJson.addProperty("lat", store.getLat());
             storeJson.addProperty("lon", store.getLon());
+            storeJson.addProperty("queued", store.getQueuedOrderCount());
+            storeJson.addProperty("queueBand", store.getQueueBand().label());
 
             JsonArray productsJson = new JsonArray();
             for (Product product : store.getProducts()) {
