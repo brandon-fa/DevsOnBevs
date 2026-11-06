@@ -265,7 +265,6 @@ public final class OrderHandler {
     }
 
     private JsonObject operatorBoard(AuthenticatedAccount account) throws SQLException {
-        GroceryStore store = dispatcher.operatorStore(account);
         JsonArray couriers = new JsonArray();
         List<Order> orders = dispatcher.operatorOrders(account);
         for (CourierRosterEntry courier : dispatcher.operatorCouriers(account)) {
@@ -284,8 +283,6 @@ public final class OrderHandler {
             couriers.add(entry);
         }
         JsonObject response = new JsonObject();
-        response.addProperty("storeId", store.getId());
-        response.addProperty("storeName", store.getName());
         response.add("couriers", couriers);
         return response;
     }

@@ -32,7 +32,6 @@ function statusLabel(order) {
 
 function OperatorCouriers({ onFeedback }) {
   const [couriers, setCouriers] = useState(null);
-  const [storeName, setStoreName] = useState("Olive & Rye");
   const [loadError, setLoadError] = useState("");
   const [pendingId, setPendingId] = useState(null);
   const [choices, setChoices] = useState({});
@@ -55,9 +54,6 @@ function OperatorCouriers({ onFeedback }) {
         if (!response.ok) throw new Error(body.error || "Couriers could not be loaded.");
         if (!cancelled) {
           setCouriers(body.couriers || []);
-          if (typeof body.storeName === "string" && body.storeName.trim()) {
-            setStoreName(body.storeName.trim());
-          }
           setLoadError("");
         }
       } catch (error) {
@@ -94,9 +90,6 @@ function OperatorCouriers({ onFeedback }) {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "The order could not be reassigned.");
       setCouriers(body.couriers || []);
-      if (typeof body.storeName === "string" && body.storeName.trim()) {
-        setStoreName(body.storeName.trim());
-      }
       setChoices((current) => ({ ...current, [orderId]: "" }));
       const message = "Order " + orderId + " reassigned to " + courierName + ".";
       setNotice({ id: Date.now(), text: message });
@@ -112,7 +105,7 @@ function OperatorCouriers({ onFeedback }) {
     <section className="dash-section" aria-label="Operator View">
       <div className="store-orders-heading">
         <h1>Operator View</h1>
-        <p>Courier deliveries for {storeName}. Only you can reassign an accepted order for this store.</p>
+        <p>Courier deliveries across all grocery stores. Only you can reassign an accepted order.</p>
       </div>
       {loadError && <p className="form-alert" role="alert">{loadError}</p>}
       {couriers && couriers.length === 0 && <p>No couriers are registered.</p>}

@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class RegistrationServer {
+    private static final String OPERATOR_AUTH_PASSCODE = "111";
+
     private final RegistrationService registrationService;
     private final AccountStore accountStore;
     private final AuthController authController;
@@ -172,6 +174,12 @@ public final class RegistrationServer {
                 }
                 groceries.setStoreCode(storeCode.trim());
             }
+            if ("operator".equals(fields.get("role"))) {
+                String operatorPasscode = fields.get("operatorPasscode");
+                if (operatorPasscode == null || !OPERATOR_AUTH_PASSCODE.equals(operatorPasscode.trim())) {
+                    throw new IllegalArgumentException("wrong passcode, try again");
+                }
+            }
             long id = accountStore.insert(account);
             send(exchange, 201, accountJson(id, account));
         } catch (IllegalArgumentException | IllegalStateException exception) {
@@ -202,7 +210,7 @@ public final class RegistrationServer {
 
     private static Map<String, String> readFields(String body) {
         Map<String, String> fields = new LinkedHashMap<>();
-        for (String key : new String[] {"fullName", "email", "password", "phone", "role", "storeCode", "defaultAddress"}) {
+        for (String key : new String[] {"fullName", "email", "password", "phone", "role", "storeCode", "defaultAddress", "operatorPasscode"}) {
             fields.put(key, stringField(body, key));
         }
         return fields;

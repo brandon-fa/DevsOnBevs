@@ -50,12 +50,21 @@ export default function CartPage() {
 
   function updateBasket(storeId, changeLines) {
     if (submitting) return;
-    setBaskets((previous) => previous.flatMap((basket) => {
+    const next = baskets.flatMap((basket) => {
       if (basket.id !== storeId) return [basket];
       const lines = changeLines(basket.lines);
+      // Drop the store basket entirely once every product is removed.
       if (lines.length === 0) return [];
       return [{ ...basket, lines }];
-    }));
+    });
+    setBaskets(next);
+    if (!next.some((basket) => basket.id === storeId) && orderingId === storeId) {
+      setOrderingId(null);
+      setDestination("");
+      setAddressError("");
+      setAskDefault(false);
+      setOrderError("");
+    }
   }
 
   function changeQuantity(storeId, productId, quantity) {

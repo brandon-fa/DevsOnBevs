@@ -37,8 +37,8 @@ public final class Main {
         }
         RegistrationServer registrationServer = new RegistrationServer(registrationService, accountStore, authController, cityCatalog);
         HttpServer server = registrationServer.start(port);
-        new CityCatalogHandler(authController, cityCatalog).bind(server);
         CommandDispatcher dispatcher = new CommandDispatcher(orderController);
+        new CityCatalogHandler(authController, dispatcher).bind(server);
         new OrderHandler(authController, dispatcher).bind(server);
         System.out.println("Seeded demonstration accounts available:");
         for (SeedAccountLoader.SeededAccount account : seededAccounts) {

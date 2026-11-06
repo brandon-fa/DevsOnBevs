@@ -35,7 +35,14 @@ public interface AccountRepository {
     default void updateCourierStatus(long userId, String status) throws SQLException {
     }
 
+    default void updateCourierLocation(long userId, double lat, double lon) throws SQLException {
+    }
+
     default List<CourierRosterEntry> listCouriers() throws SQLException {
+        return List.of();
+    }
+
+    default List<AccountCredentials> listCustomerAccounts() throws SQLException {
         return List.of();
     }
 }

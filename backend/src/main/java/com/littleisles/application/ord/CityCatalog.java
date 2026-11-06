@@ -58,14 +58,27 @@ public final class CityCatalog {
     }
 
     public void setCourierStatus(String courierPinId, CourierStatus status) {
-        if (courierPinId == null || courierPinId.isBlank() || status == null) {
-            throw new IllegalArgumentException("A courier status update needs a pin and a status.");
+        replaceCourier(courierPinId, null, null, status);
+    }
+
+    public void setCourierLocation(String courierPinId, double lat, double lon) {
+        replaceCourier(courierPinId, lat, lon, null);
+    }
+
+    private void replaceCourier(String courierPinId, Double lat, Double lon, CourierStatus status) {
+        if (courierPinId == null || courierPinId.isBlank()) {
+            throw new IllegalArgumentException("A courier update needs a pin id.");
         }
         List<CourierPin> updated = new ArrayList<>();
         boolean found = false;
         for (CourierPin pin : snapshot.couriers()) {
             if (pin.id().equals(courierPinId)) {
-                updated.add(new CourierPin(pin.id(), pin.name(), pin.lat(), pin.lon(), status));
+                updated.add(new CourierPin(
+                        pin.id(),
+                        pin.name(),
+                        lat == null ? pin.lat() : lat,
+                        lon == null ? pin.lon() : lon,
+                        status == null ? pin.status() : status));
                 found = true;
             } else {
                 updated.add(pin);

@@ -61,8 +61,8 @@ public final class CommandDispatcher {
         orderController.deliverCourierOrder(account, orderId);
     }
 
-    public GroceryStore operatorStore(AuthenticatedAccount account) throws SQLException {
-        return orderController.operatorStore(account);
+    public String cityJson(AuthenticatedAccount account) throws SQLException {
+        return orderController.cityJson(account);
     }
 
     public List<CourierRosterEntry> operatorCouriers(AuthenticatedAccount account) throws SQLException {

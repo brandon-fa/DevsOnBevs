@@ -1,8 +1,11 @@
 package com.littleisles.application.ord;
 
+import com.littleisles.domain.ord.AddressLocator;
+import com.littleisles.domain.ord.CitySnapshot;
 import com.littleisles.domain.ord.CourierPin;
 import com.littleisles.domain.ord.CourierRosterEntry;
 import com.littleisles.domain.ord.CourierStatus;
+import com.littleisles.domain.ord.CustomerPin;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
@@ -18,6 +21,7 @@ import com.littleisles.technicalservices.reg.AccountRepository;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,9 +59,17 @@ public final class OrderController {
         if (products == null || products.isEmpty()) {
             throw new IllegalArgumentException("Add at least one product to your order.");
         }
+        // Resolve coordinates up front so the map pin matches the typed street address.
+        AddressLocator.locate(destination.trim(), cityCatalog.snapshot().bounds());
         GroceryStore store = findStore(storeId);
         if (!store.isOpen()) {
             throw new IllegalStateException("This grocery store is closed.");
+        }
+        for (Order existing : customer.getOrders()) {
+            if (Order.isCurrent(existing.getStatus()) && store.getId().equals(existing.getStore().getId())) {
+                throw new IllegalStateException(
+                        "You already have an open order at " + store.getName() + ". Finish or cancel it before ordering again there.");
+            }
         }
 
         List<OrderLine> validatedLines = new ArrayList<>();
@@ -74,6 +86,7 @@ public final class OrderController {
         }
 
         Order order = new Order(store, destination.trim());
+        order.setCustomerUserId(account.id());
         for (OrderLine line : validatedLines) {
             order.addOrderLine(line.getProduct(), line.getQuantity());
         }
@@ -127,17 +140,13 @@ public final class OrderController {
         }
         store.readyNextOrder(orderId);
         orderStore.updateStatus(orderId, "ready");
-        for (Order order : store.getReadyOrders()) {
-            if (order.getOrderId() == orderId) {
-                offerToNearestIdleCourier(store, order);
-                break;
-            }
-        }
+        offerUnassignedReadyOrders();
         return store;
     }
 
     public synchronized List<Order> courierOffers(AuthenticatedAccount account) throws SQLException {
         long courierUserId = requireCourier(account);
+        offerUnassignedReadyOrders();
         List<Order> offers = new ArrayList<>();
         for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
             for (Order order : store.getReadyOrders()) {
@@ -177,6 +186,7 @@ public final class OrderController {
         orderStore.updateStatus(offered.getOrderId(), "accepted");
         rememberCourierStatus(courierUserId, pin, CourierStatus.ASSIGNED);
         cityCatalog.clearOpenOffer(pin);
+        offerUnassignedReadyOrders();
     }
 
     public synchronized void pickupCourierOrder(AuthenticatedAccount account, int orderId) throws SQLException {
@@ -186,7 +196,9 @@ public final class OrderController {
         }
         order.pickupOrder();
         orderStore.updateStatus(order.getOrderId(), order.getStatus());
-        rememberCourierStatus(account.id(), accountRepository.courierPinForUser(account.id()), CourierStatus.CARRYING);
+        String pin = accountRepository.courierPinForUser(account.id());
+        rememberCourierStatus(account.id(), pin, CourierStatus.CARRYING);
+        rememberCourierLocation(account.id(), pin, order.getStore().getLat(), order.getStore().getLon());
         if (!deliveries.contains(order)) {
             deliveries.add(order);
         }
@@ -197,26 +209,18 @@ public final class OrderController {
         return accountRepository.listCouriers();
     }
 
-    public synchronized GroceryStore operatorStore(AuthenticatedAccount account) throws SQLException {
-        requireOperator(account);
-        String storeId = accountRepository.linkedStoreId(account.id());
-        if (storeId == null || storeId.isBlank()) {
-            throw new SecurityException("Your operator account is not linked to a grocery store.");
-        }
-        return findStore(storeId);
-    }
-
     public synchronized List<Order> operatorOrders(AuthenticatedAccount account) throws SQLException {
-        GroceryStore store = operatorStore(account);
+        requireOperator(account);
         List<Order> orders = new ArrayList<>();
-        for (Order order : store.getReadyOrders()) {
-            if (order.getOfferedCourierUserId() != null && !"delivered".equals(order.getStatus())) {
-                orders.add(order);
+        for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+            for (Order order : store.getReadyOrders()) {
+                if (order.getOfferedCourierUserId() != null && !"delivered".equals(order.getStatus())) {
+                    orders.add(order);
+                }
             }
         }
         for (Order order : deliveries) {
-            if (order.getStore().getId().equals(store.getId())
-                    && order.getOfferedCourierUserId() != null
+            if (order.getOfferedCourierUserId() != null
                     && !"delivered".equals(order.getStatus())
                     && !orders.contains(order)) {
                 orders.add(order);
@@ -226,7 +230,7 @@ public final class OrderController {
     }
 
     public synchronized void reassignAcceptedOrder(AuthenticatedAccount account, int orderId, long targetCourierUserId) throws SQLException {
-        GroceryStore store = operatorStore(account);
+        requireOperator(account);
         if (orderId <= 0) {
             throw new IllegalArgumentException("Choose a valid order id.");
         }
@@ -234,8 +238,8 @@ public final class OrderController {
             throw new IllegalArgumentException("Choose a courier.");
         }
         Order order = findAssignedOrder(orderId);
-        if (order == null || !order.getStore().getId().equals(store.getId())) {
-            throw new SecurityException("You can only reassign deliveries for " + store.getName() + ".");
+        if (order == null) {
+            throw new IllegalArgumentException("That delivery is not available to reassign.");
         }
         if (!order.isCourierAccepted() || !"ready".equals(order.getStatus())) {
             throw new IllegalStateException("Only an accepted delivery can be reassigned.");
@@ -265,7 +269,231 @@ public final class OrderController {
         order.deliverOrder();
         orderStore.updateStatus(order.getOrderId(), order.getStatus());
         deliveries.remove(order);
-        rememberCourierStatus(account.id(), accountRepository.courierPinForUser(account.id()), CourierStatus.IDLE);
+        String pin = accountRepository.courierPinForUser(account.id());
+        double[] delivery = AddressLocator.locate(order.getDestination(), cityCatalog.snapshot().bounds());
+        rememberCourierLocation(account.id(), pin, delivery[0], delivery[1]);
+        rememberCourierStatus(account.id(), pin, CourierStatus.IDLE);
+        if (pin != null && !pin.isBlank()) {
+            cityCatalog.clearOpenOffer(pin);
+        }
+        offerUnassignedReadyOrders();
+    }
+
+    public synchronized String cityJson(AuthenticatedAccount account) throws SQLException {
+        if (account == null) {
+            throw new SecurityException("Log in to continue.");
+        }
+        List<CustomerPin> pins = liveCustomerPins(account);
+        CitySnapshot base = cityCatalog.snapshot();
+        List<CourierPin> couriers = mapCouriersAtPickupStops(base.couriers());
+        if (account.role() == Role.CUSTOMER) {
+            List<CourierPin> visible = new ArrayList<>();
+            for (ActiveOrder active : activeOrders()) {
+                if (active.customerId() == null || active.customerId() != account.id()) continue;
+                if (!active.courierAccepted() || active.courierUserId() == null) continue;
+                if (!"picked_up".equals(active.status()) && !"ready".equals(active.status()) && !"accepted".equals(active.status())) {
+                    continue;
+                }
+                String pinId = accountRepository.courierPinForUser(active.courierUserId());
+                if (pinId == null) continue;
+                for (CourierPin courier : couriers) {
+                    if (courier.id().equals(pinId) && !visible.contains(courier)) {
+                        visible.add(courier);
+                    }
+                }
+            }
+            couriers = visible;
+        }
+        return new CitySnapshot(base.bounds(), base.groceryStores(), couriers, pins).toJson();
+    }
+
+    /** Couriers with a picked-up delivery are shown at that order's grocery store. */
+    private List<CourierPin> mapCouriersAtPickupStops(List<CourierPin> couriers) throws SQLException {
+        List<CourierPin> mapped = new ArrayList<>(couriers.size());
+        for (CourierPin courier : couriers) {
+            GroceryStore pickupStore = pickupStoreForCourier(courier);
+            if (pickupStore != null) {
+                mapped.add(new CourierPin(
+                        courier.id(),
+                        courier.name(),
+                        pickupStore.getLat(),
+                        pickupStore.getLon(),
+                        CourierStatus.CARRYING));
+            } else {
+                mapped.add(courier);
+            }
+        }
+        return mapped;
+    }
+
+    private GroceryStore pickupStoreForCourier(CourierPin courier) throws SQLException {
+        Long userId = accountRepository.courierUserId(courier.id());
+        if (userId == null) {
+            return null;
+        }
+        for (Order order : deliveries) {
+            if (userId.equals(order.getOfferedCourierUserId()) && "picked_up".equals(order.getStatus())) {
+                return order.getStore();
+            }
+        }
+        return null;
+    }
+
+    private void rememberCourierLocation(long courierUserId, String pin, double lat, double lon) throws SQLException {
+        accountRepository.updateCourierLocation(courierUserId, lat, lon);
+        if (pin != null && !pin.isBlank()) {
+            cityCatalog.setCourierLocation(pin, lat, lon);
+        }
+    }
+
+    private List<CustomerPin> liveCustomerPins(AuthenticatedAccount account) throws SQLException {
+        CityBoundsHolder bounds = new CityBoundsHolder(cityCatalog.snapshot().bounds());
+        Map<String, PinBuilder> builders = new LinkedHashMap<>();
+
+        if (account.role() == Role.CUSTOMER || account.role() == Role.OPERATOR) {
+            for (AccountCredentials customer : accountRepository.listCustomerAccounts()) {
+                if (account.role() == Role.CUSTOMER && customer.id() != account.id()) continue;
+                String defaultAddress = customer.defaultAddress();
+                if (defaultAddress == null || defaultAddress.isBlank()) continue;
+                putPin(builders, customer.id(), customer.fullName(), defaultAddress, bounds, null);
+            }
+        }
+
+        for (ActiveOrder active : activeOrders()) {
+            if (account.role() == Role.CUSTOMER && (active.customerId() == null || active.customerId() != account.id())) {
+                continue;
+            }
+            if (account.role() == Role.GROCERIES) {
+                GroceryStore store = storeFor(account);
+                if (!store.getId().equals(active.storeId())) continue;
+            }
+            if (account.role() == Role.COURIER) {
+                if (!active.courierAccepted() || !Long.valueOf(account.id()).equals(active.courierUserId())) {
+                    continue;
+                }
+            }
+            AccountCredentials customer = findCustomerCredentials(active.customerId());
+            String name = customer == null ? "Customer" : customer.fullName();
+            long customerId = active.customerId() == null ? 0L : active.customerId();
+            putPin(builders, customerId, name, active.destination(), bounds,
+                    new CustomerPin.CustomerOrderRef(active.orderId(), active.status(), active.storeName()));
+        }
+
+        List<CustomerPin> pins = new ArrayList<>();
+        for (PinBuilder builder : builders.values()) {
+            pins.add(builder.build(bounds));
+        }
+        return pins;
+    }
+
+    private AccountCredentials findCustomerCredentials(Long customerId) throws SQLException {
+        if (customerId == null) return null;
+        for (AccountCredentials customer : accountRepository.listCustomerAccounts()) {
+            if (customer.id() == customerId) return customer;
+        }
+        return null;
+    }
+
+    private List<ActiveOrder> activeOrders() {
+        List<ActiveOrder> active = new ArrayList<>();
+        for (Map.Entry<Long, CustomerAccount> entry : customers.entrySet()) {
+            for (Order order : entry.getValue().getOrders()) {
+                if (!Order.isCurrent(order.getStatus())) continue;
+                active.add(new ActiveOrder(
+                        order.getOrderId(),
+                        entry.getKey(),
+                        order.getStore().getId(),
+                        order.getStore().getName(),
+                        order.getDestination(),
+                        order.getStatus(),
+                        order.getOfferedCourierUserId(),
+                        order.isCourierAccepted()));
+            }
+        }
+        for (Map.Entry<Long, List<Order>> entry : savedOrdersByCustomer.entrySet()) {
+            if (customers.containsKey(entry.getKey())) continue;
+            for (Order order : entry.getValue()) {
+                if (!Order.isCurrent(order.getStatus())) continue;
+                active.add(new ActiveOrder(
+                        order.getOrderId(),
+                        entry.getKey(),
+                        order.getStore().getId(),
+                        order.getStore().getName(),
+                        order.getDestination(),
+                        order.getStatus(),
+                        order.getOfferedCourierUserId(),
+                        order.isCourierAccepted()));
+            }
+        }
+        for (Order order : deliveries) {
+            if (!Order.isCurrent(order.getStatus())) continue;
+            boolean already = false;
+            for (ActiveOrder existing : active) {
+                if (existing.orderId() == order.getOrderId()) {
+                    already = true;
+                    break;
+                }
+            }
+            if (already) continue;
+            active.add(new ActiveOrder(
+                    order.getOrderId(),
+                    order.getCustomerUserId(),
+                    order.getStore().getId(),
+                    order.getStore().getName(),
+                    order.getDestination(),
+                    order.getStatus(),
+                    order.getOfferedCourierUserId(),
+                    order.isCourierAccepted()));
+        }
+        return active;
+    }
+
+    private static void putPin(Map<String, PinBuilder> builders, long customerId, String name, String address,
+                               CityBoundsHolder bounds, CustomerPin.CustomerOrderRef order) {
+        String key = customerId + "|" + AddressLocator.normalize(address);
+        PinBuilder builder = builders.get(key);
+        if (builder == null) {
+            builder = new PinBuilder(customerId, name, address);
+            builders.put(key, builder);
+        }
+        if (order != null) {
+            builder.addOrder(order);
+        }
+    }
+
+    private record ActiveOrder(int orderId, Long customerId, String storeId, String storeName, String destination,
+                               String status, Long courierUserId, boolean courierAccepted) {
+    }
+
+    private record CityBoundsHolder(com.littleisles.domain.ord.CityBounds bounds) {
+    }
+
+    private static final class PinBuilder {
+        private final long customerId;
+        private final String name;
+        private final String address;
+        private final List<CustomerPin.CustomerOrderRef> orders = new ArrayList<>();
+
+        private PinBuilder(long customerId, String name, String address) {
+            this.customerId = customerId;
+            this.name = name;
+            this.address = address;
+        }
+
+        private void addOrder(CustomerPin.CustomerOrderRef order) {
+            orders.add(order);
+        }
+
+        private CustomerPin build(CityBoundsHolder bounds) {
+            double[] point = AddressLocator.locate(address, bounds.bounds());
+            return new CustomerPin(
+                    "customer-" + customerId + "-" + Integer.toHexString(AddressLocator.normalize(address).hashCode()),
+                    name,
+                    point[0],
+                    point[1],
+                    address,
+                    orders);
+        }
     }
 
     private Order deliveryFor(AuthenticatedAccount account, int orderId) throws SQLException {
@@ -359,6 +587,55 @@ public final class OrderController {
         if (pin != null && !pin.isBlank()) {
             cityCatalog.clearOpenOffer(pin);
         }
+        offerUnassignedReadyOrders();
+    }
+
+    private void offerUnassignedReadyOrders() throws SQLException {
+        reconcileCourierAvailability();
+        for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+            for (Order order : store.getReadyOrders()) {
+                if (order.getOfferedCourierUserId() != null || order.isCourierAccepted()) {
+                    continue;
+                }
+                offerToNearestIdleCourier(store, order);
+            }
+        }
+    }
+
+    private void reconcileCourierAvailability() throws SQLException {
+        for (CourierPin pin : List.copyOf(cityCatalog.snapshot().couriers())) {
+            Long userId = accountRepository.courierUserId(pin.id());
+            boolean hasPendingOffer = false;
+            boolean hasActiveWork = false;
+            if (userId != null) {
+                for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+                    for (Order order : store.getReadyOrders()) {
+                        if (!userId.equals(order.getOfferedCourierUserId())) {
+                            continue;
+                        }
+                        hasActiveWork = true;
+                        if (!order.isCourierAccepted()) {
+                            hasPendingOffer = true;
+                        }
+                    }
+                }
+                for (Order order : deliveries) {
+                    if (userId.equals(order.getOfferedCourierUserId())) {
+                        hasActiveWork = true;
+                    }
+                }
+            }
+            if (cityCatalog.hasOpenOffer(pin.id()) && !hasPendingOffer) {
+                cityCatalog.clearOpenOffer(pin.id());
+            }
+            if (userId != null
+                    && pin.status() != CourierStatus.IDLE
+                    && pin.status() != CourierStatus.OFFLINE
+                    && !hasActiveWork) {
+                rememberCourierStatus(userId, pin.id(), CourierStatus.IDLE);
+                cityCatalog.clearOpenOffer(pin.id());
+            }
+        }
     }
 
     private void requireOperator(AuthenticatedAccount account) {
@@ -378,7 +655,8 @@ public final class OrderController {
         GroceryStore store = storeFor(account);
         Order order = findPendingOrder(store, orderId);
         store.rejectPendingOrder(order, reason);
-        orderStore.updateStatus(order.getOrderId(), order.getStatus());
+        // Drop the persisted row instead of leaving a cancelled status behind.
+        orderStore.delete(order.getOrderId());
         return store;
     }
 
@@ -434,6 +712,7 @@ public final class OrderController {
                 throw new SecurityException("The customer account is unavailable.");
             }
             customer = new CustomerAccount(stored.fullName(), stored.email(), stored.passwordHash(), stored.phone());
+            customer.setDefaultAddress(stored.defaultAddress());
             List<Order> saved = savedOrdersByCustomer.remove(account.id());
             if (saved != null) {
                 for (Order order : saved) {
@@ -466,6 +745,7 @@ public final class OrderController {
                 continue;
             }
             Order order = new Order(store, saved.destination());
+            order.setCustomerUserId(saved.customerId());
             order.restoreSaved(saved.id(), saved.status(), saved.lines());
             if ("placed".equals(saved.status())) {
                 store.addPendingOrder(order);
@@ -488,8 +768,12 @@ public final class OrderController {
                 order.setOfferedCourierUserId(saved.courierUserId());
                 order.markCourierAccepted();
                 deliveries.add(order);
+                String pin = accountRepository.courierPinForUser(saved.courierUserId());
+                rememberCourierStatus(saved.courierUserId(), pin, CourierStatus.CARRYING);
+                rememberCourierLocation(saved.courierUserId(), pin, store.getLat(), store.getLon());
             }
             savedOrdersByCustomer.computeIfAbsent(saved.customerId(), id -> new ArrayList<>()).add(order);
         }
+        offerUnassignedReadyOrders();
     }
 }

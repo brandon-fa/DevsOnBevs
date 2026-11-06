@@ -121,6 +121,31 @@ public final class OrderStore {
         }
     }
 
+    public void delete(int orderId) throws SQLException {
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("A saved order needs a positive id.");
+        }
+        try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement items = connection.prepareStatement("DELETE FROM order_items WHERE order_id = ?")) {
+                    items.setInt(1, orderId);
+                    items.executeUpdate();
+                }
+                try (PreparedStatement orders = connection.prepareStatement("DELETE FROM orders WHERE id = ?")) {
+                    orders.setInt(1, orderId);
+                    if (orders.executeUpdate() != 1) {
+                        throw new SQLException("The saved order could not be deleted.");
+                    }
+                }
+                connection.commit();
+            } catch (SQLException exception) {
+                connection.rollback();
+                throw exception;
+            }
+        }
+    }
+
     public List<SavedOrder> loadAll() throws SQLException {
         String orderSql = """
                 SELECT o.id, o.customer_id, gs.id AS store_id, o.delivery_address, o.status, o.courier_id
@@ -128,7 +153,7 @@ public final class OrderStore {
                 JOIN users u ON u.id = o.groceries_id AND u.role = 'groceries'
                 JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
                     OR upper(u.store_code) = upper(gs.store_code)
-                WHERE o.status IN ('placed', 'accepted', 'preparing', 'ready', 'picked up', 'picked_up', 'delivered', 'cancelled')
+                WHERE o.status IN ('placed', 'accepted', 'preparing', 'ready', 'picked up', 'picked_up', 'on_the_way', 'delivered', 'cancelled')
                 ORDER BY o.id
                 """;
         String lineSql = """
@@ -236,7 +261,7 @@ public final class OrderStore {
         if ("cancelled".equals(status)) {
             return "canceled";
         }
-        if ("picked up".equals(status)) {
+        if ("picked up".equals(status) || "on_the_way".equals(status)) {
             return "picked_up";
         }
         return status;

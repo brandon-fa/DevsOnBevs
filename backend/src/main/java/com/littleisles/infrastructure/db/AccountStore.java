@@ -8,7 +8,6 @@ import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.CourierAccount;
 import com.littleisles.domain.reg.CustomerAccount;
 import com.littleisles.domain.reg.GroceriesAccount;
-import com.littleisles.domain.reg.OperatorAccount;
 import com.littleisles.technicalservices.reg.AccountRepository;
 
 import java.util.ArrayList;
@@ -106,12 +105,7 @@ public final class AccountStore implements AccountRepository {
         statement.setString(3, account.getEmail());
         statement.setString(4, account.getPasswordHash());
         statement.setString(5, account.getPhone());
-        String storeCode = null;
-        if (account instanceof GroceriesAccount groceries) {
-            storeCode = groceries.getStoreCode();
-        } else if (account instanceof OperatorAccount operator) {
-            storeCode = operator.getStoreCode();
-        }
+        String storeCode = account instanceof GroceriesAccount groceries ? groceries.getStoreCode() : null;
         statement.setString(6, storeCode);
         statement.setString(7, account instanceof CustomerAccount customer ? customer.getDefaultAddress() : null);
         statement.setString(8, account instanceof CourierAccount courier ? courier.getCourierPin() : null);
@@ -231,13 +225,53 @@ public final class AccountStore implements AccountRepository {
         }
     }
 
+    @Override
+    public void updateCourierLocation(long userId, double lat, double lon) throws SQLException {
+        String sql = "UPDATE users SET latitude = ?, longitude = ? WHERE id = ? AND role = 'courier'";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setDouble(1, lat);
+            statement.setDouble(2, lon);
+            statement.setLong(3, userId);
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("The courier location could not be saved.");
+            }
+        }
+    }
+
+    @Override
+    public List<AccountCredentials> listCustomerAccounts() throws SQLException {
+        String sql = """
+                SELECT id, role, full_name, email, phone, password_hash, default_address
+                FROM users
+                WHERE role = 'customer'
+                ORDER BY id
+                """;
+        List<AccountCredentials> accounts = new ArrayList<>();
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet result = statement.executeQuery()) {
+            while (result.next()) {
+                accounts.add(new AccountCredentials(
+                        result.getLong("id"),
+                        result.getString("role"),
+                        result.getString("full_name"),
+                        result.getString("email"),
+                        result.getString("phone"),
+                        result.getString("password_hash"),
+                        result.getString("default_address")));
+            }
+        }
+        return accounts;
+    }
+
     private String groceryStoreField(long userId, String column) throws SQLException {
         String sql = """
                 SELECT gs.id, gs.store_code
                 FROM users u
                 JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
                     OR upper(u.store_code) = upper(gs.store_code)
-                WHERE u.id = ? AND u.role IN ('groceries', 'operator')
+                WHERE u.id = ? AND u.role = 'groceries'
                 """;
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement statement = connection.prepareStatement(sql)) {

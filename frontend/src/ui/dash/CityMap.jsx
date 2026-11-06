@@ -13,19 +13,19 @@ const KIND_LABEL = {
 const MAP_COPY = {
   customer: {
     title: "Markets and your delivery",
-    description: "Browse markets and your delivery address. Your courier appears after pickup.",
+    description: "Browse markets and your delivery addresses. Your courier appears after pickup.",
   },
   groceries: {
     title: "Market operations map",
-    description: "Review market locations, courier activity, and customer delivery pins.",
+    description: "Review market locations, courier activity, and customers ordering from your store.",
   },
   courier: {
     title: "Courier stops map",
-    description: "Review market pickup locations and customer delivery stops available in the city.",
+    description: "See pickup markets and the customer stop for the delivery you accepted.",
   },
   operator: {
     title: "City operations map",
-    description: "Monitor all market, courier, and customer locations across the seeded city.",
+    description: "Monitor all market, courier, and customer locations across the city.",
   },
 };
 
@@ -34,6 +34,9 @@ const MARKER_GLYPH = {
   customer: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M6.2 19.2c.8-3 2.9-4.5 5.8-4.5s5 1.5 5.8 4.5"/></svg>`,
   courier: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.2 12 4.4l7.5 3.8v8.4L12 20.4l-7.5-3.8z"/><path d="M4.5 8.2 12 12l7.5-3.8"/><path d="M12 12v8.4"/><path d="M12 12 8.2 10.1"/></svg>`,
 };
+
+/** Small NE nudge so a courier and market sharing a stop stay both visible. */
+const COLOCATED_COURIER_OFFSET = 0.00045;
 
 function markerIcon(kind, status) {
   return L.divIcon({
@@ -45,13 +48,27 @@ function markerIcon(kind, status) {
   });
 }
 
-function normalizedName(value) {
-  return value?.trim().toLocaleLowerCase() ?? "";
+function positionKey(lat, lon) {
+  return `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
+}
+
+function courierDisplayPosition(courier, occupiedKeys) {
+  let lat = courier.lat;
+  let lon = courier.lon;
+  const key = positionKey(lat, lon);
+  if (occupiedKeys.has(key)) {
+    lat += COLOCATED_COURIER_OFFSET;
+    lon += COLOCATED_COURIER_OFFSET;
+  }
+  occupiedKeys.add(positionKey(lat, lon));
+  return [lat, lon];
 }
 
 export default function CityMap({ role, account, order, onFeedback }) {
   const mapNode = useRef(null);
   const mapRef = useRef(null);
+  const markersLayerRef = useRef(null);
+  const hasFittedRef = useRef(false);
   const [city, setCity] = useState(null);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
@@ -59,46 +76,39 @@ export default function CityMap({ role, account, order, onFeedback }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/city", { credentials: "include" })
-      .then(async (response) => {
+    let timer;
+    const controller = new AbortController();
+
+    async function load() {
+      try {
+        const response = await fetch("/api/city", { credentials: "include", signal: controller.signal });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
           throw new Error(payload.error || "The city could not be loaded.");
         }
-        return payload;
-      })
-      .then((payload) => {
-        if (!cancelled) setCity(payload);
-      })
-      .catch((loadError) => {
         if (!cancelled) {
-          setError(loadError.message || "The city could not be loaded.");
-          onFeedback(loadError.message || "The city could not be loaded.", "error");
+          setCity(payload);
+          setError("");
         }
-      });
+      } catch (loadError) {
+        if (!cancelled && loadError.name !== "AbortError") {
+          setError(loadError.message || "The city could not be loaded.");
+          onFeedback?.(loadError.message || "The city could not be loaded.", "error");
+        }
+      } finally {
+        if (!cancelled) timer = window.setTimeout(load, 5000);
+      }
+    }
+
+    load();
     return () => {
       cancelled = true;
+      controller.abort();
+      window.clearTimeout(timer);
     };
   }, [onFeedback]);
 
-  const visibleCity = useMemo(() => {
-    if (!city) return null;
-    if (role !== "customer") return city;
-
-    const customer = city.customers.find(
-      (pin) => normalizedName(pin.name) === normalizedName(account?.fullName),
-    );
-    const isPickedUp = ["transit", "picked_up", "on_the_way"].includes(order?.status);
-    const courier = order?.courierId && isPickedUp
-      ? city.couriers.find((pin) => pin.id === order?.courierId)
-      : null;
-
-    return {
-      ...city,
-      couriers: courier ? [courier] : [],
-      customers: customer ? [customer] : [],
-    };
-  }, [account?.fullName, city, order?.courierId, order?.status, role]);
+  const visibleCity = city;
 
   const isEmpty = useMemo(() => {
     if (!visibleCity) return false;
@@ -106,62 +116,98 @@ export default function CityMap({ role, account, order, onFeedback }) {
   }, [visibleCity]);
 
   useEffect(() => {
-    if (!visibleCity || isEmpty || !mapNode.current) return undefined;
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        markersLayerRef.current = null;
+        hasFittedRef.current = false;
+      }
+    };
+  }, []);
 
-    const map = L.map(mapNode.current, { scrollWheelZoom: false, attributionControl: true });
-    mapRef.current = map;
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
-    }).addTo(map);
+  useEffect(() => {
+    if (!visibleCity || isEmpty || !mapNode.current) return;
 
-    const bounds = L.latLngBounds(
-      [visibleCity.bounds.minLat, visibleCity.bounds.minLon],
-      [visibleCity.bounds.maxLat, visibleCity.bounds.maxLon],
-    );
-    map.fitBounds(bounds, { padding: [24, 24] });
+    let map = mapRef.current;
+    if (!map) {
+      map = L.map(mapNode.current, { scrollWheelZoom: false, attributionControl: true });
+      mapRef.current = map;
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap",
+      }).addTo(map);
+      markersLayerRef.current = L.layerGroup().addTo(map);
+    }
+
+    const layer = markersLayerRef.current;
+    layer.clearLayers();
+
+    const occupiedKeys = new Set();
 
     visibleCity.groceryStores.forEach((groceryStore) => {
+      occupiedKeys.add(positionKey(groceryStore.lat, groceryStore.lon));
       const marker = L.marker([groceryStore.lat, groceryStore.lon], {
         icon: markerIcon("groceryStore", groceryStore.open ? "open" : "closed"),
         title: groceryStore.name,
-      }).addTo(map);
+        zIndexOffset: 200,
+      });
       marker.bindPopup(`${groceryStore.name} · ${groceryStore.open ? "open" : "closed"}`);
       marker.on("click", () => setSelected({ kind: "groceryStore", ...groceryStore }));
-    });
-
-    visibleCity.couriers.forEach((courier) => {
-      const marker = L.marker([courier.lat, courier.lon], {
-        icon: markerIcon("courier"),
-        title: courier.name || `Courier ${courier.id}`,
-      }).addTo(map);
-      marker.bindPopup(`${courier.name || courier.id} · ${courier.status}`);
-      marker.on("click", () => setSelected({ kind: "courier", ...courier }));
+      layer.addLayer(marker);
     });
 
     visibleCity.customers.forEach((customer) => {
+      occupiedKeys.add(positionKey(customer.lat, customer.lon));
       const marker = L.marker([customer.lat, customer.lon], {
         icon: markerIcon("customer"),
         title: customer.name,
-      }).addTo(map);
-      marker.bindPopup(`${customer.name}`);
+        zIndexOffset: 100,
+      });
+      const orderCount = (customer.orders || []).length;
+      marker.bindPopup(
+        orderCount > 0
+          ? `${customer.name} · ${orderCount} open order${orderCount === 1 ? "" : "s"}`
+          : customer.name,
+      );
       marker.on("click", () => setSelected({ kind: "customer", ...customer }));
+      layer.addLayer(marker);
     });
 
-    const trackedCourier = visibleCity.couriers.find((courier) => courier.id === order?.courierId);
+    visibleCity.couriers.forEach((courier) => {
+      const [lat, lon] = courierDisplayPosition(courier, occupiedKeys);
+      const marker = L.marker([lat, lon], {
+        icon: markerIcon("courier"),
+        title: courier.name || `Courier ${courier.id}`,
+        zIndexOffset: 300,
+      });
+      marker.bindPopup(`${courier.name || courier.id} · ${courier.status}`);
+      marker.on("click", () => setSelected({ kind: "courier", ...courier }));
+      layer.addLayer(marker);
+    });
+
+    const isPickedUp = ["transit", "picked_up", "on_the_way"].includes(order?.status);
+    const trackedCourier = isPickedUp
+      ? visibleCity.couriers.find((courier) => courier.id === order?.courierId)
+      : null;
     const deliveryPin = visibleCity.customers[0];
     if (role === "customer" && trackedCourier && deliveryPin) {
-      L.polyline(
+      const line = L.polyline(
         [[trackedCourier.lat, trackedCourier.lon], [deliveryPin.lat, deliveryPin.lon]],
         { color: "#87543c", weight: 3, dashArray: "7 8" },
-      ).addTo(map);
+      );
+      layer.addLayer(line);
     }
 
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, [isEmpty, order?.courierId, role, visibleCity]);
+    if (!hasFittedRef.current) {
+      const bounds = L.latLngBounds(
+        [visibleCity.bounds.minLat, visibleCity.bounds.minLon],
+        [visibleCity.bounds.maxLat, visibleCity.bounds.maxLon],
+      );
+      map.fitBounds(bounds, { padding: [24, 24] });
+      hasFittedRef.current = true;
+    }
+  }, [isEmpty, order?.courierId, order?.status, role, visibleCity]);
 
   return (
     <section className="dash-section city-map-section" aria-labelledby="city-map-title">
@@ -177,13 +223,7 @@ export default function CityMap({ role, account, order, onFeedback }) {
         <div className="city-map-layout">
           <div className="city-map-canvas" ref={mapNode} role="application" aria-label="Little Isles city map" />
           <aside className="city-map-details" aria-live="polite">
-            {selected ? <SelectedDetails selected={selected} /> : <p>Select a marker to read its seeded details.</p>}
-            {role === "customer" && !visibleCity.customers.length && (
-              <p className="city-map-note">No seeded delivery pin matches this customer account.</p>
-            )}
-            {role === "customer" && visibleCity.couriers.length > 0 && (
-              <p className="city-map-note">Showing the seeded courier location; this demo does not update it live.</p>
-            )}
+            {selected ? <SelectedDetails selected={selected} /> : <p>Select a marker to read its details.</p>}
           </aside>
         </div>
       )}
@@ -223,13 +263,30 @@ function SelectedDetails({ selected }) {
       </>
     );
   }
+  const orders = selected.orders || [];
   return (
     <>
       <p className="section-kicker">{KIND_LABEL.customer}</p>
       <h3>{selected.name}</h3>
+      {selected.address && <p className="city-map-status">Address: {selected.address}</p>}
       <p className="city-map-status">
-        Delivery pin: {selected.lat.toFixed(4)}, {selected.lon.toFixed(4)}
+        Pin: {selected.lat.toFixed(4)}, {selected.lon.toFixed(4)}
       </p>
+      {orders.length === 0 ? (
+        <p className="city-map-note">No open orders at this address.</p>
+      ) : (
+        <ul className="city-product-list">
+          {orders.map((order) => (
+            <li key={order.orderId}>
+              <span>
+                Order {order.orderId}
+                {order.storeName ? ` · ${order.storeName}` : ""}
+              </span>
+              <span>{order.status}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }

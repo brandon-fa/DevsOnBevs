@@ -5,7 +5,6 @@ import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountDraft;
 import com.littleisles.domain.reg.CourierAccount;
 import com.littleisles.domain.reg.GroceriesAccount;
-import com.littleisles.domain.reg.OperatorAccount;
 import com.littleisles.domain.reg.Role;
 
 import java.io.IOException;
@@ -56,10 +55,10 @@ public final class SeedAccountLoader {
             String roleLabel = required(properties, prefix + "role");
             Role role = Role.fromLabel(roleLabel);
             String storeId = null;
-            if (role == Role.GROCERIES || role == Role.OPERATOR) {
+            if (role == Role.GROCERIES) {
                 storeId = required(properties, prefix + "storeId");
             } else if (properties.containsKey(prefix + "storeId")) {
-                throw new IllegalArgumentException("Only groceries and operator accounts can have a storeId.");
+                throw new IllegalArgumentException("Only groceries accounts can have a storeId.");
             }
             String courierId = null;
             if (role == Role.COURIER && properties.containsKey(prefix + "courierId")) {
@@ -80,9 +79,6 @@ public final class SeedAccountLoader {
             Account account = registrationService.register(role.label(), draft);
             if (account instanceof GroceriesAccount groceries && storeId != null) {
                 groceries.setStoreCode(storeId);
-            }
-            if (account instanceof OperatorAccount operator && storeId != null) {
-                operator.setStoreCode(storeId);
             }
             if (account instanceof CourierAccount courier && courierId != null) {
                 courier.setCourierPin(courierId);

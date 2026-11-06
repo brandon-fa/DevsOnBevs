@@ -15,6 +15,7 @@ public class Order {
     private String rejectionReason;
     private Long offeredCourierUserId;
     private boolean courierAccepted;
+    private Long customerUserId;
     //private double tip;
 
     public Order(GroceryStore store, String destination) {
@@ -169,6 +170,22 @@ public class Order {
 
     public void markCourierAccepted() {
         this.courierAccepted = true;
+    }
+
+    public Long getCustomerUserId() {
+        return customerUserId;
+    }
+
+    public void setCustomerUserId(Long customerUserId) {
+        this.customerUserId = customerUserId;
+    }
+
+    public static boolean isCurrent(String status) {
+        return "placed".equals(status)
+                || "preparing".equals(status)
+                || "ready".equals(status)
+                || "accepted".equals(status)
+                || "picked_up".equals(status);
     }
 
     /*

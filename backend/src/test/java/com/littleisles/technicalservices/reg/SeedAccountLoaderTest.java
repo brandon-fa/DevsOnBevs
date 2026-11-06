@@ -109,7 +109,7 @@ class SeedAccountLoaderTest {
                 + "account." + id + ".email=demo." + role + "@example.com\n"
                 + "account." + id + ".password=DemoPass123!\n"
                 + "account." + id + ".phone=514-555-0200\n"
-                + (role.equals("groceries") || role.equals("operator") ? "account." + id + ".storeId=olive-rye\n" : "") + "\n";
+                + (role.equals("groceries") ? "account." + id + ".storeId=olive-rye\n" : "") + "\n";
     }
 
     private static final class InMemorySeedAccountRepository implements AccountRepository {
