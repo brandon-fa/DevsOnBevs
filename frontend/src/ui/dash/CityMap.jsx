@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { formatMoney } from "../../data/mockData.js";
 import "./city-map.css";
+import { subscribeConsole } from "./consoleFeed.js";
 
 const KIND_LABEL = {
   groceryStore: "Market",
@@ -57,27 +58,48 @@ export default function CityMap({ role, account, order, onFeedback }) {
   const [selected, setSelected] = useState(null);
   const mapCopy = MAP_COPY[role] ?? MAP_COPY.operator;
 
+  // R-DASH-06: reload the city on start, after every console message
+  // (a command just ran), and every few seconds (changes from other sessions).
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/city", { credentials: "include" })
-      .then(async (response) => {
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(payload.error || "The city could not be loaded.");
-        }
-        return payload;
-      })
-      .then((payload) => {
-        if (!cancelled) setCity(payload);
-      })
-      .catch((loadError) => {
-        if (!cancelled) {
-          setError(loadError.message || "The city could not be loaded.");
-          onFeedback(loadError.message || "The city could not be loaded.", "error");
-        }
-      });
+    let lastJson = "";
+    let errorShown = false;
+
+    function loadCity() {
+      fetch("/api/city", { credentials: "include" })
+        .then(async (response) => {
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.error || "The city could not be loaded.");
+          }
+          return payload;
+        })
+        .then((payload) => {
+          if (cancelled) return;
+          errorShown = false;
+          setError("");
+          const json = JSON.stringify(payload);
+          if (json === lastJson) return; // nothing changed, keep the map as it is
+          lastJson = json;
+          setCity(payload);
+        })
+        .catch((loadError) => {
+          if (cancelled || errorShown) return;
+          errorShown = true; // report once, otherwise the console message would trigger another reload
+          const message = loadError.message || "The city could not be loaded.";
+          setError(message);
+          onFeedback(message, "error");
+        });
+    }
+
+    loadCity();
+    const unsubscribe = subscribeConsole(loadCity);
+    const timer = setInterval(loadCity, 5000);
+
     return () => {
       cancelled = true;
+      unsubscribe();
+      clearInterval(timer);
     };
   }, [onFeedback]);
 
