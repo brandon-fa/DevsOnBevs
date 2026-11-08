@@ -1,5 +1,6 @@
 package com.littleisles.application.ord;
 
+import com.littleisles.domain.ord.CitySnapshot;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
@@ -131,6 +132,18 @@ public final class OrderController {
         store.rejectPendingOrder(order, reason);
         orderStore.updateStatus(order.getOrderId(), order.getStatus());
         return store;
+    }
+
+    /** Reset: deletes every saved order and swaps in a freshly loaded city. */
+    public synchronized void reset(CitySnapshot freshCity) throws SQLException {
+        orderStore.deleteAllOrders();
+        cityCatalog.replace(freshCity);
+        customers.clear();
+        savedOrdersByCustomer.clear();
+        // Groceries accounts still point at the old stores; move each one to its matching new store.
+        for (GroceriesAccount groceries : groceriesAccounts.values()) {
+            groceries.setStore(findStore(groceries.getStore().getId()));
+        }
     }
 
     private GroceryStore findStore(String storeId) {
