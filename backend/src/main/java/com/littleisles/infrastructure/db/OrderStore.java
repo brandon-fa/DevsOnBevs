@@ -108,6 +108,17 @@ public final class OrderStore {
             }
         }
     }
+    
+    /** Reset: removes every saved order so the demo restarts from the initial scenario. */
+    public void deleteAllOrders() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            statement.executeUpdate("DELETE FROM order_items");
+            statement.executeUpdate("DELETE FROM orders");
+            connection.commit();
+        }
+    }
 
     public List<SavedOrder> loadAll() throws SQLException {
         String orderSql = """
