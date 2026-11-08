@@ -10,6 +10,7 @@ import SiteHeader from "./SiteHeader.jsx";
 import { appendConsoleMessage } from "./consoleFeed.js";
 import useSessionAccount from "./useSessionAccount.js";
 import "./dashboard.css";
+import ResetControl from "./ResetControl.jsx";
 
 export default function Dashboard() {
   const { role: routeRole } = useParams();
@@ -50,8 +51,18 @@ export default function Dashboard() {
       <a className="skip-link" href="#main">Skip to content</a>
       <SiteHeader account={account} />
       <main id="main" className="dash-main">
-        {view}
-        <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+        {account.role === "customer" ? (
+          <>
+            {view}
+            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+          </>
+        ) : (
+          <>
+            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+            {account.role === "operator" ? <ResetControl onFeedback={addFeedback} /> : null}
+            {view}
+          </>
+        )}
       </main>
     </div>
   );
