@@ -1,23 +1,5 @@
 import { formatMoney } from "../../data/mockData.js";
-
-const PRODUCT_IMAGES = {
-  "green olives": "/products/olives.avif",
-  halloumi: "/products/halloumi.png",
-  "sesame bread": "/products/sesame-bread.avif",
-  "scotch bonnet peppers": "/products/peppers.webp",
-  "green seasoning": "/products/seasoning.jpg",
-  atta: "/products/atta.jpg",
-  "basmati rice": "/products/basmati.jpg",
-  labneh: "/products/labneh.jpeg",
-  pita: "/products/pita.jpg",
-  "jasmine rice": "/products/jasmine.avif",
-  "bok choy": "/products/bok-choy.jpg",
-};
-
-function productImage(product) {
-  const named = PRODUCT_IMAGES[product.name.trim().toLowerCase()];
-  return named || product.image || "";
-}
+import { productImage } from "./productImages.js";
 
 export default function StoreProducts({ store, cart = [], onAdd, disabled = false }) {
   function quantityInCart(productId) {
