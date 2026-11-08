@@ -49,6 +49,27 @@ CREATE TABLE order_items (
     unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0)
 );
 
+CREATE TABLE ledger_entries (
+    id TEXT PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders (id),
+    entry_type TEXT NOT NULL CHECK (entry_type IN ('CHARGE', 'REFUND')),
+    final_state TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    recorded_at TEXT NOT NULL
+);
+
+CREATE TABLE ledger_entry_timestamps (
+    ledger_entry_id TEXT NOT NULL REFERENCES ledger_entries (id) ON DELETE CASCADE,
+    sequence_number INTEGER NOT NULL,
+    order_state TEXT NOT NULL,
+    occurred_at TEXT NOT NULL,
+    PRIMARY KEY (ledger_entry_id, sequence_number)
+);
+
+CREATE UNIQUE INDEX one_charge_per_order
+ON ledger_entries (order_id)
+WHERE entry_type = 'CHARGE';
+
 CREATE TRIGGER products_groceries_role
 BEFORE INSERT ON products
 FOR EACH ROW

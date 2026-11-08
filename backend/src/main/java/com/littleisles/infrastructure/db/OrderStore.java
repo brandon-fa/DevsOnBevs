@@ -51,7 +51,7 @@ public final class OrderStore {
                 int subtotalCents = 0;
                 List<int[]> pricedLines = new ArrayList<>();
                 for (OrderLine line : order.getOrderLines()) {
-                    int unitPriceCents = Math.toIntExact(Math.round(line.getProduct().getPrice() * 100));
+                    int unitPriceCents = Math.toIntExact(line.getUnitPriceCents());
                     int productId = productId(connection, groceriesId, line.getProduct().getName(), unitPriceCents);
                     pricedLines.add(new int[] {productId, line.getQuantity(), unitPriceCents});
                     subtotalCents = Math.addExact(subtotalCents, Math.multiplyExact(unitPriceCents, line.getQuantity()));
@@ -146,7 +146,8 @@ public final class OrderStore {
                     if (order == null) continue;
                     order.lines().add(new OrderLine(
                             new Product(Integer.toString(lines.getInt("product_id")), lines.getString("name"), lines.getInt("unit_price_cents") / 100.0),
-                            lines.getInt("quantity")));
+                            lines.getInt("quantity"),
+                            lines.getLong("unit_price_cents")));
                 }
             }
             return List.copyOf(byId.values());
