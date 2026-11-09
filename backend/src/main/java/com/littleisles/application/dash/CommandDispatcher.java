@@ -50,19 +50,28 @@ public final class CommandDispatcher {
 
     /** Reset (operator only): restore the initial scenario from the configuration file. */
     public void reset(AuthenticatedAccount account) throws IOException, SQLException {
-        requireOperator(account);
+        requireOperator(account, "reset the simulator");
         orderController.reset(cityLoader.load());
     }
 
+    public GroceryStore pauseStore(AuthenticatedAccount account, String storeId) {
+        return orderController.pauseStore(account, storeId);
+    }
+
+    public GroceryStore reopenStore(AuthenticatedAccount account, String storeId) {
+        requireOperator(account, "reopen a grocery store");
+        return orderController.reopenStore(storeId);
+    }
+    
     private static void requireCustomer(AuthenticatedAccount account) {
         if (account == null || account.role() != Role.CUSTOMER) {
             throw new SecurityException("Only customers can place or view their orders.");
         }
     }
-    
-    private static void requireOperator(AuthenticatedAccount account) {
+
+    private static void requireOperator(AuthenticatedAccount account, String action) {
         if (account == null || account.role() != Role.OPERATOR) {
-            throw new SecurityException("Only the platform operator can reset the simulator.");
+            throw new SecurityException("Only the platform operator can " + action + ".");
         }
     }
 }
