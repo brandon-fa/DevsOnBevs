@@ -44,12 +44,12 @@ INSERT INTO products (id, groceries_id, name, description, price_cents, category
 
 INSERT INTO orders (
     id, customer_id, groceries_id, courier_id, status, delivery_address,
-    subtotal_cents, delivery_fee_cents, total_cents, created_at
+    subtotal_cents, delivery_fee_cents, service_fee_cents, small_order_surcharge_cents, total_cents, created_at
 ) VALUES
-    (1042, 8, 4, 7, 'on_the_way', '418 Avenue Duluth, Montreal', 1495, 399, 1894, '2026-10-16 16:10:00'),
-    (1038, 8, 2, 6, 'delivered', '418 Avenue Duluth, Montreal', 1538, 399, 1937, '2026-10-12 18:20:00'),
-    (1031, 9, 3, 7, 'delivered', '88 Rue Jean-Talon Ouest, Montreal', 1349, 399, 1748, '2026-10-08 12:05:00'),
-    (1024, 8, 1, 6, 'delivered', '418 Avenue Duluth, Montreal', 1540, 399, 1939, '2026-10-02 17:40:00');
+    (1042, 8, 4, 7, 'on_the_way', '418 Avenue Duluth, Montreal', 1495, 399, 0, 0, 1894, '2026-10-16 16:10:00'),
+    (1038, 8, 2, 6, 'delivered', '418 Avenue Duluth, Montreal', 1538, 399, 0, 0, 1937, '2026-10-12 18:20:00'),
+    (1031, 9, 3, 7, 'delivered', '88 Rue Jean-Talon Ouest, Montreal', 1349, 399, 0, 0, 1748, '2026-10-08 12:05:00'),
+    (1024, 8, 1, 6, 'delivered', '418 Avenue Duluth, Montreal', 1540, 399, 0, 0, 1939, '2026-10-02 17:40:00');
 
 INSERT INTO order_items (id, order_id, product_id, quantity, unit_price_cents) VALUES
     (1, 1042, 10, 1, 695),

@@ -11,6 +11,7 @@ const STATUS_LABELS = {
   preparing: "Preparing",
   ready: "Ready for pickup",
   canceled: "Canceled",
+  delivered: "Delivered",
 };
 const STEPS = [
   { status: "placed", label: "Placed" },
@@ -52,6 +53,7 @@ function addNewOrder(orders, newOrder) {
 export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback, storeId = null }) {
   const [orders, setOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [summaryId, setSummaryId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -135,6 +137,7 @@ export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback,
     ? orders
     : orders.filter((order) => String(order.storeId) === String(storeId));
   const selectedOrder = chooseOrder(visibleOrders, selectedId);
+  const summaryOrder = findOrder(visibleOrders, summaryId);
   useEffect(() => {
     if (onSelectOrder) onSelectOrder(selectedOrder);
   }, [selectedOrder, onSelectOrder]);
@@ -147,8 +150,8 @@ export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback,
   return (
     <section className="customer-orders dash-section" aria-labelledby="customer-orders-title">
       <div className="customer-orders-heading">
-        <h2 id="customer-orders-title">Track your orders</h2>
-        <p>Each order stays labeled with the restaurant that is preparing it.</p>
+        <h2 id="customer-orders-title">Your orders</h2>
+        <p>Track active orders or open the summary for a delivered order.</p>
       </div>
       {loading && <p>Loading your orders…</p>}
       {!loading && !loadFailed && visibleOrders.length === 0 && (
@@ -166,15 +169,17 @@ export default function CustomerOrders({ latestOrder, onSelectOrder, onFeedback,
               order={order}
               selected={selectedOrder?.orderId === order.orderId}
               onSelect={() => selectOrder(order)}
+              onViewSummary={() => setSummaryId(order.orderId)}
             />
           ))}
         </div>
       )}
+      {summaryOrder && <OrderSummary order={summaryOrder} onClose={() => setSummaryId(null)} />}
     </section>
   );
 }
 
-function OrderTracking({ order, selected, onSelect }) {
+function OrderTracking({ order, selected, onSelect, onViewSummary }) {
   let currentStep = -1;
   for (let index = 0; index < STEPS.length; index++) {
     if (STEPS[index].status === order.status) currentStep = index;
@@ -185,6 +190,7 @@ function OrderTracking({ order, selected, onSelect }) {
     preparing: "The grocery store accepted your order and added it to the preparation queue.",
     ready: "Your order has been prepared and is ready for pickup.",
     canceled: "This order was canceled.",
+    delivered: "This order has been delivered. Its final order summary is available.",
   };
   let description = descriptions[order.status];
   if (order.status === "canceled" && order.rejectionReason) {
@@ -208,6 +214,11 @@ function OrderTracking({ order, selected, onSelect }) {
         <p className="order-copy">{description}</p>
         <p className="order-copy">Deliver to: {order.destination}</p>
         {order.rejectionReason && <p className="order-copy">Reason: {order.rejectionReason}</p>}
+        {order.status === "delivered" && (
+          <button type="button" className="order-summary-button" onClick={onViewSummary}>
+            View order summary
+          </button>
+        )}
         {currentStep >= 0 && (
           <ol className="steps" aria-label="Order progress">
             {STEPS.map((step, index) => {
@@ -229,18 +240,20 @@ function OrderTracking({ order, selected, onSelect }) {
             })}
           </ol>
         )}
-        <details className="customer-order-history">
-          <summary>Order history</summary>
-          <ol>
-            {order.transitionEvents.map((event, index) => (
-              <li key={event.timestamp + "-" + index}>
-                <time dateTime={event.timestamp}>{new Date(event.timestamp).toLocaleString()}</time>
-                <span>{statusLabel(event.fromState)} → {statusLabel(event.toState, event.reason)}</span>
-                {event.reason && <span>Reason: {event.reason}</span>}
-              </li>
-            ))}
-          </ol>
-        </details>
+        {order.status !== "delivered" && (
+          <details className="customer-order-history">
+            <summary>Order history</summary>
+            <ol>
+              {order.transitionEvents.map((event, index) => (
+                <li key={event.timestamp + "-" + index}>
+                  <time dateTime={event.timestamp}>{new Date(event.timestamp).toLocaleString()}</time>
+                  <span>{statusLabel(event.fromState)} → {statusLabel(event.toState, event.reason)}</span>
+                  {event.reason && <span>Reason: {event.reason}</span>}
+                </li>
+              ))}
+            </ol>
+          </details>
+        )}
       </div>
       <div className="order-meta">
         <ul className="item-list">
@@ -254,5 +267,37 @@ function OrderTracking({ order, selected, onSelect }) {
         <p className="total-row"><span>Subtotal</span><span className="money">{formatMoney(order.subtotalCents)}</span></p>
       </div>
     </article>
+  );
+}
+
+function OrderSummary({ order, onClose }) {
+  return (
+    <section className="order-summary-panel" aria-labelledby="order-summary-title" aria-live="polite">
+      <div className="order-summary-heading">
+        <div>
+          <p className="section-kicker">Delivered order · {order.orderId}</p>
+          <h2 id="order-summary-title">Order summary</h2>
+          <p>{order.storeName} · Deliver to: {order.destination}</p>
+        </div>
+        <button type="button" className="order-summary-close" onClick={onClose}>Close summary</button>
+      </div>
+      <ul className="item-list order-summary-items">
+        {order.lines.map((line) => (
+          <li key={line.productId}>
+            <span>{line.quantity} × {line.name}</span>
+            <span className="money">{formatMoney(line.priceCents * line.quantity)}</span>
+          </li>
+        ))}
+      </ul>
+      <dl className="order-summary-costs">
+        <div className="fee-row"><dt>Subtotal</dt><dd>{formatMoney(order.subtotalCents)}</dd></div>
+        <div className="fee-row"><dt>Delivery fee</dt><dd>{formatMoney(order.deliveryFeeCents)}</dd></div>
+        <div className="fee-row"><dt>Service fee</dt><dd>{formatMoney(order.serviceFeeCents)}</dd></div>
+        {order.smallOrderSurchargeCents > 0 && (
+          <div className="fee-row"><dt>Small-order surcharge</dt><dd>{formatMoney(order.smallOrderSurchargeCents)}</dd></div>
+        )}
+        <div className="total-row order-summary-total"><dt>Total paid</dt><dd>{formatMoney(order.totalCents)}</dd></div>
+      </dl>
+    </section>
   );
 }

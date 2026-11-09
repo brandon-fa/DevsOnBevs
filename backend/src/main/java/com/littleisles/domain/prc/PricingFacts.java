@@ -19,8 +19,17 @@ public record PricingFacts(long orderId, List<PricedOrderLine> orderLines,
         if (orderLines.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("Pricing facts cannot contain a null order line.");
         }
-        Objects.requireNonNull(storeLocation, "Pricing facts need the grocery-store location.");
-        Objects.requireNonNull(deliveryLocation, "Pricing facts need the delivery location.");
+        if ((storeLocation == null) != (deliveryLocation == null)) {
+            throw new IllegalArgumentException("Provide both locations or neither location.");
+        }
+    }
+
+    public static PricingFacts from(Order order) {
+        Objects.requireNonNull(order, "An order is required for pricing.");
+        List<PricedOrderLine> lines = order.getOrderLines().stream()
+                .map(PricingFacts::pricedLine)
+                .toList();
+        return new PricingFacts(order.getOrderId(), lines, null, null);
     }
 
     public static PricingFacts from(Order order, GeoPoint deliveryLocation) {

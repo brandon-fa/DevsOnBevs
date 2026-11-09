@@ -87,6 +87,76 @@
   overflow-wrap: anywhere;
 }
 
+.order-summary-button,
+.order-summary-close {
+  min-height: 2.75rem;
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--color-cream);
+  border-radius: var(--radius-control);
+  background: var(--color-cream);
+  color: var(--color-brown);
+  font: inherit;
+  font-weight: 600;
+}
+
+.order-summary-button:hover,
+.order-summary-close:hover {
+  background: var(--color-linen);
+}
+
+.order-summary-panel {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-taupe);
+  border-radius: var(--radius-outer);
+  background: var(--color-cream);
+  box-shadow: var(--shadow-card);
+}
+
+.order-summary-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-taupe);
+}
+
+.order-summary-heading h2 {
+  margin-top: 0.3rem;
+}
+
+.order-summary-heading p:last-child {
+  margin-top: 0.4rem;
+}
+
+.order-summary-close {
+  flex: 0 0 auto;
+  margin-top: 0;
+  border-color: var(--color-clay-deep);
+  background: transparent;
+  color: var(--color-clay-deep);
+}
+
+.order-summary-items {
+  margin-top: 1rem;
+}
+
+.order-summary-costs {
+  max-width: 34rem;
+  margin: 1rem 0 0 auto;
+}
+
+.order-summary-costs dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-summary-total {
+  font-size: var(--text-h3);
+}
+
 @media (max-width: 600px) {
   .customer-orders-heading {
     align-items: flex-start;
@@ -95,5 +165,9 @@
 
   .customer-order-card .steps {
     grid-template-columns: 1fr;
+  }
+
+  .order-summary-heading {
+    flex-direction: column;
   }
 }

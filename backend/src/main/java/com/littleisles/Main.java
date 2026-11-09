@@ -2,16 +2,21 @@ package com.littleisles;
 
 import com.littleisles.application.ord.CityCatalog;
 import com.littleisles.application.ord.OrderController;
+import com.littleisles.application.prc.PricingService;
 import com.littleisles.application.dash.CommandDispatcher;
 import com.littleisles.application.reg.RegistrationService;
 import com.littleisles.application.reg.AuthController;
 import com.littleisles.domain.ord.CitySnapshot;
+import com.littleisles.domain.prc.PricingConfiguration;
+import com.littleisles.domain.prc.StandardPricingStrategy;
 import com.littleisles.domain.reg.Role;
 import com.littleisles.infrastructure.db.AccountStore;
+import com.littleisles.infrastructure.db.OrderStore;
 import com.littleisles.infrastructure.http.CityCatalogHandler;
 import com.littleisles.infrastructure.http.RegistrationServer;
 import com.littleisles.infrastructure.http.OrderHandler;
 import com.littleisles.technicalservices.ord.CityConfigLoader;
+import com.littleisles.technicalservices.prc.PricingConfigLoader;
 import com.littleisles.technicalservices.reg.SeedAccountLoader;
 import com.sun.net.httpserver.HttpServer;
 import java.util.List;
@@ -28,7 +33,12 @@ public final class Main {
         CityConfigLoader cityLoader = new CityConfigLoader(CityConfigLoader.locateConfigFile());
         CitySnapshot city = cityLoader.load();
         CityCatalog cityCatalog = new CityCatalog(city);
-        OrderController orderController = new OrderController(cityCatalog, accountStore);
+        PricingConfiguration pricingConfiguration = new PricingConfigLoader(
+                PricingConfigLoader.locateConfigFile()).load();
+        PricingService pricingService = new PricingService(
+                new StandardPricingStrategy(), pricingConfiguration);
+        OrderController orderController = new OrderController(
+                cityCatalog, accountStore, new OrderStore(), pricingService);
         for (SeedAccountLoader.SeededAccount account : seededAccounts) {
             if (account.role() == Role.GROCERIES) {
                 orderController.associateGroceriesAccount(account.email(), account.storeId());

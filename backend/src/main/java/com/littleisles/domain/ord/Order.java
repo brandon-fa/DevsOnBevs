@@ -3,6 +3,7 @@ package com.littleisles.domain.ord;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.littleisles.domain.common.Billing;
+import com.littleisles.domain.prc.Fare;
 
 public class Order {
     private static final AtomicInteger nextOrderId = new AtomicInteger(1);
@@ -13,6 +14,7 @@ public class Order {
     private ArrayList<TransitionEvent> transitionEvents;
     private String destination;
     private String rejectionReason;
+    private Fare fare;
     //private double tip;
 
     public Order(GroceryStore store, String destination) {
@@ -113,6 +115,8 @@ public class Order {
             this.state = new PreparingOrderState(this);
         } else if ("ready".equals(status)) {
             this.state = new ReadyOrderState(this);
+        } else if ("delivered".equals(status)) {
+            this.state = new CompletedOrderState(this);
         } else if ("canceled".equals(status)) {
             this.state = new CanceledOrderState(this);
         } else {
@@ -143,6 +147,14 @@ public class Order {
 
     public String getDestination() {
         return destination;
+    }
+
+    public Fare getFare() {
+        return fare;
+    }
+
+    public void assignFare(Fare fare) {
+        this.fare = Objects.requireNonNull(fare, "A computed fare is required.");
     }
 
     /*
