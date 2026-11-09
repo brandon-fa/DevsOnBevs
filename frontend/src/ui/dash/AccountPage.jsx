@@ -6,6 +6,7 @@ import { saveAccount } from "../reg/accountSession.js";
 import SiteHeader from "./SiteHeader.jsx";
 import useSessionAccount from "./useSessionAccount.js";
 import "./dashboard.css";
+import { appendConsoleMessage } from "./consoleFeed.js";
 
 export default function AccountPage() {
   const navigate = useNavigate();
@@ -90,6 +91,7 @@ function AccountForm({ account, onUpdated }) {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         const message = body.error || "The account could not be saved.";
+        appendConsoleMessage(message, "error");
         if (newPassword && currentPassword) {
           setPasswordNotice(
             message.toLowerCase().includes("incorrect")
@@ -109,8 +111,10 @@ function AccountForm({ account, onUpdated }) {
       setNewPassword("");
       setConfirmPassword("");
       setSaved(newPassword ? "password" : "profile");
+      appendConsoleMessage(newPassword ? "Password changed." : "Account details saved.", "success");
     } catch {
       setError("The account could not be saved.");
+      appendConsoleMessage("The account could not be saved.", "error");
     } finally {
       setPending(false);
     }
