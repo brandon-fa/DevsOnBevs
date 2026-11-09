@@ -137,6 +137,10 @@ public final class OrderController {
         return store;
     }
 
+    public List<OrderStore.OperatorOrder> operatorOrders() throws SQLException {
+        return orderStore.loadOperatorOrders();
+    }
+
     /** Reset: deletes every saved order and swaps in a freshly loaded city. */
     public synchronized void reset(CitySnapshot freshCity) throws SQLException {
         orderStore.deleteAllOrders();

@@ -5,6 +5,7 @@ import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.Role;
+import com.littleisles.infrastructure.db.OrderStore;
 import com.littleisles.technicalservices.ord.CityConfigLoader;
 
 import java.io.IOException;
@@ -48,9 +49,14 @@ public final class CommandDispatcher {
         return orderController.storeOrders(account);
     }
 
+    public List<OrderStore.OperatorOrder> operatorOrders(AuthenticatedAccount account) throws SQLException {
+        requireOperator(account, "view all orders");
+        return orderController.operatorOrders();
+    }
+
     /** Reset (operator only): restore the initial scenario from the configuration file. */
     public void reset(AuthenticatedAccount account) throws IOException, SQLException {
-        requireOperator(account);
+        requireOperator(account, "reset the simulator");
         orderController.reset(cityLoader.load());
     }
 
@@ -60,9 +66,9 @@ public final class CommandDispatcher {
         }
     }
     
-    private static void requireOperator(AuthenticatedAccount account) {
+    private static void requireOperator(AuthenticatedAccount account, String action) {
         if (account == null || account.role() != Role.OPERATOR) {
-            throw new SecurityException("Only the platform operator can reset the simulator.");
+            throw new SecurityException("Only the platform operator can " + action + ".");
         }
     }
 }

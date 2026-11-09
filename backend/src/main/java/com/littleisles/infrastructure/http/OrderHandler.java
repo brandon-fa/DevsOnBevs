@@ -13,6 +13,7 @@ import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
 import com.littleisles.domain.reg.AuthenticatedAccount;
+import com.littleisles.infrastructure.db.OrderStore;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -36,6 +37,45 @@ public final class OrderHandler {
     public void bind(HttpServer server) {
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
+        server.createContext("/api/operator/orders", this::handleOperatorOrders);
+    }
+
+    private void handleOperatorOrders(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestURI().getPath().equals("/api/operator/orders")) {
+            sendError(exchange, 404, "The operator order endpoint does not exist.");
+            return;
+        }
+
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "GET, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("GET")) {
+            sendError(exchange, 405, "Use GET to view all orders.");
+            return;
+        }
+
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+
+        try {
+            JsonArray orders = new JsonArray();
+            for (OrderStore.OperatorOrder order : dispatcher.operatorOrders(account)) {
+                orders.add(operatorOrderJson(order));
+            }
+            JsonObject response = new JsonObject();
+            response.add("orders", orders);
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The orders could not be loaded. Please try again.");
+        }
     }
 
     private void handleCustomerOrders(HttpExchange exchange) throws IOException {
@@ -250,6 +290,20 @@ public final class OrderHandler {
         result.add("lines", lines);
         result.addProperty("subtotalCents", subtotalCents);
         result.add("transitionEvents", JSON.toJsonTree(order.getTransitionEvents()));
+        return result;
+    }
+
+    private static JsonObject operatorOrderJson(OrderStore.OperatorOrder order) {
+        JsonObject result = new JsonObject();
+        result.addProperty("orderId", order.id());
+        result.addProperty("storeId", order.storeId());
+        result.addProperty("status", order.status());
+        result.addProperty("customer", order.customer());
+        result.addProperty("courier", order.courier());
+        result.addProperty("destination", order.destination());
+        result.addProperty("itemCount", order.itemCount());
+        result.addProperty("totalCents", order.totalCents());
+        result.addProperty("createdAt", order.createdAt());
         return result;
     }
 
