@@ -14,7 +14,7 @@ public class GroceryStore {
     private String location;
     private double lat;
     private double lon;
-    private boolean isOpen = true;
+    private StoreStatus status = StoreStatus.OPEN;
     private final ArrayList<Product> products = new ArrayList<>();
 
     public GroceryStore(String name, String location) {
@@ -142,8 +142,7 @@ public class GroceryStore {
 
     /** R-DASH-03: the colour band of this store's queue. */
     public QueueBand getQueueBand() {
-        // TODO: pass isPaused() once the store has a "paused" status (open | paused | closed).
-        return QueueBand.of(getQueuedOrderCount(), false);
+        return QueueBand.of(getQueuedOrderCount(), isPaused());
     }
 
     public String getLocation() {
@@ -154,12 +153,24 @@ public class GroceryStore {
         this.location = location;
     }
 
+        /** R-ORD-02: only an open store accepts new orders. */
     public boolean isOpen() {
-        return isOpen;
+        return status == StoreStatus.OPEN;
     }
 
-    public void setOpen(boolean open) {
-        isOpen = open;
+    public boolean isPaused() {
+        return status == StoreStatus.PAUSED;
+    }
+
+    public StoreStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(StoreStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("A grocery store needs a status.");
+        }
+        this.status = status;
     }
 
      public int getStoreId() {

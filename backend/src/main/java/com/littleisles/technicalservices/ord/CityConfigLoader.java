@@ -7,6 +7,7 @@ import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.CustomerPin;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Product;
+import com.littleisles.domain.ord.StoreStatus;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -19,7 +20,7 @@ import java.util.TreeSet;
 
 public final class CityConfigLoader {
     private static final Set<String> CITY_FIELDS = Set.of("minLat", "maxLat", "minLon", "maxLon");
-    private static final Set<String> STORE_FIELDS = Set.of("name", "open", "lat", "lon");
+    private static final Set<String> STORE_FIELDS = Set.of("name", "status", "lat", "lon");
     private static final Set<String> PRODUCT_FIELDS = Set.of("name", "priceCents", "soldOut", "image");
     private static final Set<String> COURIER_FIELDS = Set.of("lat", "lon", "status");
     private static final Set<String> CUSTOMER_FIELDS = Set.of("name", "lat", "lon");
@@ -70,7 +71,7 @@ public final class CityConfigLoader {
                 required(properties, prefix + "name"),
                 readDouble(properties, prefix + "lat"),
                 readDouble(properties, prefix + "lon"));
-        store.setOpen(readBoolean(properties, prefix + "open"));
+        store.setStatus(StoreStatus.fromLabel(required(properties, prefix + "status")));
 
         for (String productId : findIds(properties, prefix + "product.")) {
             String productPrefix = prefix + "product." + productId + ".";
