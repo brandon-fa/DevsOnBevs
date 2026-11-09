@@ -52,6 +52,9 @@ public final class OrderController {
             throw new IllegalArgumentException("Add at least one product to your order.");
         }
         GroceryStore store = findStore(storeId);
+        if (store.isPaused()) {
+            throw new IllegalStateException("This grocery store is paused and is not taking new orders.");
+        }
         if (!store.isOpen()) {
             throw new IllegalStateException("This grocery store is closed.");
         }
