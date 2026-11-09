@@ -111,3 +111,22 @@
     flex-direction: column;
   }
 }
+
+  .store-pause-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+  .store-pause-cancel {
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 0.6rem 1.2rem;
+    font: inherit;
+    cursor: pointer;
+}
+
+  .store-status-note.is-paused {
+    font-weight: 600;
+}
