@@ -10,6 +10,7 @@ import com.google.gson.Strictness;
 import com.littleisles.application.dash.CommandDispatcher;
 import com.littleisles.application.reg.AuthController;
 import com.littleisles.domain.ord.CourierRosterEntry;
+import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
@@ -38,6 +39,7 @@ public final class OrderHandler {
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
         server.createContext("/api/courier/orders", this::handleCourierOrders);
+        server.createContext("/api/courier/status", this::handleCourierStatus);
         server.createContext("/api/operator/couriers", this::handleOperatorCouriers);
     }
 
@@ -189,6 +191,7 @@ public final class OrderHandler {
             if (listing) {
                 JsonObject response = new JsonObject();
                 response.add("orders", ordersJson(dispatcher.courierOffers(account)));
+                response.addProperty("status", dispatcher.courierStatus(account).label());
                 send(exchange, 200, response);
             } else {
                 String[] parts = path.split("/");
@@ -203,6 +206,7 @@ public final class OrderHandler {
                 }
                 JsonObject response = new JsonObject();
                 response.add("orders", ordersJson(dispatcher.courierOffers(account)));
+                response.addProperty("status", dispatcher.courierStatus(account).label());
                 send(exchange, 200, response);
             }
         } catch (SecurityException exception) {
@@ -215,6 +219,47 @@ public final class OrderHandler {
             sendError(exchange, 409, exception.getMessage());
         } catch (SQLException exception) {
             sendError(exchange, 500, "The delivery could not be updated. Please try again.");
+        }
+    }
+
+    private void handleCourierStatus(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestURI().getPath().equals("/api/courier/status")) {
+            sendError(exchange, 404, "The courier status endpoint does not exist.");
+            return;
+        }
+        exchange.getResponseHeaders().set("Allow", "POST, OPTIONS");
+        if (exchange.getRequestMethod().equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!exchange.getRequestMethod().equals("POST")) {
+            sendError(exchange, 405, "Use POST to update courier availability.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            JsonElement online = readBody(exchange).get("online");
+            if (online == null || !online.isJsonPrimitive() || !online.getAsJsonPrimitive().isBoolean()) {
+                throw new IllegalArgumentException("Provide online as true or false.");
+            }
+            CourierStatus status = dispatcher.setCourierOnline(account, online.getAsBoolean());
+            JsonObject response = new JsonObject();
+            response.addProperty("status", status.label());
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (JsonParseException exception) {
+            sendError(exchange, 400, "Send valid JSON containing online as true or false.");
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        } catch (IllegalStateException exception) {
+            sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "Courier availability could not be updated. Please try again.");
         }
     }
 

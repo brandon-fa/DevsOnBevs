@@ -29,6 +29,7 @@ public final class OrderController {
     private final CityCatalog cityCatalog;
     private final AccountRepository accountRepository;
     private final OrderStore orderStore;
+    private final CourierAvailability courierAvailability = new CourierAvailability();
     // Keep one domain customer per database id, shared by all of that customer's sessions.
     private final Map<Long, CustomerAccount> customers = new HashMap<>();
     private final Map<Long, List<Order>> savedOrdersByCustomer = new HashMap<>();
@@ -43,6 +44,7 @@ public final class OrderController {
         this.cityCatalog = cityCatalog;
         this.accountRepository = accountRepository;
         this.orderStore = orderStore;
+        courierAvailability.addObserver(ignoredCourierUserId -> offerUnassignedReadyOrders());
         restoreCourierStatuses();
         loadSavedOrders();
     }
@@ -163,6 +165,33 @@ public final class OrderController {
         return List.copyOf(offers);
     }
 
+    public synchronized CourierStatus courierStatus(AuthenticatedAccount account) throws SQLException {
+        long courierUserId = requireCourier(account);
+        String pin = accountRepository.courierPinForUser(courierUserId);
+        if (pin == null || pin.isBlank()) {
+            throw new IllegalStateException("Your courier account is not on the city map.");
+        }
+        return cityCatalog.snapshot().couriers().stream()
+                .filter(courier -> courier.id().equals(pin))
+                .map(CourierPin::status)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Your courier account is not on the city map."));
+    }
+
+    public synchronized CourierStatus setCourierOnline(AuthenticatedAccount account, boolean online) throws SQLException {
+        long courierUserId = requireCourier(account);
+        String pin = accountRepository.courierPinForUser(courierUserId);
+        if (pin == null || pin.isBlank()) {
+            throw new IllegalStateException("Your courier account is not on the city map.");
+        }
+        CourierStatus status = online ? CourierStatus.IDLE : CourierStatus.OFFLINE;
+        rememberCourierStatus(courierUserId, pin, status);
+        if (online) {
+            courierAvailability.notifyCourierAvailable(courierUserId);
+        }
+        return status;
+    }
+
     public synchronized void acceptCourierOffer(AuthenticatedAccount account, int orderId) throws SQLException {
         long courierUserId = requireCourier(account);
         if (orderId <= 0) {
@@ -178,6 +207,7 @@ public final class OrderController {
         if (offered == null) {
             throw new IllegalStateException("This delivery is not offered to you.");
         }
+        ensureNoOtherActiveOrder(courierUserId, offered.getOrderId());
         String pin = accountRepository.courierPinForUser(courierUserId);
         if (pin == null || pin.isBlank()) {
             throw new IllegalStateException("Your courier account is not on the city map.");
@@ -194,6 +224,7 @@ public final class OrderController {
         if (!order.isCourierAccepted() || !"ready".equals(order.getStatus())) {
             throw new IllegalStateException("Accept the delivery before picking it up.");
         }
+        ensureNoOtherActiveOrder(account.id(), order.getOrderId());
         order.pickupOrder();
         orderStore.updateStatus(order.getOrderId(), order.getStatus());
         String pin = accountRepository.courierPinForUser(account.id());
@@ -252,6 +283,7 @@ public final class OrderController {
         if (currentCourier != null && currentCourier == targetCourierUserId) {
             throw new IllegalArgumentException("This order is already assigned to that courier.");
         }
+        ensureNoOtherActiveOrder(targetCourierUserId, order.getOrderId());
         order.setOfferedCourierUserId(targetCourierUserId);
         orderStore.assignCourier(order.getOrderId(), targetCourierUserId);
         rememberCourierStatus(targetCourierUserId, targetPin, statusAfterAssignment(targetCourierUserId));
@@ -276,7 +308,7 @@ public final class OrderController {
         if (pin != null && !pin.isBlank()) {
             cityCatalog.clearOpenOffer(pin);
         }
-        offerUnassignedReadyOrders();
+        courierAvailability.notifyCourierAvailable(account.id());
     }
 
     public synchronized String cityJson(AuthenticatedAccount account) throws SQLException {
@@ -515,10 +547,42 @@ public final class OrderController {
     }
 
     private void rememberCourierStatus(long courierUserId, String pin, CourierStatus status) throws SQLException {
+        if (status == CourierStatus.OFFLINE && hasPickedUpOrder(courierUserId)) {
+            throw new IllegalStateException("Deliver your current order before going offline.");
+        }
         accountRepository.updateCourierStatus(courierUserId, status.label());
         if (pin != null && !pin.isBlank()) {
             cityCatalog.setCourierStatus(pin, status);
         }
+    }
+
+    private void ensureNoOtherActiveOrder(long courierUserId, int exceptOrderId) {
+        for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+            for (Order order : store.getReadyOrders()) {
+                if (order.getOrderId() != exceptOrderId
+                        && Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId())
+                        && !"delivered".equals(order.getStatus())) {
+                    throw new IllegalStateException("A courier can only have one active order at a time.");
+                }
+            }
+        }
+        for (Order order : deliveries) {
+            if (order.getOrderId() != exceptOrderId
+                    && Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId())
+                    && !"delivered".equals(order.getStatus())) {
+                throw new IllegalStateException("A courier can only have one active order at a time.");
+            }
+        }
+    }
+
+    private boolean hasPickedUpOrder(long courierUserId) {
+        for (Order order : deliveries) {
+            if (Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId())
+                    && "picked_up".equals(order.getStatus())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void offerToNearestIdleCourier(GroceryStore store, Order order) throws SQLException {
@@ -536,7 +600,8 @@ public final class OrderController {
             double dLat = store.getLat() - pin.lat();
             double dLon = store.getLon() - pin.lon();
             double distance = dLat * dLat + dLon * dLon;
-            if (distance < best) {
+            if (distance < best || (Double.compare(distance, best) == 0
+                    && (nearest == null || userId < nearestUserId))) {
                 best = distance;
                 nearest = pin;
                 nearestUserId = userId;
@@ -593,7 +658,7 @@ public final class OrderController {
         if (pin != null && !pin.isBlank()) {
             cityCatalog.clearOpenOffer(pin);
         }
-        offerUnassignedReadyOrders();
+        courierAvailability.notifyCourierAvailable(courierUserId);
     }
 
     private void offerUnassignedReadyOrders() throws SQLException {

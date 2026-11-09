@@ -2,6 +2,7 @@ package com.littleisles.application.dash;
 
 import com.littleisles.application.ord.OrderController;
 import com.littleisles.domain.ord.CourierRosterEntry;
+import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.reg.AuthenticatedAccount;
@@ -47,6 +48,14 @@ public final class CommandDispatcher {
 
     public List<Order> courierOffers(AuthenticatedAccount account) throws SQLException {
         return orderController.courierOffers(account);
+    }
+
+    public CourierStatus courierStatus(AuthenticatedAccount account) throws SQLException {
+        return orderController.courierStatus(account);
+    }
+
+    public CourierStatus setCourierOnline(AuthenticatedAccount account, boolean online) throws SQLException {
+        return orderController.setCourierOnline(account, online);
     }
 
     public void acceptCourierOffer(AuthenticatedAccount account, int orderId) throws SQLException {

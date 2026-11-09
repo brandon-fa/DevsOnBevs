@@ -170,8 +170,10 @@ function OperatorCouriers({ onFeedback }) {
 
 function CourierOffers({ onFeedback }) {
   const [orders, setOrders] = useState(null);
+  const [courierStatus, setCourierStatus] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [pendingId, setPendingId] = useState(null);
+  const [availabilityPending, setAvailabilityPending] = useState(false);
   const [notice, setNotice] = useState(null);
 
   useEffect(() => {
@@ -191,6 +193,7 @@ function CourierOffers({ onFeedback }) {
         if (!response.ok) throw new Error(body.error || "Deliveries could not be loaded.");
         if (!cancelled) {
           setOrders((body.orders || []).filter((order) => order.status !== "delivered"));
+          setCourierStatus(body.status || null);
           setLoadError("");
         }
       } catch (error) {
@@ -215,6 +218,29 @@ function CourierOffers({ onFeedback }) {
     return { action: "accept", label: "Accept", pending: "Accepting…" };
   }
 
+  const carryingOrder = (orders || []).some((order) => order.status === "picked_up");
+
+  async function toggleAvailability() {
+    const online = courierStatus === "offline";
+    setAvailabilityPending(true);
+    try {
+      const response = await fetch("/api/courier/status", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ online }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Courier availability could not be updated.");
+      setCourierStatus(body.status);
+      if (onFeedback) onFeedback(online ? "You are now online." : "You are now offline.", "success");
+    } catch (error) {
+      if (onFeedback) onFeedback(error.message || "Courier availability could not be updated.", "error");
+    } finally {
+      setAvailabilityPending(false);
+    }
+  }
+
   async function accept(orderId, action) {
     setPendingId(orderId);
     try {
@@ -225,6 +251,7 @@ function CourierOffers({ onFeedback }) {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "The delivery could not be accepted.");
       setOrders((body.orders || []).filter((order) => order.status !== "delivered"));
+      setCourierStatus(body.status || courierStatus);
       const message = action === "pickup"
         ? "Order " + orderId + " picked up."
         : action === "deliver"
@@ -244,6 +271,16 @@ function CourierOffers({ onFeedback }) {
       <div className="store-orders-heading">
         <h1>Courier View</h1>
         <p>Deliveries offered to you while you are the nearest idle courier.</p>
+        <p>Availability: {courierStatus || "loading"}</p>
+        <button
+          className="store-order-button"
+          type="button"
+          disabled={availabilityPending || (courierStatus !== "offline" && carryingOrder)}
+          onClick={toggleAvailability}
+        >
+          {availabilityPending ? "Updating…" : courierStatus === "offline" ? "Go online" : "Go offline"}
+        </button>
+        {carryingOrder && <p>Deliver your current order before going offline.</p>}
       </div>
       {loadError && <p className="form-alert" role="alert">{loadError}</p>}
       {orders && orders.length === 0 && <p>No deliveries are waiting for you.</p>}
