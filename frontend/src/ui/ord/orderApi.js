@@ -108,6 +108,11 @@ export function setStoreOpen(storeId, open) {
   return request("/api/operator/stores/" + encodeURIComponent(storeId) + "/" + action, "POST");
 }
 
+// The store's staff pause their own store; only the operator can reopen it.
+export function pauseStore(storeId) {
+  return request("/api/stores/" + encodeURIComponent(storeId) + "/pause", "POST");
+}
+
 export function updateStoreOrder(orderId, action, reason = "") {
   let body = null;
   if (action === "reject") {
