@@ -149,6 +149,34 @@ public final class OrderController {
         }
     }
 
+    /** Pause a store: its own groceries account, or the operator for any store (R-DASH-01). */
+    public synchronized GroceryStore pauseStore(AuthenticatedAccount account, String storeId) {
+        GroceryStore store = storeAllowedToPause(account, storeId);
+        store.pause();
+        return store;
+    }
+
+    /** Reopen a paused store (the dispatcher already checked that this is the operator). */
+    public synchronized GroceryStore reopenStore(String storeId) {
+        GroceryStore store = findStore(storeId);
+        store.reopen();
+        return store;
+    }
+
+    private GroceryStore storeAllowedToPause(AuthenticatedAccount account, String storeId) {
+        if (account != null && account.role() == Role.OPERATOR) {
+            return findStore(storeId);
+        }
+        if (account == null || account.role() != Role.GROCERIES) {
+            throw new SecurityException("Only the store's staff or the operator can pause a grocery store.");
+        }
+        GroceryStore ownStore = storeFor(account); // refuses anyone who is not a groceries account
+        if (!ownStore.getId().equals(storeId)) {
+            throw new SecurityException("You can only pause your own grocery store.");
+        }
+        return ownStore;
+    }
+
     private GroceryStore findStore(String storeId) {
         for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
             if (store.getId().equals(storeId)) {
