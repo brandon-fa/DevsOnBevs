@@ -10,7 +10,6 @@ import SiteHeader from "./SiteHeader.jsx";
 import { appendConsoleMessage } from "./consoleFeed.js";
 import useSessionAccount from "./useSessionAccount.js";
 import "./dashboard.css";
-import ResetControl from "./ResetControl.jsx";
 
 export default function Dashboard() {
   const { role: routeRole } = useParams();
@@ -59,7 +58,6 @@ export default function Dashboard() {
         ) : (
           <>
             <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
-            {account.role === "operator" ? <ResetControl onFeedback={addFeedback} /> : null}
             {view}
           </>
         )}

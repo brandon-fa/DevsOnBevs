@@ -127,7 +127,6 @@ public final class CommandDispatcher {
             throw new SecurityException("Only customers can place or view their orders.");
         }
     }
-
     private static void requireOperator(AuthenticatedAccount account, String action) {
         if (account == null || account.role() != Role.OPERATOR) {
             throw new SecurityException("Only the platform operator can " + action + ".");

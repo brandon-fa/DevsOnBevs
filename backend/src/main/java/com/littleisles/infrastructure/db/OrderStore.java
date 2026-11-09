@@ -542,4 +542,9 @@ public final class OrderStore {
     public record OperatorOrder(int id, String storeId, String status, String customer, String courier,
                                 String destination, int itemCount, int totalCents, String createdAt) {
     }
+
+    /** {@code createdAt} is UTC in ISO-8601; {@code courier} is null until one is assigned. */
+    public record OperatorOrder(int id, String storeId, String status, String customer, String courier,
+                                String destination, int itemCount, int totalCents, String createdAt) {
+    }
 }
