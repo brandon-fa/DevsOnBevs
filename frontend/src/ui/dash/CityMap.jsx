@@ -11,6 +11,12 @@ const KIND_LABEL = {
   customer: "Customer",
 };
 
+const STATUS_LABEL = { 
+  open: "Open", 
+  paused: "Paused", 
+  closed: "Closed" 
+};
+
 const MAP_COPY = {
   customer: {
     title: "Markets and your delivery",
@@ -149,7 +155,7 @@ export default function CityMap({ role, account, order, onFeedback }) {
     map.fitBounds(bounds, { padding: [24, 24] });
 
     visibleCity.groceryStores.forEach((groceryStore) => {
-      const status = groceryStore.open ? "open" : "closed";
+      const status = groceryStore.status || (groceryStore.open ? "open" : "closed");
       const band = groceryStore.queueBand || "short";
       const queued = groceryStore.queued ?? 0;
       const marker = L.marker([groceryStore.lat, groceryStore.lon], {
@@ -227,8 +233,8 @@ function SelectedDetails({ selected }) {
       <>
         <p className="section-kicker">{KIND_LABEL.groceryStore}</p>
         <h3>{selected.name}</h3>
-        <p className={`city-status-label ${selected.open ? "is-open" : "is-closed"}`}>
-          {selected.open ? "Open" : "Closed"}
+        <p className={`city-status-label is-${selected.status || (selected.open ? "open" : "closed")}`}>
+          {STATUS_LABEL[selected.status] || (selected.open ? "Open" : "Closed")}
         </p>
         <ul className="city-product-list">
           {selected.products.map((product) => (

@@ -41,6 +41,10 @@
   background: #b42318;
 }
 
+.city-status-label.is-paused {
+  background: #c27c0e;
+}
+
 .city-map-status,
 .city-item-status,
 .city-map-note {
