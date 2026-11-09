@@ -833,6 +833,13 @@ public final class OrderController {
         return orderStore.loadOperatorOrders();
     }
 
+    /** Changes the live city only; a reset or restart returns the store to its configured status. */
+    public synchronized GroceryStore setStoreStatus(String storeId, StoreStatus status) {
+        GroceryStore store = findStore(storeId);
+        store.setStatus(status);
+        return store;
+    }
+
     /** Reset: deletes every saved order and swaps in a freshly loaded city. */
     public synchronized void reset(CitySnapshot freshCity) throws SQLException {
         orderStore.deleteAllOrders();
