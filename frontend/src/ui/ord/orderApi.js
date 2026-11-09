@@ -103,6 +103,11 @@ export async function loadOperatorOrders(signal) {
   return data.orders;
 }
 
+export function setStoreOpen(storeId, open) {
+  const action = open ? "open" : "close";
+  return request("/api/operator/stores/" + encodeURIComponent(storeId) + "/" + action, "POST");
+}
+
 export function updateStoreOrder(orderId, action, reason = "") {
   let body = null;
   if (action === "reject") {

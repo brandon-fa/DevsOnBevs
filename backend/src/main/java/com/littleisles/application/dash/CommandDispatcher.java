@@ -3,6 +3,7 @@ package com.littleisles.application.dash;
 import com.littleisles.application.ord.OrderController;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.GroceryStore;
+import com.littleisles.domain.ord.StoreStatus;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.Role;
 import com.littleisles.infrastructure.db.OrderStore;
@@ -52,6 +53,11 @@ public final class CommandDispatcher {
     public List<OrderStore.OperatorOrder> operatorOrders(AuthenticatedAccount account) throws SQLException {
         requireOperator(account, "view all orders");
         return orderController.operatorOrders();
+    }
+
+    public GroceryStore setStoreOpen(AuthenticatedAccount account, String storeId, boolean open) {
+        requireOperator(account, "open or close a grocery store");
+        return orderController.setStoreStatus(storeId, open ? StoreStatus.OPEN : StoreStatus.CLOSED);
     }
 
     /** Reset (operator only): restore the initial scenario from the configuration file. */

@@ -33,5 +33,9 @@ export default function useOperatorStores(onFeedback) {
     return () => controller.abort();
   }, [onFeedback]);
 
-  return { stores, error };
+  function updateStore(storeId, changes) {
+    setStores((current) => current.map((store) => (store.id === storeId ? { ...store, ...changes } : store)));
+  }
+
+  return { stores, error, updateStore };
 }

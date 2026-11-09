@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatMoney } from "../../data/mockData.js";
+import { setStoreOpen } from "../ord/orderApi.js";
 import { storeFontClass } from "../ord/storeFonts.js";
 import ResetControl from "./ResetControl.jsx";
 import useOperatorStores from "./useOperatorStores.js";
@@ -28,12 +29,19 @@ const QUEUE_BAND_LABELS = {
 };
 
 export default function OperatorDashboard({ onFeedback }) {
-  const { stores, error } = useOperatorStores(onFeedback);
+  const { stores, error, updateStore } = useOperatorStores(onFeedback);
   const [selectedStoreId, setSelectedStoreId] = useState(null);
   const selectedStore = stores?.find((store) => store.id === selectedStoreId);
 
   if (selectedStore) {
-    return <StoreCurrentOrders store={selectedStore} onBack={() => setSelectedStoreId(null)} />;
+    return (
+      <StoreCurrentOrders
+        store={selectedStore}
+        onBack={() => setSelectedStoreId(null)}
+        onStoreChange={(changes) => updateStore(selectedStore.id, changes)}
+        onFeedback={onFeedback}
+      />
+    );
   }
 
   return (
@@ -66,7 +74,31 @@ export default function OperatorDashboard({ onFeedback }) {
   );
 }
 
-function StoreCurrentOrders({ store, onBack }) {
+function StoreCurrentOrders({ store, onBack, onStoreChange, onFeedback }) {
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState("");
+  const action = store.open
+    ? { verb: "close", label: "Close store", busy: "Closing…" }
+    : { verb: "open", label: "Open store", busy: "Opening…" };
+
+  async function toggleOpen() {
+    setUpdating(true);
+    setUpdateError("");
+    onFeedback(`Operator command: ${action.verb} ${store.name}.`, "info");
+    try {
+      const changes = await setStoreOpen(store.id, !store.open);
+      onStoreChange(changes);
+      onFeedback(`${store.name} is now ${changes.status}.`, "success");
+    } catch (error) {
+      let message = error.message || `${store.name} could not be updated.`;
+      if (error instanceof TypeError) message = `${store.name} could not be updated. Check your connection.`;
+      setUpdateError(message);
+      onFeedback(message, "error");
+    } finally {
+      setUpdating(false);
+    }
+  }
+
   return (
     <section className="dash-section" aria-labelledby="operator-store-title">
       <button type="button" className="store-back" onClick={onBack}>
@@ -80,10 +112,11 @@ function StoreCurrentOrders({ store, onBack }) {
             <QueueStatus band={store.queueBand} queued={store.queued} />
           </p>
         </div>
-        <button type="button" className="store-order-button">
-          {store.open ? "Close store" : "Open store"}
+        <button type="button" className="store-order-button" disabled={updating} onClick={toggleOpen}>
+          {updating ? action.busy : action.label}
         </button>
       </div>
+      {updateError && <p role="alert" className="operator-store-error">{updateError}</p>}
       <div className="operator-order-columns">
         {ORDER_STAGES.map((stage) => {
           const orders = store.orders.filter((order) => stage.statuses.includes(order.status));

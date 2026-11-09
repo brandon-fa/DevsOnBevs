@@ -38,6 +38,44 @@ public final class OrderHandler {
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
         server.createContext("/api/operator/orders", this::handleOperatorOrders);
+        server.createContext("/api/operator/stores", this::handleOperatorStores);
+    }
+
+    private void handleOperatorStores(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+
+        // An action URL contains a store id followed by open or close.
+        if (!path.matches("/api/operator/stores/[^/]+/(open|close)")) {
+            sendError(exchange, 404, "The operator store endpoint does not exist.");
+            return;
+        }
+
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "POST, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("POST")) {
+            sendError(exchange, 405, "Use POST to open or close a grocery store.");
+            return;
+        }
+
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+
+        try {
+            String[] parts = path.split("/");
+            GroceryStore store = dispatcher.setStoreOpen(account, parts[4], parts[5].equals("open"));
+            send(exchange, 200, storeStatusJson(store));
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        }
     }
 
     private void handleOperatorOrders(HttpExchange exchange) throws IOException {
@@ -290,6 +328,16 @@ public final class OrderHandler {
         result.add("lines", lines);
         result.addProperty("subtotalCents", subtotalCents);
         result.add("transitionEvents", JSON.toJsonTree(order.getTransitionEvents()));
+        return result;
+    }
+
+    /** Uses the same field names as /api/city so the page can merge it into its store. */
+    private static JsonObject storeStatusJson(GroceryStore store) {
+        JsonObject result = new JsonObject();
+        result.addProperty("open", store.isOpen());
+        result.addProperty("status", store.getStatus().label());
+        result.addProperty("queued", store.getQueuedOrderCount());
+        result.addProperty("queueBand", store.getQueueBand().label());
         return result;
     }
 

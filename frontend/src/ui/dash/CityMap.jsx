@@ -127,6 +127,11 @@ export default function CityMap({ role, account, order, onFeedback }) {
     return visibleCity.groceryStores.length + visibleCity.couriers.length + visibleCity.customers.length === 0;
   }, [visibleCity]);
 
+  // Show the store's latest status, not the copy taken when its marker was clicked.
+  const selectedDetails = selected?.kind === "groceryStore"
+    ? { ...selected, ...visibleCity?.groceryStores.find((store) => store.id === selected.id) }
+    : selected;
+
   useEffect(() => {
     if (!visibleCity || isEmpty || !mapNode.current) return undefined;
 
@@ -202,7 +207,7 @@ export default function CityMap({ role, account, order, onFeedback }) {
         <div className="city-map-layout">
           <div className="city-map-canvas" ref={mapNode} role="application" aria-label="Little Isles city map" />
           <aside className="city-map-details" aria-live="polite">
-            {selected ? <SelectedDetails selected={selected} /> : <p>Select a marker to read its seeded details.</p>}
+            {selectedDetails ? <SelectedDetails selected={selectedDetails} /> : <p>Select a marker to read its seeded details.</p>}
             {role === "customer" && !visibleCity.customers.length && (
               <p className="city-map-note">No seeded delivery pin matches this customer account.</p>
             )}

@@ -91,6 +91,12 @@
   margin-top: 0.5rem;
 }
 
+.operator-store-error {
+  margin-bottom: 1.25rem;
+  color: #b42318;
+  font-weight: 600;
+}
+
 .operator-order-columns {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
