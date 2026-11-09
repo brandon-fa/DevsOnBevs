@@ -164,6 +164,43 @@ public final class OrderStore {
         }
     }
 
+    /** Every order that was not cancelled, with the names and totals the operator screens show. */
+    public List<OperatorOrder> loadOperatorOrders() throws SQLException {
+        String sql = """
+                SELECT o.id, gs.id AS store_id, o.status, o.delivery_address, o.total_cents,
+                       strftime('%Y-%m-%dT%H:%M:%SZ', o.created_at) AS created_at,
+                       customer.full_name AS customer_name,
+                       courier.full_name AS courier_name,
+                       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id = o.id), 0) AS item_count
+                FROM orders o
+                JOIN users u ON u.id = o.groceries_id AND u.role = 'groceries'
+                JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
+                    OR upper(u.store_code) = upper(gs.store_code)
+                JOIN users customer ON customer.id = o.customer_id
+                LEFT JOIN users courier ON courier.id = o.courier_id
+                WHERE o.status <> 'cancelled'
+                ORDER BY o.id
+                """;
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement();
+             ResultSet orders = statement.executeQuery(sql)) {
+            List<OperatorOrder> result = new ArrayList<>();
+            while (orders.next()) {
+                result.add(new OperatorOrder(
+                        orders.getInt("id"),
+                        orders.getString("store_id"),
+                        orders.getString("status"),
+                        orders.getString("customer_name"),
+                        orders.getString("courier_name"),
+                        orders.getString("delivery_address"),
+                        orders.getInt("item_count"),
+                        orders.getInt("total_cents"),
+                        orders.getString("created_at")));
+            }
+            return List.copyOf(result);
+        }
+    }
+
     private static long groceriesUserId(Connection connection, String storeId) throws SQLException {
         String sql = """
                 SELECT u.id
@@ -247,5 +284,10 @@ public final class OrderStore {
 
     public record SavedOrder(int id, long customerId, String storeId, String destination, String status,
                              ArrayList<OrderLine> lines) {
+    }
+
+    /** {@code createdAt} is UTC in ISO-8601; {@code courier} is null until one is assigned. */
+    public record OperatorOrder(int id, String storeId, String status, String customer, String courier,
+                                String destination, int itemCount, int totalCents, String createdAt) {
     }
 }

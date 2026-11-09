@@ -95,6 +95,19 @@ export async function loadStoreOrders(signal) {
   return data;
 }
 
+export async function loadOperatorOrders(signal) {
+  const data = await request("/api/operator/orders", "GET", null, signal);
+  if (!data || !Array.isArray(data.orders)) {
+    throw new Error("Orders could not be loaded.");
+  }
+  return data.orders;
+}
+
+export function setStoreOpen(storeId, open) {
+  const action = open ? "open" : "close";
+  return request("/api/operator/stores/" + encodeURIComponent(storeId) + "/" + action, "POST");
+}
+
 export function updateStoreOrder(orderId, action, reason = "") {
   let body = null;
   if (action === "reject") {

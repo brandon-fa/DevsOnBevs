@@ -5,6 +5,7 @@ import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
 import com.littleisles.domain.ord.Product;
+import com.littleisles.domain.ord.StoreStatus;
 import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.CustomerAccount;
@@ -134,6 +135,17 @@ public final class OrderController {
         Order order = findPendingOrder(store, orderId);
         store.rejectPendingOrder(order, reason);
         orderStore.updateStatus(order.getOrderId(), order.getStatus());
+        return store;
+    }
+
+    public List<OrderStore.OperatorOrder> operatorOrders() throws SQLException {
+        return orderStore.loadOperatorOrders();
+    }
+
+    /** Changes the live city only; a reset or restart returns the store to its configured status. */
+    public synchronized GroceryStore setStoreStatus(String storeId, StoreStatus status) {
+        GroceryStore store = findStore(storeId);
+        store.setStatus(status);
         return store;
     }
 
