@@ -172,6 +172,20 @@ public class GroceryStore {
         }
         this.status = status;
     }
+    /** Pause: stop taking new orders but keep preparing the accepted ones (R-ORD-02). */
+    public void pause() {
+        if (status != StoreStatus.OPEN) {
+            throw new IllegalStateException("Only an open grocery store can be paused.");
+        }
+        status = StoreStatus.PAUSED;
+    }
+    /** Reopen: a paused store takes new orders again. */
+    public void reopen() {
+        if (status != StoreStatus.PAUSED) {
+            throw new IllegalStateException("Only a paused grocery store can be reopened.");
+        }
+        status = StoreStatus.OPEN;
+    }
 
      public int getStoreId() {
         return storeId;
