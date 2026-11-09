@@ -12,6 +12,7 @@ import com.littleisles.infrastructure.http.CityCatalogHandler;
 import com.littleisles.infrastructure.http.RegistrationServer;
 import com.littleisles.infrastructure.http.OrderHandler;
 import com.littleisles.infrastructure.http.ResetHandler;
+import com.littleisles.infrastructure.http.StoreStatusHandler;
 import com.littleisles.technicalservices.ord.CityConfigLoader;
 import com.littleisles.technicalservices.reg.SeedAccountLoader;
 import com.sun.net.httpserver.HttpServer;
@@ -41,6 +42,7 @@ public final class Main {
         CommandDispatcher dispatcher = new CommandDispatcher(orderController, cityLoader);
         new OrderHandler(authController, dispatcher).bind(server);
         new ResetHandler(authController, dispatcher).bind(server);
+        new StoreStatusHandler(authController, dispatcher).bind(server);
         System.out.println("Seeded demonstration accounts available:");
         for (SeedAccountLoader.SeededAccount account : seededAccounts) {
             System.out.println("  " + account.role().label() + ": " + account.email());
