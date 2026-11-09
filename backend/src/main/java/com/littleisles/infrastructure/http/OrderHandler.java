@@ -296,6 +296,7 @@ public final class OrderHandler {
         JsonObject result = new JsonObject();
         result.addProperty("storeId", store.getId());
         result.addProperty("storeName", store.getName());
+        result.addProperty("status", store.getStatus().label());
         result.add("pending", ordersJson(store.getPendingOrders()));
         result.add("preparing", ordersJson(store.getPreparationQueue().getOrders()));
         result.add("ready", ordersJson(store.getReadyOrders()));
