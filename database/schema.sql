@@ -37,7 +37,10 @@ CREATE TABLE orders (
     delivery_address TEXT NOT NULL,
     subtotal_cents INTEGER NOT NULL CHECK (subtotal_cents >= 0),
     delivery_fee_cents INTEGER NOT NULL CHECK (delivery_fee_cents >= 0),
-    total_cents INTEGER NOT NULL CHECK (total_cents = subtotal_cents + delivery_fee_cents),
+    service_fee_cents INTEGER NOT NULL DEFAULT 0 CHECK (service_fee_cents >= 0),
+    small_order_surcharge_cents INTEGER NOT NULL DEFAULT 0 CHECK (small_order_surcharge_cents >= 0),
+    total_cents INTEGER NOT NULL CHECK (total_cents = subtotal_cents + delivery_fee_cents + service_fee_cents + small_order_surcharge_cents),
+    fare_version INTEGER NOT NULL DEFAULT 1 CHECK (fare_version >= 0),
     created_at TEXT NOT NULL
 );
 

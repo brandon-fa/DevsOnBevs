@@ -109,7 +109,10 @@ export default function CheckoutPage() {
         const basket = submittedBaskets[index];
         if (result.ok) {
           successfulIds.add(basket.id);
-          appendConsoleMessage(`Order ${result.order.orderId} placed for ${basket.name}.`, "success");
+          appendConsoleMessage(
+            `Order ${result.order.orderId} placed for ${basket.name}. Total: ${formatMoney(result.order.totalCents)}.`,
+            "success",
+          );
         } else {
           appendConsoleMessage(`The ${basket.name} order could not be placed.`, "error");
         }

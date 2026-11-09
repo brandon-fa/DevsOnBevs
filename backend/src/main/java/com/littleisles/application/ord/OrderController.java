@@ -4,14 +4,21 @@ import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
 import com.littleisles.domain.ord.Product;
+import com.littleisles.domain.prc.Fare;
+import com.littleisles.domain.prc.PricingFacts;
+import com.littleisles.application.prc.PricingService;
+import com.littleisles.domain.prc.StandardPricingStrategy;
 import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.CustomerAccount;
 import com.littleisles.domain.reg.GroceriesAccount;
 import com.littleisles.domain.reg.Role;
 import com.littleisles.infrastructure.db.OrderStore;
+import com.littleisles.domain.prc.PricingConfiguration;
+import com.littleisles.technicalservices.prc.PricingConfigLoader;
 import com.littleisles.technicalservices.reg.AccountRepository;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,19 +29,31 @@ public final class OrderController {
     private final CityCatalog cityCatalog;
     private final AccountRepository accountRepository;
     private final OrderStore orderStore;
+    private final PricingService pricingService;
     // Keep one domain customer per database id, shared by all of that customer's sessions.
     private final Map<Long, CustomerAccount> customers = new HashMap<>();
     private final Map<Long, List<Order>> savedOrdersByCustomer = new HashMap<>();
     private final Map<Long, GroceriesAccount> groceriesAccounts = new HashMap<>();
 
     public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository) throws SQLException {
-        this(cityCatalog, accountRepository, new OrderStore());
+        this(cityCatalog, accountRepository, new OrderStore(), defaultPricingService());
     }
 
     public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository, OrderStore orderStore) throws SQLException {
+        this(cityCatalog, accountRepository, orderStore, defaultPricingService());
+    }
+
+    public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository,
+                           PricingService pricingService) throws SQLException {
+        this(cityCatalog, accountRepository, new OrderStore(), pricingService);
+    }
+
+    public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository,
+                           OrderStore orderStore, PricingService pricingService) throws SQLException {
         this.cityCatalog = cityCatalog;
         this.accountRepository = accountRepository;
         this.orderStore = orderStore;
+        this.pricingService = pricingService;
         loadSavedOrders();
     }
 
@@ -72,6 +91,7 @@ public final class OrderController {
         for (OrderLine line : validatedLines) {
             order.addOrderLine(line.getProduct(), line.getQuantity());
         }
+        order.assignFare(pricingService.calculate(PricingFacts.from(order)));
         order.placeOrder();
         try {
             int savedId = orderStore.savePlacedOrder(account.id(), store.getId(), order.getDestination(), order);
@@ -206,6 +226,12 @@ public final class OrderController {
             }
             Order order = new Order(store, saved.destination());
             order.restoreSaved(saved.id(), saved.status(), saved.lines());
+            Fare fare = saved.fare();
+            if (saved.fareVersion() == 0) {
+                fare = pricingService.calculate(PricingFacts.from(order));
+                orderStore.updateFare(saved.id(), fare);
+            }
+            order.assignFare(fare);
             if ("placed".equals(saved.status())) {
                 store.addPendingOrder(order);
             } else if ("preparing".equals(saved.status())) {
@@ -214,6 +240,16 @@ public final class OrderController {
                 store.restoreReadyOrder(order);
             }
             savedOrdersByCustomer.computeIfAbsent(saved.customerId(), id -> new ArrayList<>()).add(order);
+        }
+    }
+
+    private static PricingService defaultPricingService() {
+        try {
+            PricingConfiguration configuration = new PricingConfigLoader(
+                    PricingConfigLoader.locateConfigFile()).load();
+            return new PricingService(new StandardPricingStrategy(), configuration);
+        } catch (IOException exception) {
+            throw new IllegalStateException("Pricing rules could not be loaded.", exception);
         }
     }
 }

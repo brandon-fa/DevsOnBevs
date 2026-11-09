@@ -12,6 +12,7 @@ import com.littleisles.application.reg.AuthController;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
+import com.littleisles.domain.prc.Fare;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -248,7 +249,16 @@ public final class OrderHandler {
             subtotalCents += priceCents * line.getQuantity();
         }
         result.add("lines", lines);
-        result.addProperty("subtotalCents", subtotalCents);
+        Fare fare = order.getFare();
+        if (fare != null) {
+            result.addProperty("subtotalCents", fare.subtotalCents());
+            result.addProperty("deliveryFeeCents", fare.deliveryFeeCents());
+            result.addProperty("serviceFeeCents", fare.serviceFeeCents());
+            result.addProperty("smallOrderSurchargeCents", fare.smallOrderSurchargeCents());
+            result.addProperty("totalCents", fare.totalCents());
+        } else {
+            result.addProperty("subtotalCents", subtotalCents);
+        }
         result.add("transitionEvents", JSON.toJsonTree(order.getTransitionEvents()));
         return result;
     }
