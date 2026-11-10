@@ -9,6 +9,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.Strictness;
 import com.littleisles.application.dash.CommandDispatcher;
 import com.littleisles.application.reg.AuthController;
+import com.littleisles.domain.ord.CourierRosterEntry;
+import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
@@ -36,6 +38,9 @@ public final class OrderHandler {
     public void bind(HttpServer server) {
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
+        server.createContext("/api/courier/orders", this::handleCourierOrders);
+        server.createContext("/api/courier/status", this::handleCourierStatus);
+        server.createContext("/api/operator/couriers", this::handleOperatorCouriers);
     }
 
     private void handleCustomerOrders(HttpExchange exchange) throws IOException {
@@ -159,6 +164,174 @@ public final class OrderHandler {
         }
     }
 
+    private void handleCourierOrders(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        boolean listing = path.equals("/api/courier/orders");
+        if (!listing && !path.matches("/api/courier/orders/[1-9][0-9]*/(accept|pickup|deliver)")) {
+            sendError(exchange, 404, "The courier order endpoint does not exist.");
+            return;
+        }
+        String expectedMethod = listing ? "GET" : "POST";
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", expectedMethod + ", OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals(expectedMethod)) {
+            sendError(exchange, 405, "Use " + expectedMethod + " for this courier order endpoint.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            if (listing) {
+                JsonObject response = new JsonObject();
+                response.add("orders", ordersJson(dispatcher.courierOffers(account)));
+                response.addProperty("status", dispatcher.courierStatus(account).label());
+                send(exchange, 200, response);
+            } else {
+                String[] parts = path.split("/");
+                int orderId = Integer.parseInt(parts[4]);
+                String action = parts[5];
+                if (action.equals("accept")) {
+                    dispatcher.acceptCourierOffer(account, orderId);
+                } else if (action.equals("pickup")) {
+                    dispatcher.pickupCourierOrder(account, orderId);
+                } else {
+                    dispatcher.deliverCourierOrder(account, orderId);
+                }
+                JsonObject response = new JsonObject();
+                response.add("orders", ordersJson(dispatcher.courierOffers(account)));
+                response.addProperty("status", dispatcher.courierStatus(account).label());
+                send(exchange, 200, response);
+            }
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (NumberFormatException exception) {
+            sendError(exchange, 400, "Choose a valid order id.");
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        } catch (IllegalStateException exception) {
+            sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The delivery could not be updated. Please try again.");
+        }
+    }
+
+    private void handleCourierStatus(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestURI().getPath().equals("/api/courier/status")) {
+            sendError(exchange, 404, "The courier status endpoint does not exist.");
+            return;
+        }
+        exchange.getResponseHeaders().set("Allow", "POST, OPTIONS");
+        if (exchange.getRequestMethod().equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!exchange.getRequestMethod().equals("POST")) {
+            sendError(exchange, 405, "Use POST to update courier availability.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            JsonElement online = readBody(exchange).get("online");
+            if (online == null || !online.isJsonPrimitive() || !online.getAsJsonPrimitive().isBoolean()) {
+                throw new IllegalArgumentException("Provide online as true or false.");
+            }
+            CourierStatus status = dispatcher.setCourierOnline(account, online.getAsBoolean());
+            JsonObject response = new JsonObject();
+            response.addProperty("status", status.label());
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (JsonParseException exception) {
+            sendError(exchange, 400, "Send valid JSON containing online as true or false.");
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        } catch (IllegalStateException exception) {
+            sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "Courier availability could not be updated. Please try again.");
+        }
+    }
+
+    private void handleOperatorCouriers(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        boolean listing = path.equals("/api/operator/couriers");
+        if (!listing && !path.matches("/api/operator/couriers/orders/[1-9][0-9]*/reassign")) {
+            sendError(exchange, 404, "The operator endpoint does not exist.");
+            return;
+        }
+        String expectedMethod = listing ? "GET" : "POST";
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", expectedMethod + ", OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals(expectedMethod)) {
+            sendError(exchange, 405, "Use " + expectedMethod + " for this operator endpoint.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            if (!listing) {
+                int orderId = Integer.parseInt(path.split("/")[5]);
+                JsonElement courierId = readBody(exchange).get("courierUserId");
+                if (courierId == null || !courierId.isJsonPrimitive() || !courierId.getAsJsonPrimitive().isNumber()) {
+                    throw new IllegalArgumentException("Choose a courier.");
+                }
+                dispatcher.reassignAcceptedOrder(account, orderId, courierId.getAsLong());
+            }
+            send(exchange, 200, operatorBoard(account));
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (NumberFormatException | JsonParseException exception) {
+            sendError(exchange, 400, "Choose a valid order and courier.");
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        } catch (IllegalStateException exception) {
+            sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The courier board could not be updated. Please try again.");
+        }
+    }
+
+    private JsonObject operatorBoard(AuthenticatedAccount account) throws SQLException {
+        JsonArray couriers = new JsonArray();
+        List<Order> orders = dispatcher.operatorOrders(account);
+        for (CourierRosterEntry courier : dispatcher.operatorCouriers(account)) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("userId", courier.userId());
+            entry.addProperty("name", courier.name());
+            entry.addProperty("pin", courier.pin());
+            entry.addProperty("status", courier.status());
+            JsonArray assigned = new JsonArray();
+            for (Order order : orders) {
+                if (Long.valueOf(courier.userId()).equals(order.getOfferedCourierUserId())) {
+                    assigned.add(orderJson(order));
+                }
+            }
+            entry.add("orders", assigned);
+            couriers.add(entry);
+        }
+        JsonObject response = new JsonObject();
+        response.add("couriers", couriers);
+        return response;
+    }
+
     private static JsonObject readBody(HttpExchange exchange) throws IOException {
         String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         JsonObject request = JSON.fromJson(body, JsonObject.class);
@@ -231,6 +404,7 @@ public final class OrderHandler {
         result.addProperty("storeName", order.getStore().getName());
         result.addProperty("status", order.getStatus());
         result.addProperty("destination", order.getDestination());
+        result.addProperty("courierAccepted", order.isCourierAccepted());
         if (order.getRejectionReason() != null) {
             result.addProperty("rejectionReason", order.getRejectionReason());
         }

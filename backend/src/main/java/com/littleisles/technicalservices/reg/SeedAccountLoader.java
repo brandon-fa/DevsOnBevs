@@ -3,6 +3,7 @@ package com.littleisles.technicalservices.reg;
 import com.littleisles.application.reg.RegistrationService;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountDraft;
+import com.littleisles.domain.reg.CourierAccount;
 import com.littleisles.domain.reg.GroceriesAccount;
 import com.littleisles.domain.reg.Role;
 
@@ -59,6 +60,12 @@ public final class SeedAccountLoader {
             } else if (properties.containsKey(prefix + "storeId")) {
                 throw new IllegalArgumentException("Only groceries accounts can have a storeId.");
             }
+            String courierId = null;
+            if (role == Role.COURIER && properties.containsKey(prefix + "courierId")) {
+                courierId = required(properties, prefix + "courierId");
+            } else if (properties.containsKey(prefix + "courierId")) {
+                throw new IllegalArgumentException("Only courier accounts can have a courierId.");
+            }
             AccountDraft draft = new AccountDraft(
                     required(properties, prefix + "fullName"),
                     required(properties, prefix + "email"),
@@ -72,6 +79,9 @@ public final class SeedAccountLoader {
             Account account = registrationService.register(role.label(), draft);
             if (account instanceof GroceriesAccount groceries && storeId != null) {
                 groceries.setStoreCode(storeId);
+            }
+            if (account instanceof CourierAccount courier && courierId != null) {
+                courier.setCourierPin(courierId);
             }
             if (account.getRole() != role) {
                 throw new IllegalStateException("A seeded account must hold exactly one configured role.");
@@ -116,7 +126,7 @@ public final class SeedAccountLoader {
                 throw new IllegalArgumentException("Invalid seeded account setting: " + key);
             }
             String field = remainder.substring(separator + 1);
-            if (!Set.of("role", "fullName", "email", "password", "phone", "storeId").contains(field)) {
+            if (!Set.of("role", "fullName", "email", "password", "phone", "storeId", "courierId").contains(field)) {
                 throw new IllegalArgumentException("Unknown seeded account field: " + field);
             }
             ids.add(remainder.substring(0, separator));

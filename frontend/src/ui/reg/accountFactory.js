@@ -32,7 +32,16 @@ export function accountIssues(draft) {
   if (draft.role === "groceries" && !(draft.storeCode?.trim())) {
     issues.storeCode = "Enter the store code for your grocery store.";
   }
+  if (draft.role === "operator" && !(draft.operatorPasscode?.trim())) {
+    issues.operatorPasscode = "Enter the authentication passcode.";
+  }
   return issues;
+}
+
+export const OPERATOR_AUTH_PASSCODE = "111";
+
+export function isValidOperatorPasscode(passcode) {
+  return (passcode ?? "").trim() === OPERATOR_AUTH_PASSCODE;
 }
 
 function cleaned(draft) {

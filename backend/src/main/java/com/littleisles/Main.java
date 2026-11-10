@@ -28,16 +28,17 @@ public final class Main {
         CityConfigLoader cityLoader = new CityConfigLoader(CityConfigLoader.locateConfigFile());
         CitySnapshot city = cityLoader.load();
         CityCatalog cityCatalog = new CityCatalog(city);
+        cityCatalog.overlayStoredCouriers(accountStore.couriersWithLocation());
         OrderController orderController = new OrderController(cityCatalog, accountStore);
         for (SeedAccountLoader.SeededAccount account : seededAccounts) {
             if (account.role() == Role.GROCERIES) {
                 orderController.associateGroceriesAccount(account.email(), account.storeId());
             }
         }
-        RegistrationServer registrationServer = new RegistrationServer(registrationService, accountStore, authController);
+        RegistrationServer registrationServer = new RegistrationServer(registrationService, accountStore, authController, cityCatalog);
         HttpServer server = registrationServer.start(port);
-        new CityCatalogHandler(authController, cityCatalog).bind(server);
         CommandDispatcher dispatcher = new CommandDispatcher(orderController);
+        new CityCatalogHandler(authController, dispatcher).bind(server);
         new OrderHandler(authController, dispatcher).bind(server);
         System.out.println("Seeded demonstration accounts available:");
         for (SeedAccountLoader.SeededAccount account : seededAccounts) {
