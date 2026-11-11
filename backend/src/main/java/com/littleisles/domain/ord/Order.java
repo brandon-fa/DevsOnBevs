@@ -15,6 +15,9 @@ public class Order {
     private String destination;
     private String rejectionReason;
     private Fare fare;
+    private Long offeredCourierUserId;
+    private boolean courierAccepted;
+    private Long customerUserId;
     //private double tip;
 
     public Order(GroceryStore store, String destination) {
@@ -78,6 +81,10 @@ public class Order {
         state.handoffOrder();
     }
 
+    public void deliverOrder() {
+        handoffOrder();
+    }
+
     /*
     public double[] getTotalPrice(){
         double subtotal = 0.0;
@@ -109,12 +116,19 @@ public class Order {
     }
 
     public void restoreSaved(int persistedId, String status, ArrayList<OrderLine> lines) {
+        restoreSaved(persistedId, status, lines, List.of());
+    }
+
+    public void restoreSaved(int persistedId, String status, ArrayList<OrderLine> lines,
+                             List<TransitionEvent> savedTransitions) {
         assignPersistedId(persistedId);
         this.orderLines = lines;
         if ("preparing".equals(status)) {
             this.state = new PreparingOrderState(this);
-        } else if ("ready".equals(status)) {
+        } else if ("ready".equals(status) || "accepted".equals(status)) {
             this.state = new ReadyOrderState(this);
+        } else if ("picked_up".equals(status)) {
+            this.state = new TransitOrderState(this);
         } else if ("delivered".equals(status)) {
             this.state = new CompletedOrderState(this);
         } else if ("canceled".equals(status)) {
@@ -122,7 +136,12 @@ public class Order {
         } else {
             this.state = new PlacedOrderState(this);
         }
-        addTransitionEvent(new TransitionEvent("open", getStatus()));
+        transitionEvents.clear();
+        if (savedTransitions == null || savedTransitions.isEmpty()) {
+            addTransitionEvent(new TransitionEvent("open", getStatus()));
+        } else {
+            transitionEvents.addAll(savedTransitions);
+        }
     }
 
     public void setStore(GroceryStore store) {
@@ -155,6 +174,38 @@ public class Order {
 
     public void assignFare(Fare fare) {
         this.fare = Objects.requireNonNull(fare, "A computed fare is required.");
+    }
+
+    public Long getOfferedCourierUserId() {
+        return offeredCourierUserId;
+    }
+
+    public void setOfferedCourierUserId(Long offeredCourierUserId) {
+        this.offeredCourierUserId = offeredCourierUserId;
+    }
+
+    public boolean isCourierAccepted() {
+        return courierAccepted;
+    }
+
+    public void markCourierAccepted() {
+        this.courierAccepted = true;
+    }
+
+    public Long getCustomerUserId() {
+        return customerUserId;
+    }
+
+    public void setCustomerUserId(Long customerUserId) {
+        this.customerUserId = customerUserId;
+    }
+
+    public static boolean isCurrent(String status) {
+        return "placed".equals(status)
+                || "preparing".equals(status)
+                || "ready".equals(status)
+                || "accepted".equals(status)
+                || "picked_up".equals(status);
     }
 
     /*

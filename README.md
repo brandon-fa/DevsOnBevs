@@ -78,3 +78,5 @@ Credentials to use for the seeded accounts based on its respective role:
 | Operator | demo.operator@littleisles.example | DemoPass123! |
 
 Note that these are only for demonstration purposes.
+
+Authentication passcode for any new operator account: 111

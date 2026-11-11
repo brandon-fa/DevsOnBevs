@@ -3,6 +3,7 @@ package com.littleisles.infrastructure.db;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
 import com.littleisles.domain.ord.Product;
+import com.littleisles.domain.ord.TransitionEvent;
 import com.littleisles.domain.prc.Fare;
 
 import java.nio.file.Files;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class OrderStore {
+    private final Path databaseFile;
     private final String jdbcUrl;
 
     public OrderStore() {
@@ -26,13 +28,19 @@ public final class OrderStore {
     }
 
     public OrderStore(Path databaseFile) {
-        this.jdbcUrl = "jdbc:sqlite:" + databaseFile.toAbsolutePath();
+        this.databaseFile = databaseFile.toAbsolutePath().normalize();
+        this.jdbcUrl = "jdbc:sqlite:" + this.databaseFile;
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException exception) {
             throw new IllegalStateException("SQLite JDBC driver is not on the classpath.", exception);
         }
         migrateFareColumns();
+        ensureTransitionSchema();
+    }
+
+    public Path databaseFile() {
+        return databaseFile;
     }
 
     public int savePlacedOrder(long customerId, String storeId, String destination, Order order) throws SQLException {
@@ -93,6 +101,7 @@ public final class OrderStore {
                         lineStatement.executeUpdate();
                     }
                 }
+                insertTransitions(connection, orderId, order.getTransitionEvents());
                 connection.commit();
                 return orderId;
             } catch (SQLException | ArithmeticException exception) {
@@ -105,14 +114,39 @@ public final class OrderStore {
         }
     }
 
-    public void updateStatus(int orderId, String status) throws SQLException {
-        String sql = "UPDATE orders SET status = ? WHERE id = ?";
+    public void assignCourier(int orderId, long courierUserId) throws SQLException {
+        String sql = "UPDATE orders SET courier_id = ? WHERE id = ?";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, databaseStatus(status));
+            statement.setLong(1, courierUserId);
             statement.setInt(2, orderId);
             if (statement.executeUpdate() != 1) {
-                throw new SQLException("The saved order could not be updated.");
+                throw new SQLException("The courier could not be saved on the order.");
+            }
+        }
+    }
+
+    public void updateStatus(int orderId, String status) throws SQLException {
+        updateStatus(orderId, status, null);
+    }
+
+    public void updateStatus(int orderId, String status, TransitionEvent transition) throws SQLException {
+        String sql = "UPDATE orders SET status = ? WHERE id = ?";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, databaseStatus(status));
+                statement.setInt(2, orderId);
+                if (statement.executeUpdate() != 1) {
+                    throw new SQLException("The saved order could not be updated.");
+                }
+                if (transition != null) {
+                    insertTransition(connection, orderId, transition);
+                }
+                connection.commit();
+            } catch (SQLException exception) {
+                connection.rollback();
+                throw exception;
             }
         }
     }
@@ -133,16 +167,46 @@ public final class OrderStore {
         }
     }
 
+    public void delete(int orderId) throws SQLException {
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("A saved order needs a positive id.");
+        }
+        try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement items = connection.prepareStatement("DELETE FROM order_items WHERE order_id = ?")) {
+                    items.setInt(1, orderId);
+                    items.executeUpdate();
+                }
+                try (PreparedStatement transitions = connection.prepareStatement("DELETE FROM order_transition_events WHERE order_id = ?")) {
+                    transitions.setInt(1, orderId);
+                    transitions.executeUpdate();
+                }
+                try (PreparedStatement orders = connection.prepareStatement("DELETE FROM orders WHERE id = ?")) {
+                    orders.setInt(1, orderId);
+                    if (orders.executeUpdate() != 1) {
+                        throw new SQLException("The saved order could not be deleted.");
+                    }
+                }
+                connection.commit();
+            } catch (SQLException exception) {
+                connection.rollback();
+                throw exception;
+            }
+        }
+    }
+
     public List<SavedOrder> loadAll() throws SQLException {
         String orderSql = """
                 SELECT o.id, o.customer_id, gs.id AS store_id, o.delivery_address, o.status,
                        o.subtotal_cents, o.delivery_fee_cents, o.service_fee_cents,
-                       o.small_order_surcharge_cents, o.total_cents, o.fare_version
+                       o.small_order_surcharge_cents, o.total_cents, o.fare_version,
+                       o.courier_id
                 FROM orders o
                 JOIN users u ON u.id = o.groceries_id AND u.role = 'groceries'
                 JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
                     OR upper(u.store_code) = upper(gs.store_code)
-                WHERE o.status IN ('placed', 'preparing', 'ready', 'cancelled', 'delivered')
+                WHERE o.status IN ('placed', 'accepted', 'preparing', 'ready', 'picked up', 'picked_up', 'on_the_way', 'delivered', 'cancelled')
                 ORDER BY o.id
                 """;
         String lineSql = """
@@ -151,12 +215,19 @@ public final class OrderStore {
                 JOIN products p ON p.id = oi.product_id
                 ORDER BY oi.id
                 """;
+        String transitionSql = """
+                SELECT order_id, from_state, to_state, occurred_at, reason
+                FROM order_transition_events
+                ORDER BY order_id, sequence_number
+                """;
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              Statement statement = connection.createStatement();
              ResultSet orders = statement.executeQuery(orderSql)) {
             Map<Integer, SavedOrder> byId = new LinkedHashMap<>();
             while (orders.next()) {
                 int id = orders.getInt("id");
+                orders.getLong("courier_id");
+                Long courierUserId = orders.wasNull() ? null : orders.getLong("courier_id");
                 byId.put(id, new SavedOrder(
                         id,
                         orders.getLong("customer_id"),
@@ -167,6 +238,8 @@ public final class OrderStore {
                                 orders.getLong("service_fee_cents"), orders.getLong("small_order_surcharge_cents"),
                                 orders.getLong("total_cents")),
                         orders.getInt("fare_version"),
+                        courierUserId,
+                        new ArrayList<>(),
                         new ArrayList<>()));
             }
             try (Statement lineStatement = connection.createStatement();
@@ -178,6 +251,18 @@ public final class OrderStore {
                             new Product(Integer.toString(lines.getInt("product_id")), lines.getString("name"), lines.getInt("unit_price_cents") / 100.0),
                             lines.getInt("quantity"),
                             lines.getLong("unit_price_cents")));
+                }
+            }
+            try (Statement transitionStatement = connection.createStatement();
+                 ResultSet transitions = transitionStatement.executeQuery(transitionSql)) {
+                while (transitions.next()) {
+                    SavedOrder order = byId.get(transitions.getInt("order_id"));
+                    if (order == null) continue;
+                    order.transitions().add(TransitionEvent.restore(
+                            transitions.getString("from_state"),
+                            transitions.getString("to_state"),
+                            transitions.getString("occurred_at"),
+                            transitions.getString("reason")));
                 }
             }
             return List.copyOf(byId.values());
@@ -243,6 +328,58 @@ public final class OrderStore {
             return "cancelled";
         }
         return status;
+    }
+
+    private static void insertTransitions(Connection connection, int orderId,
+                                          List<TransitionEvent> transitions) throws SQLException {
+        for (TransitionEvent transition : transitions) {
+            insertTransition(connection, orderId, transition);
+        }
+    }
+
+    private static void insertTransition(Connection connection, int orderId,
+                                         TransitionEvent transition) throws SQLException {
+        int sequence;
+        try (PreparedStatement next = connection.prepareStatement(
+                "SELECT COALESCE(MAX(sequence_number), -1) + 1 FROM order_transition_events WHERE order_id = ?")) {
+            next.setInt(1, orderId);
+            try (ResultSet result = next.executeQuery()) {
+                sequence = result.next() ? result.getInt(1) : 0;
+            }
+        }
+        String sql = """
+                INSERT INTO order_transition_events (
+                    order_id, sequence_number, from_state, to_state, occurred_at, reason
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.setInt(2, sequence);
+            statement.setString(3, transition.getFromState());
+            statement.setString(4, transition.getToState());
+            statement.setString(5, transition.getTimestamp());
+            statement.setString(6, transition.getReason());
+            statement.executeUpdate();
+        }
+    }
+
+    private void ensureTransitionSchema() {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS order_transition_events (
+                        order_id INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
+                        sequence_number INTEGER NOT NULL,
+                        from_state TEXT NOT NULL,
+                        to_state TEXT NOT NULL,
+                        occurred_at TEXT NOT NULL,
+                        reason TEXT,
+                        PRIMARY KEY (order_id, sequence_number)
+                    )
+                    """);
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Order transition history could not be prepared.", exception);
+        }
     }
 
     private void migrateFareColumns() {
@@ -329,6 +466,9 @@ public final class OrderStore {
         if ("cancelled".equals(status)) {
             return "canceled";
         }
+        if ("picked up".equals(status) || "on_the_way".equals(status)) {
+            return "picked_up";
+        }
         return status;
     }
 
@@ -346,7 +486,7 @@ public final class OrderStore {
     }
 
     public record SavedOrder(int id, long customerId, String storeId, String destination, String status, Fare fare,
-                             int fareVersion,
-                             ArrayList<OrderLine> lines) {
+                             int fareVersion, Long courierUserId, ArrayList<OrderLine> lines,
+                             ArrayList<TransitionEvent> transitions) {
     }
 }

@@ -48,6 +48,7 @@ class OrderStoreTest {
         Order order = new Order(groceryStore, "1 Test Street");
         order.addOrderLine(product, 2);
         order.assignFare(new Fare(1500, 400, 120, 250, 2270));
+        order.placeOrder();
 
         int id = store.savePlacedOrder(1, "store-1", order.getDestination(), order);
         OrderStore.SavedOrder saved = store.loadAll().stream()
@@ -57,6 +58,8 @@ class OrderStoreTest {
 
         assertEquals(order.getFare(), saved.fare());
         assertEquals(1, saved.lines().size());
+        assertEquals(1, saved.transitions().size());
+        assertEquals("placed", saved.transitions().get(0).getToState());
         assertStoredFare(database, id);
         assertInvalidTotalRejected(database);
     }
@@ -68,7 +71,7 @@ class OrderStoreTest {
         OrderStore store = new OrderStore(database);
         GroceryStore groceryStore = new GroceryStore("store-1", "Test Store", 0, 0);
         groceryStore.addProduct(new Product("rice", "Rice", 7.50));
-        CityCatalog cityCatalog = new CityCatalog(CitySnapshot.builder(new CityBounds(-1, 1, -1, 1))
+        CityCatalog cityCatalog = new CityCatalog(CitySnapshot.builder(new CityBounds(45.45, 45.56, -73.68, -73.40))
                 .addGroceryStore(groceryStore)
                 .build());
         AccountRepository accounts = new AccountRepository() {
@@ -100,7 +103,7 @@ class OrderStoreTest {
 
         Order placed = controller.placeOrder(
                 new AuthenticatedAccount(1, "Test Customer", "test@example.com", "555-0100", Role.CUSTOMER, null),
-                "store-1", "1 Test Street", Map.of("rice", 2), false);
+                "store-1", "1819 rue baile", Map.of("rice", 2), false);
 
         Fare expected = new Fare(1500, 400, 120, 250, 2270);
         assertEquals(expected, placed.getFare());
