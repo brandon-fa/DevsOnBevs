@@ -95,6 +95,24 @@ export async function loadStoreOrders(signal) {
   return data;
 }
 
+export async function loadOperatorOrders(signal) {
+  const data = await request("/api/operator/orders", "GET", null, signal);
+  if (!data || !Array.isArray(data.orders)) {
+    throw new Error("Orders could not be loaded.");
+  }
+  return data.orders;
+}
+
+export function setStoreOpen(storeId, open) {
+  const action = open ? "open" : "close";
+  return request("/api/operator/stores/" + encodeURIComponent(storeId) + "/" + action, "POST");
+}
+
+// The store's staff pause their own store; only the operator can reopen it.
+export function pauseStore(storeId) {
+  return request("/api/stores/" + encodeURIComponent(storeId) + "/pause", "POST");
+}
+
 export function updateStoreOrder(orderId, action, reason = "") {
   let body = null;
   if (action === "reject") {

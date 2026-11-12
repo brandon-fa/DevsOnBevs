@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { loadStoreOrders, updateStoreOrder } from "./orderApi.js";
 import { formatMoney } from "../../data/mockData.js";
 import { storeFontClass } from "./storeFonts.js";
+import StorePauseControl from "./StorePauseControl.jsx";
 import "./shopping.css";
 import "./store-orders.css";
 
@@ -117,6 +118,15 @@ export default function StoreOrders({ onFeedback }) {
                     {orders?.storeName || "Your grocery store"}
                 </h1>
                 <p>Accept pending orders or reject them with a reason. Prepare accepted orders in queue order.</p>
+                {orders && (
+                    <StorePauseControl
+                        storeId={orders.storeId}
+                        storeName={orders.storeName}
+                        status={orders.status}
+                        onPaused={(status) => setOrders((previous) => ({ ...previous, status }))}
+                        onFeedback={onFeedback}
+                    />
+                )}
             </div>
             {!orders && !loadError && <p role="status">Loading store orders…</p>}
             {orders && (

@@ -14,29 +14,35 @@ public final class CityCatalog {
     private final Set<String> openOffers = new HashSet<>();
 
     public CityCatalog(CitySnapshot snapshot) {
-        if (snapshot == null) {
-            throw new IllegalArgumentException("The city catalog needs a loaded snapshot.");
-        }
-        this.snapshot = snapshot;
+        replace(snapshot);
     }
 
-    public CitySnapshot snapshot() {
+    public synchronized CitySnapshot snapshot() {
         return snapshot;
     }
 
-    public boolean hasOpenOffer(String courierPinId) {
+    /** Reset: swap in a freshly loaded city from the configuration file. */
+    public synchronized void replace(CitySnapshot freshSnapshot) {
+        if (freshSnapshot == null) {
+            throw new IllegalArgumentException("The city catalog needs a loaded snapshot.");
+        }
+        this.snapshot = freshSnapshot;
+        openOffers.clear(); // a reset also forgets pending courier offers
+    }
+
+    public synchronized boolean hasOpenOffer(String courierPinId) {
         return openOffers.contains(courierPinId);
     }
 
-    public void markOpenOffer(String courierPinId) {
+    public synchronized void markOpenOffer(String courierPinId) {
         openOffers.add(courierPinId);
     }
 
-    public void clearOpenOffer(String courierPinId) {
+    public synchronized void clearOpenOffer(String courierPinId) {
         openOffers.remove(courierPinId);
     }
 
-    public void overlayStoredCouriers(List<CourierPin> stored) {
+    public synchronized void overlayStoredCouriers(List<CourierPin> stored) {
         if (stored == null || stored.isEmpty()) {
             return;
         }
@@ -57,11 +63,11 @@ public final class CityCatalog {
         snapshot = new CitySnapshot(snapshot.bounds(), snapshot.groceryStores(), updated, snapshot.customers());
     }
 
-    public void setCourierStatus(String courierPinId, CourierStatus status) {
+    public synchronized void setCourierStatus(String courierPinId, CourierStatus status) {
         replaceCourier(courierPinId, null, null, status);
     }
 
-    public void setCourierLocation(String courierPinId, double lat, double lon) {
+    public synchronized void setCourierLocation(String courierPinId, double lat, double lon) {
         replaceCourier(courierPinId, lat, lon, null);
     }
 

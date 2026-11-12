@@ -7,7 +7,7 @@ import { saveAccount } from "../reg/accountSession.js";
 import SiteHeader from "../dash/SiteHeader.jsx";
 import useSessionAccount from "../dash/useSessionAccount.js";
 import { appendConsoleMessage } from "../dash/consoleFeed.js";
-import { placeOrder } from "./orderApi.js";
+import { loadStores, placeOrder } from "./orderApi.js";
 import OrderPlacedAnimation from "./OrderPlacedAnimation.jsx";
 import { useCart } from "./cartContext.js";
 import { storeFontClass } from "./storeFonts.js";
@@ -28,6 +28,7 @@ export default function CartPage() {
   const [orderError, setOrderError] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState(null);
   const [askDefault, setAskDefault] = useState(false);
+  const [liveStores, setLiveStores] = useState({});
 
   useEffect(() => {
     if (!notice) return undefined;
@@ -40,6 +41,31 @@ export default function CartPage() {
     const timer = window.setTimeout(() => setSuccess(""), 5000);
     return () => window.clearTimeout(timer);
   }, [success]);
+
+  // R-DASH-04: use each store's live status
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer;
+    async function load() {
+      try {
+        const stores = await loadStores(controller.signal);
+        const byId = {};
+        stores.forEach((store) => {
+          byId[store.id] = store;
+        });
+        setLiveStores(byId);
+      } catch {
+        // Keep the last known statuses; the server still refuses orders at a store that is not open.
+      } finally {
+        if (!controller.signal.aborted) timer = window.setTimeout(load, 5000);
+      }
+    }
+    load();
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   if (loading) {
     return <main className="dash-main" aria-live="polite">Loading your cart…</main>;
@@ -78,6 +104,12 @@ export default function CartPage() {
     updateBasket(storeId, (lines) => lines.filter((line) => line.id !== productId));
   }
 
+  function basketStatus(basket) {
+    const live = liveStores[basket.id];
+    if (live) return live.status || (live.open ? "open" : "closed");
+    return basket.open ? "open" : "closed";
+  }
+
   function beginOrder(basket) {
     if (basket.lines.length === 0) {
       const message = "Your cart is empty. Add a product before placing your order.";
@@ -85,8 +117,9 @@ export default function CartPage() {
       appendConsoleMessage(message, "error");
       return;
     }
-    if (!basket.open) {
-      const message = `${basket.name} is closed. Choose an open grocery store to place your order.`;
+    const status = basketStatus(basket);
+    if (status !== "open") {
+      const message = `${basket.name} is ${status}. Choose an open grocery store to place your order.`;
       setNotice(message);
       appendConsoleMessage(message, "error");
       return;
@@ -180,7 +213,7 @@ export default function CartPage() {
                 <button
                   key={basket.id}
                   type="button"
-                  className={`store-chip ${storeFontClass(basket.id)} ${basket.open ? "is-open" : "is-closed"} ${basket.id === visibleId ? "is-selected" : ""}`}
+                  className={`store-chip ${storeFontClass(basket.id)} ${basketStatus(basket) === "open" ? "is-open" : "is-closed"} ${basket.id === visibleId ? "is-selected" : ""}`}
                   aria-pressed={basket.id === visibleId}
                   onClick={() => setSelectedStoreId(basket.id)}
                 >
@@ -231,12 +264,15 @@ export default function CartPage() {
               </p>
               {orderingId !== visibleBasket.id && (
                 <div className="cart-actions">
-                  <button type="button" className="button-primary cart-place" onClick={() => beginOrder(visibleBasket)} disabled={submitting}>
+                  <button type="button" className="button-primary cart-place" onClick={() => beginOrder(visibleBasket)} disabled={submitting || basketStatus(visibleBasket) !== "open"}>
                     Place {visibleBasket.name} order
                   </button>
+                  {basketStatus(visibleBasket) !== "open" && (
+                    <p className="field-error">{visibleBasket.name} is {basketStatus(visibleBasket)}. You can't place this order right now.</p>
+                  )}
                 </div>
               )}
-              {orderingId === visibleBasket.id && (
+              {orderingId === visibleBasket.id && basketStatus(visibleBasket) === "open" && (
                 <form
                   className="cart-address"
                   onSubmit={(event) => {

@@ -84,6 +84,11 @@ export default function SiteHeader({ account }) {
                     Track order
                   </button>
                 )}
+                {account.role === "operator" && (
+                  <button className="account-menu-item" type="button" role="menuitem" onClick={() => go(`${home}/completed-orders`)}>
+                    Completed orders
+                  </button>
+                )}
                 <button className="account-menu-item" type="button" role="menuitem" onClick={() => go(`${home}/account`)}>
                   Manage account
                 </button>

@@ -7,7 +7,6 @@ import "../ord/store-orders.css";
 const VIEW_LABELS = {
   groceries: "Groceries View",
   courier: "Courier View",
-  operator: "Operator View",
 };
 
 export default function RoleDashboardView({ role, onFeedback }) {

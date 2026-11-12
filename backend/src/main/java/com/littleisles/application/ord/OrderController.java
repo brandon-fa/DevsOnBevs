@@ -10,6 +10,7 @@ import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
 import com.littleisles.domain.ord.Product;
+import com.littleisles.domain.ord.StoreStatus;
 import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.CustomerAccount;
@@ -64,14 +65,11 @@ public final class OrderController {
         // Resolve coordinates up front so the map pin matches the typed street address.
         AddressLocator.locate(destination.trim(), cityCatalog.snapshot().bounds());
         GroceryStore store = findStore(storeId);
+        if (store.isPaused()) {
+            throw new IllegalStateException("This grocery store is paused and is not taking new orders.");
+        }
         if (!store.isOpen()) {
             throw new IllegalStateException("This grocery store is closed.");
-        }
-        for (Order existing : customer.getOrders()) {
-            if (Order.isCurrent(existing.getStatus()) && store.getId().equals(existing.getStore().getId())) {
-                throw new IllegalStateException(
-                        "You already have an open order at " + store.getName() + ". Finish or cancel it before ordering again there.");
-            }
         }
 
         List<OrderLine> validatedLines = new ArrayList<>();
@@ -240,7 +238,7 @@ public final class OrderController {
         return accountRepository.listCouriers();
     }
 
-    public synchronized List<Order> operatorOrders(AuthenticatedAccount account) throws SQLException {
+    public synchronized List<Order> operatorCourierOrders(AuthenticatedAccount account) throws SQLException {
         requireOperator(account);
         List<Order> orders = new ArrayList<>();
         for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
@@ -729,6 +727,65 @@ public final class OrderController {
         // Drop the persisted row instead of leaving a cancelled status behind.
         orderStore.delete(order.getOrderId());
         return store;
+    }
+
+    public List<OrderStore.OperatorOrder> operatorOrders() throws SQLException {
+        return orderStore.loadOperatorOrders();
+    }
+
+    /** Changes the live city only; a reset or restart returns the store to its configured status. */
+    public synchronized GroceryStore setStoreStatus(String storeId, StoreStatus status) {
+        GroceryStore store = findStore(storeId);
+        store.setStatus(status);
+        return store;
+    }
+
+    /** Reset: deletes every saved order and swaps in a freshly loaded city. */
+    public synchronized void reset(CitySnapshot freshCity) throws SQLException {
+        orderStore.deleteAllOrders();
+        cityCatalog.replace(freshCity);
+        deliveries.clear();
+        // DLV keeps courier status and position in the database; put them back to the initial city.
+        for (CourierPin courier : freshCity.couriers()) {
+            Long userId = accountRepository.courierUserId(courier.id());
+            if (userId == null) continue;
+            accountRepository.updateCourierStatus(userId, courier.status().label());
+            accountRepository.updateCourierLocation(userId, courier.lat(), courier.lon());
+        }
+        customers.clear();
+        savedOrdersByCustomer.clear();
+        // Groceries accounts still point at the old stores; move each one to its matching new store.
+        for (GroceriesAccount groceries : groceriesAccounts.values()) {
+            groceries.setStore(findStore(groceries.getStore().getId()));
+        }
+    }
+
+    /** Pause a store: its own groceries account, or the operator for any store (R-DASH-01). */
+    public synchronized GroceryStore pauseStore(AuthenticatedAccount account, String storeId) {
+        GroceryStore store = storeAllowedToPause(account, storeId);
+        store.pause();
+        return store;
+    }
+
+    /** Reopen a paused store (the dispatcher already checked that this is the operator). */
+    public synchronized GroceryStore reopenStore(String storeId) {
+        GroceryStore store = findStore(storeId);
+        store.reopen();
+        return store;
+    }
+
+    private GroceryStore storeAllowedToPause(AuthenticatedAccount account, String storeId) {
+        if (account != null && account.role() == Role.OPERATOR) {
+            return findStore(storeId);
+        }
+        if (account == null || account.role() != Role.GROCERIES) {
+            throw new SecurityException("Only the store's staff or the operator can pause a grocery store.");
+        }
+        GroceryStore ownStore = storeFor(account); // refuses anyone who is not a groceries account
+        if (!ownStore.getId().equals(storeId)) {
+            throw new SecurityException("You can only pause your own grocery store.");
+        }
+        return ownStore;
     }
 
     private GroceryStore findStore(String storeId) {

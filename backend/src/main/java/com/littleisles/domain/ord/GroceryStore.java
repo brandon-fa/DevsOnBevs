@@ -14,7 +14,7 @@ public class GroceryStore {
     private String location;
     private double lat;
     private double lon;
-    private boolean isOpen = true;
+    private StoreStatus status = StoreStatus.OPEN;
     private final ArrayList<Product> products = new ArrayList<>();
 
     public GroceryStore(String name, String location) {
@@ -135,6 +135,16 @@ public class GroceryStore {
         return preparationQueue;
     }
 
+    /** R-DASH-03: number of accepted orders waiting in the preparation queue. */
+    public int getQueuedOrderCount() {
+        return preparationQueue.getOrders().size();
+    }
+
+    /** R-DASH-03: the colour band of this store's queue. */
+    public QueueBand getQueueBand() {
+        return QueueBand.of(getQueuedOrderCount(), isPaused());
+    }
+
     public String getLocation() {
         return location;
     }
@@ -143,12 +153,38 @@ public class GroceryStore {
         this.location = location;
     }
 
+        /** R-ORD-02: only an open store accepts new orders. */
     public boolean isOpen() {
-        return isOpen;
+        return status == StoreStatus.OPEN;
     }
 
-    public void setOpen(boolean open) {
-        isOpen = open;
+    public boolean isPaused() {
+        return status == StoreStatus.PAUSED;
+    }
+
+    public StoreStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(StoreStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("A grocery store needs a status.");
+        }
+        this.status = status;
+    }
+    /** Pause: stop taking new orders but keep preparing the accepted ones (R-ORD-02). */
+    public void pause() {
+        if (status != StoreStatus.OPEN) {
+            throw new IllegalStateException("Only an open grocery store can be paused.");
+        }
+        status = StoreStatus.PAUSED;
+    }
+    /** Reopen: a paused store takes new orders again. */
+    public void reopen() {
+        if (status != StoreStatus.PAUSED) {
+            throw new IllegalStateException("Only a paused grocery store can be reopened.");
+        }
+        status = StoreStatus.OPEN;
     }
 
      public int getStoreId() {
