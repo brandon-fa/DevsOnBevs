@@ -152,6 +152,20 @@
   outline-offset: 3px;
 }
 
+.passcode-toast {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 50;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-control);
+  background: #b42318;
+  color: var(--color-cream);
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
+}
+
 @media (max-width: 800px) {
   .create-page {
     grid-template-columns: 1fr;

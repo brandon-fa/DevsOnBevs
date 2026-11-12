@@ -42,7 +42,7 @@ export default function Dashboard() {
   } else if (account.role === "operator") {
     view = <OperatorDashboard onFeedback={addFeedback} />;
   } else {
-    view = <RoleDashboardView role={account.role} />;
+    view = <RoleDashboardView role={account.role} onFeedback={addFeedback} />;
   }
 
   return (
@@ -50,17 +50,8 @@ export default function Dashboard() {
       <a className="skip-link" href="#main">Skip to content</a>
       <SiteHeader account={account} />
       <main id="main" className="dash-main">
-        {account.role === "customer" ? (
-          <>
-            {view}
-            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
-          </>
-        ) : (
-          <>
-            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
-            {view}
-          </>
-        )}
+        {view}
+        <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
       </main>
     </div>
   );

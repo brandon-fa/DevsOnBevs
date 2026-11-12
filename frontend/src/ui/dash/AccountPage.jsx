@@ -126,7 +126,9 @@ function AccountForm({ account, onUpdated }) {
       <p className="lede">
         {account.role === "customer"
           ? "Update your phone number, default address, or password. A default address is optional."
-          : "Update your phone number or password. Your role stays the same."}
+          : account.role === "groceries"
+            ? "Update your phone number or password. Your store code and address stay the same."
+            : "Update your phone number or password. Your role stays the same."}
       </p>
       <div className="account-layout">
       <dl className="account-facts">
@@ -142,6 +144,18 @@ function AccountForm({ account, onUpdated }) {
           <dt>Role</dt>
           <dd>{ROLE_LABELS[account.role]}</dd>
         </div>
+        {account.role === "groceries" && (
+          <>
+            <div>
+              <dt>Store code</dt>
+              <dd>{account.storeCode || "—"}</dd>
+            </div>
+            <div>
+              <dt>Address</dt>
+              <dd>{account.storeAddress || "—"}</dd>
+            </div>
+          </>
+        )}
       </dl>
       <form className="account-form" onSubmit={onSubmit}>
         <label className="field" htmlFor="account-phone">

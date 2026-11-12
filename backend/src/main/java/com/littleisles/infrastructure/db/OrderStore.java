@@ -97,6 +97,18 @@ public final class OrderStore {
         }
     }
 
+    public void assignCourier(int orderId, long courierUserId) throws SQLException {
+        String sql = "UPDATE orders SET courier_id = ? WHERE id = ?";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, courierUserId);
+            statement.setInt(2, orderId);
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("The courier could not be saved on the order.");
+            }
+        }
+    }
+
     public void updateStatus(int orderId, String status) throws SQLException {
         String sql = "UPDATE orders SET status = ? WHERE id = ?";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
@@ -120,14 +132,39 @@ public final class OrderStore {
         }
     }
 
+    public void delete(int orderId) throws SQLException {
+        if (orderId <= 0) {
+            throw new IllegalArgumentException("A saved order needs a positive id.");
+        }
+        try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement items = connection.prepareStatement("DELETE FROM order_items WHERE order_id = ?")) {
+                    items.setInt(1, orderId);
+                    items.executeUpdate();
+                }
+                try (PreparedStatement orders = connection.prepareStatement("DELETE FROM orders WHERE id = ?")) {
+                    orders.setInt(1, orderId);
+                    if (orders.executeUpdate() != 1) {
+                        throw new SQLException("The saved order could not be deleted.");
+                    }
+                }
+                connection.commit();
+            } catch (SQLException exception) {
+                connection.rollback();
+                throw exception;
+            }
+        }
+    }
+
     public List<SavedOrder> loadAll() throws SQLException {
         String orderSql = """
-                SELECT o.id, o.customer_id, gs.id AS store_id, o.delivery_address, o.status
+                SELECT o.id, o.customer_id, gs.id AS store_id, o.delivery_address, o.status, o.courier_id
                 FROM orders o
                 JOIN users u ON u.id = o.groceries_id AND u.role = 'groceries'
                 JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
                     OR upper(u.store_code) = upper(gs.store_code)
-                WHERE o.status IN ('placed', 'preparing', 'ready', 'cancelled')
+                WHERE o.status IN ('placed', 'accepted', 'preparing', 'ready', 'picked up', 'picked_up', 'on_the_way', 'delivered', 'cancelled')
                 ORDER BY o.id
                 """;
         String lineSql = """
@@ -142,12 +179,15 @@ public final class OrderStore {
             Map<Integer, SavedOrder> byId = new LinkedHashMap<>();
             while (orders.next()) {
                 int id = orders.getInt("id");
+                orders.getLong("courier_id");
+                Long courierUserId = orders.wasNull() ? null : orders.getLong("courier_id");
                 byId.put(id, new SavedOrder(
                         id,
                         orders.getLong("customer_id"),
                         orders.getString("store_id"),
                         orders.getString("delivery_address"),
                         domainStatus(orders.getString("status")),
+                        courierUserId,
                         new ArrayList<>()));
             }
             try (Statement lineStatement = connection.createStatement();
@@ -259,12 +299,18 @@ public final class OrderStore {
         if ("canceled".equals(status)) {
             return "cancelled";
         }
+        if ("picked_up".equals(status)) {
+            return "picked up";
+        }
         return status;
     }
 
     private static String domainStatus(String status) {
         if ("cancelled".equals(status)) {
             return "canceled";
+        }
+        if ("picked up".equals(status) || "on_the_way".equals(status)) {
+            return "picked_up";
         }
         return status;
     }
@@ -283,7 +329,7 @@ public final class OrderStore {
     }
 
     public record SavedOrder(int id, long customerId, String storeId, String destination, String status,
-                             ArrayList<OrderLine> lines) {
+                             Long courierUserId, ArrayList<OrderLine> lines) {
     }
 
     /** {@code createdAt} is UTC in ISO-8601; {@code courier} is null until one is assigned. */

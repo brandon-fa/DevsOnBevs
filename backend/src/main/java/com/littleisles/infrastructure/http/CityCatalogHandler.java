@@ -1,6 +1,6 @@
 package com.littleisles.infrastructure.http;
 
-import com.littleisles.application.ord.CityCatalog;
+import com.littleisles.application.dash.CommandDispatcher;
 import com.littleisles.application.reg.AuthController;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.sun.net.httpserver.HttpExchange;
@@ -9,14 +9,15 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 
 public final class CityCatalogHandler {
     private final AuthController authController;
-    private final CityCatalog cityCatalog;
+    private final CommandDispatcher dispatcher;
 
-    public CityCatalogHandler(AuthController authController, CityCatalog cityCatalog) {
+    public CityCatalogHandler(AuthController authController, CommandDispatcher dispatcher) {
         this.authController = authController;
-        this.cityCatalog = cityCatalog;
+        this.dispatcher = dispatcher;
     }
 
     public void bind(HttpServer server) {
@@ -37,7 +38,18 @@ public final class CityCatalogHandler {
             send(exchange, 401, "{\"error\":\"Log in to continue.\"}");
             return;
         }
-        send(exchange, 200, cityCatalog.snapshot().toJson());
+        try {
+            send(exchange, 200, dispatcher.cityJson(account));
+        } catch (SecurityException exception) {
+            send(exchange, 403, "{\"error\":\"" + escape(exception.getMessage()) + "\"}");
+        } catch (SQLException exception) {
+            send(exchange, 500, "{\"error\":\"The city could not be loaded.\"}");
+        }
+    }
+
+    private static String escape(String message) {
+        if (message == null) return "Access denied.";
+        return message.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private static String sessionCookie(HttpExchange exchange) {

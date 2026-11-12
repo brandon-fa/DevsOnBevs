@@ -1,6 +1,8 @@
 package com.littleisles.application.dash;
 
 import com.littleisles.application.ord.OrderController;
+import com.littleisles.domain.ord.CourierRosterEntry;
+import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.StoreStatus;
@@ -75,6 +77,46 @@ public final class CommandDispatcher {
         return orderController.reopenStore(storeId);
     }
     
+    public List<Order> courierOffers(AuthenticatedAccount account) throws SQLException {
+        return orderController.courierOffers(account);
+    }
+
+    public CourierStatus courierStatus(AuthenticatedAccount account) throws SQLException {
+        return orderController.courierStatus(account);
+    }
+
+    public CourierStatus setCourierOnline(AuthenticatedAccount account, boolean online) throws SQLException {
+        return orderController.setCourierOnline(account, online);
+    }
+
+    public void acceptCourierOffer(AuthenticatedAccount account, int orderId) throws SQLException {
+        orderController.acceptCourierOffer(account, orderId);
+    }
+
+    public void pickupCourierOrder(AuthenticatedAccount account, int orderId) throws SQLException {
+        orderController.pickupCourierOrder(account, orderId);
+    }
+
+    public void deliverCourierOrder(AuthenticatedAccount account, int orderId) throws SQLException {
+        orderController.deliverCourierOrder(account, orderId);
+    }
+
+    public String cityJson(AuthenticatedAccount account) throws SQLException {
+        return orderController.cityJson(account);
+    }
+
+    public List<CourierRosterEntry> operatorCouriers(AuthenticatedAccount account) throws SQLException {
+        return orderController.operatorCouriers(account);
+    }
+
+    public List<Order> operatorCourierOrders(AuthenticatedAccount account) throws SQLException {
+        return orderController.operatorCourierOrders(account);
+    }
+
+    public void reassignAcceptedOrder(AuthenticatedAccount account, int orderId, long courierUserId) throws SQLException {
+        orderController.reassignAcceptedOrder(account, orderId, courierUserId);
+    }
+
     private static void requireCustomer(AuthenticatedAccount account) {
         if (account == null || account.role() != Role.CUSTOMER) {
             throw new SecurityException("Only customers can place or view their orders.");

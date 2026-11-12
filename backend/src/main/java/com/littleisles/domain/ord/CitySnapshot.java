@@ -117,6 +117,7 @@ public record CitySnapshot(
         for (CourierPin courier : couriers) {
             JsonObject courierJson = new JsonObject();
             courierJson.addProperty("id", courier.id());
+            courierJson.addProperty("name", courier.name());
             courierJson.addProperty("lat", courier.lat());
             courierJson.addProperty("lon", courier.lon());
             courierJson.addProperty("status", courier.status().label());
@@ -131,6 +132,16 @@ public record CitySnapshot(
             customerJson.addProperty("name", customer.name());
             customerJson.addProperty("lat", customer.lat());
             customerJson.addProperty("lon", customer.lon());
+            customerJson.addProperty("address", customer.address() == null ? "" : customer.address());
+            JsonArray ordersJson = new JsonArray();
+            for (CustomerPin.CustomerOrderRef order : customer.orders()) {
+                JsonObject orderJson = new JsonObject();
+                orderJson.addProperty("orderId", order.orderId());
+                orderJson.addProperty("status", order.status());
+                orderJson.addProperty("storeName", order.storeName());
+                ordersJson.add(orderJson);
+            }
+            customerJson.add("orders", ordersJson);
             customersJson.add(customerJson);
         }
         city.add("customers", customersJson);
