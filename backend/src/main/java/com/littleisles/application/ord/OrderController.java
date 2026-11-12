@@ -15,6 +15,8 @@ import com.littleisles.domain.prc.Fare;
 import com.littleisles.domain.prc.PricingFacts;
 import com.littleisles.application.prc.PricingService;
 import com.littleisles.application.prc.LedgerService;
+import com.littleisles.application.prc.OrderHistoryRecord;
+import com.littleisles.domain.prc.LedgerEntry;
 import com.littleisles.domain.prc.StandardPricingStrategy;
 import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.AuthenticatedAccount;
@@ -30,6 +32,7 @@ import com.littleisles.technicalservices.reg.AccountRepository;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -143,6 +146,54 @@ public final class OrderController {
     public synchronized List<Order> customerOrders(AuthenticatedAccount account) throws SQLException {
         CustomerAccount customer = customerFor(account);
         return List.copyOf(customer.getOrders());
+    }
+
+    public synchronized List<OrderHistoryRecord> orderHistory(AuthenticatedAccount account) throws SQLException {
+        if (account == null || account.role() == null) {
+            throw new SecurityException("Log in to view order history.");
+        }
+        String linkedStoreId = account.role() == Role.GROCERIES
+                ? accountRepository.linkedStoreId(account.id())
+                : null;
+        Map<Long, OrderStore.SavedOrder> ordersById = new HashMap<>();
+        for (OrderStore.SavedOrder order : orderStore.loadAll()) {
+            ordersById.put((long) order.id(), order);
+        }
+        return ledgerService.entries().stream()
+                .map(entry -> historyRecord(account, linkedStoreId, ordersById, entry))
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(OrderHistoryRecord::recordedAt).reversed())
+                .toList();
+    }
+
+    private OrderHistoryRecord historyRecord(AuthenticatedAccount account, String linkedStoreId,
+                                             Map<Long, OrderStore.SavedOrder> ordersById,
+                                             LedgerEntry entry) {
+        OrderStore.SavedOrder order = ordersById.get(entry.orderId());
+        if (order == null || !canViewHistory(account, linkedStoreId, order)) {
+            return null;
+        }
+        String storeName = cityCatalog.snapshot().groceryStores().stream()
+                .filter(store -> store.getId().equals(order.storeId()))
+                .map(GroceryStore::getName)
+                .findFirst()
+                .orElse(order.storeId());
+        List<OrderHistoryRecord.HistoryTimestamp> timestamps = entry.timestamps().stream()
+                .map(timestamp -> new OrderHistoryRecord.HistoryTimestamp(
+                        timestamp.state(), timestamp.occurredAt().toString()))
+                .toList();
+        return new OrderHistoryRecord(entry.entryId(), entry.orderId(), order.storeId(), storeName,
+                entry.entryType(), entry.finalState(), timestamps, entry.amountCents(), entry.recordedAt().toString());
+    }
+
+    private static boolean canViewHistory(AuthenticatedAccount account, String linkedStoreId,
+                                          OrderStore.SavedOrder order) {
+        return switch (account.role()) {
+            case CUSTOMER -> order.customerId() == account.id();
+            case GROCERIES -> linkedStoreId != null && linkedStoreId.equalsIgnoreCase(order.storeId());
+            case COURIER -> order.courierUserId() != null && order.courierUserId() == account.id();
+            case OPERATOR -> true;
+        };
     }
 
     public synchronized void associateGroceriesAccount(String email, String storeId) throws SQLException {

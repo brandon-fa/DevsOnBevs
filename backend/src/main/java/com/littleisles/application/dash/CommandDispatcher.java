@@ -1,6 +1,7 @@
 package com.littleisles.application.dash;
 
 import com.littleisles.application.ord.OrderController;
+import com.littleisles.application.prc.OrderHistoryRecord;
 import com.littleisles.domain.ord.CourierRosterEntry;
 import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.Order;
@@ -28,6 +29,10 @@ public final class CommandDispatcher {
     public List<Order> customerOrders(AuthenticatedAccount account) throws SQLException {
         requireCustomer(account);
         return orderController.customerOrders(account);
+    }
+
+    public List<OrderHistoryRecord> orderHistory(AuthenticatedAccount account) throws SQLException {
+        return orderController.orderHistory(account);
     }
 
     public GroceryStore acceptPendingOrder(AuthenticatedAccount account, int orderId) throws SQLException {

@@ -37,11 +37,43 @@ public final class OrderHandler {
     }
 
     public void bind(HttpServer server) {
+        server.createContext("/api/history", this::handleOrderHistory);
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
         server.createContext("/api/courier/orders", this::handleCourierOrders);
         server.createContext("/api/courier/status", this::handleCourierStatus);
         server.createContext("/api/operator/couriers", this::handleOperatorCouriers);
+    }
+
+    private void handleOrderHistory(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestURI().getPath().equals("/api/history")) {
+            sendError(exchange, 404, "The order history endpoint does not exist.");
+            return;
+        }
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "GET, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("GET")) {
+            sendError(exchange, 405, "Use GET to view order history.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            JsonObject response = new JsonObject();
+            response.add("entries", JSON.toJsonTree(dispatcher.orderHistory(account)));
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "Order history could not be loaded. Please try again.");
+        }
     }
 
     private void handleCustomerOrders(HttpExchange exchange) throws IOException {
