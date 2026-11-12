@@ -119,6 +119,10 @@ export function pauseStore(storeId) {
   return request("/api/stores/" + encodeURIComponent(storeId) + "/pause", "POST");
 }
 
+export function refundOrder(orderId) {
+  return request("/api/operator/orders/" + orderId + "/refund", "POST");
+}
+
 export function updateStoreOrder(orderId, action, reason = "") {
   let body = null;
   if (action === "reject") {

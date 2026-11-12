@@ -37,5 +37,12 @@ export default function useOperatorStores(onFeedback) {
     setStores((current) => current.map((store) => (store.id === storeId ? { ...store, ...changes } : store)));
   }
 
-  return { stores, error, updateStore };
+  function updateOrder(orderId, changes) {
+    setStores((current) => current.map((store) => ({
+      ...store,
+      orders: store.orders.map((order) => (order.orderId === orderId ? { ...order, ...changes } : order)),
+    })));
+  }
+
+  return { stores, error, updateStore, updateOrder };
 }

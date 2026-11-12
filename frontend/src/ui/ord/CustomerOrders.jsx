@@ -13,6 +13,7 @@ const STATUS_LABELS = {
   picked_up: "Picked up",
   canceled: "Canceled",
   delivered: "Delivered",
+  refunded: "Refunded",
 };
 const STEPS = [
   { status: "placed", label: "Placed" },

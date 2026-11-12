@@ -18,6 +18,7 @@ public class Order {
     private Long offeredCourierUserId;
     private boolean courierAccepted;
     private Long customerUserId;
+    private boolean refunded;
     //private double tip;
 
     public Order(GroceryStore store, String destination) {
@@ -63,6 +64,16 @@ public class Order {
 
     void setRejectionReason(String reason) {
         rejectionReason = reason;
+    }
+
+    public boolean isRefunded() {
+        return refunded;
+    }
+
+    /** Flags the order as refunded and adds the refund to the history the customer sees. */
+    public void refund() {
+        refunded = true;
+        addTransitionEvent(new TransitionEvent("delivered", "refunded"));
     }
 
     public void acceptOrder() {

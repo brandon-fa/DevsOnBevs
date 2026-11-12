@@ -45,7 +45,8 @@ CREATE TABLE orders (
     small_order_surcharge_cents INTEGER NOT NULL DEFAULT 0 CHECK (small_order_surcharge_cents >= 0),
     total_cents INTEGER NOT NULL CHECK (total_cents = subtotal_cents + delivery_fee_cents + service_fee_cents + small_order_surcharge_cents),
     fare_version INTEGER NOT NULL DEFAULT 1 CHECK (fare_version >= 0),
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    refunded INTEGER NOT NULL DEFAULT 0 CHECK (refunded IN (0, 1))
 );
 
 CREATE TABLE order_items (
