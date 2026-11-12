@@ -8,7 +8,11 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     phone TEXT NOT NULL,
     store_code TEXT,
+    courier_pin TEXT,
+    courier_status TEXT,
     default_address TEXT,
+    latitude REAL,
+    longitude REAL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -33,7 +37,7 @@ CREATE TABLE orders (
     customer_id INTEGER NOT NULL REFERENCES users (id),
     groceries_id INTEGER NOT NULL REFERENCES users (id),
     courier_id INTEGER REFERENCES users (id),
-    status TEXT NOT NULL CHECK (status IN ('placed', 'accepted', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled')),
+    status TEXT NOT NULL CHECK (status IN ('placed', 'accepted', 'preparing', 'ready', 'picked up', 'picked_up', 'on_the_way', 'delivered', 'cancelled')),
     delivery_address TEXT NOT NULL,
     subtotal_cents INTEGER NOT NULL CHECK (subtotal_cents >= 0),
     delivery_fee_cents INTEGER NOT NULL CHECK (delivery_fee_cents >= 0),
@@ -50,6 +54,16 @@ CREATE TABLE order_items (
     product_id INTEGER NOT NULL REFERENCES products (id),
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0)
+);
+
+CREATE TABLE order_transition_events (
+    order_id INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
+    sequence_number INTEGER NOT NULL,
+    from_state TEXT NOT NULL,
+    to_state TEXT NOT NULL,
+    occurred_at TEXT NOT NULL,
+    reason TEXT,
+    PRIMARY KEY (order_id, sequence_number)
 );
 
 CREATE TABLE ledger_entries (

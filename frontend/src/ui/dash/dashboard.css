@@ -307,6 +307,110 @@
   margin-bottom: 0;
 }
 
+.order-history-heading {
+  margin-bottom: 0.5rem;
+}
+
+.order-history-heading .section-kicker {
+  margin-bottom: 0.45rem;
+}
+
+.order-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  counter-reset: history-entry;
+}
+
+.order-history-card,
+.order-history-empty {
+  padding: 1.15rem;
+  border: 1px solid var(--color-linen);
+  border-radius: var(--radius-outer);
+  background: var(--color-cream);
+  box-shadow: var(--shadow-card);
+}
+
+.order-history-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.order-history-summary h2 {
+  margin-top: 0.35rem;
+}
+
+.order-history-state {
+  margin-top: 0.45rem;
+  color: var(--color-brown-muted, var(--color-taupe));
+}
+
+.order-history-charge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  text-align: right;
+}
+
+.order-history-charge strong {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-history-charge time,
+.order-history-timeline time {
+  color: var(--color-taupe);
+  font-size: var(--text-caption);
+}
+
+.order-history-timeline {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-linen);
+}
+
+.order-history-timeline summary {
+  width: fit-content;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.order-history-timeline ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.order-history-timeline li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.order-history-empty h2 {
+  margin-bottom: 0.45rem;
+}
+
+@media (max-width: 600px) {
+  .order-history-summary {
+    flex-direction: column;
+  }
+
+  .order-history-charge {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .order-history-timeline li {
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+}
+
 .dash-intro .lede {
   max-width: 42rem;
   margin-top: 0.6rem;

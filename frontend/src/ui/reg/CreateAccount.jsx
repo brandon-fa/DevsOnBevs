@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { ROLE_LABELS, ROLES, accountIssues, dashboardPathForRole, factoryFor } from "./accountFactory.js";
+import {
+  ROLE_LABELS,
+  ROLES,
+  accountIssues,
+  dashboardPathForRole,
+  factoryFor,
+  isValidOperatorPasscode,
+} from "./accountFactory.js";
 import { saveAccount } from "./accountSession.js";
 import "./create-account.css";
 
@@ -12,23 +20,40 @@ const EMPTY_FORM = {
   role: "",
   storeCode: "",
   defaultAddress: "",
+  operatorPasscode: "",
 };
+
+const WRONG_OPERATOR_PASSCODE = "wrong passcode, try again";
 
 export default function CreateAccount() {
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  const [passcodeNotice, setPasscodeNotice] = useState(null);
 
   useEffect(() => {
     document.title = "Create account · Little Isles";
   }, []);
+
+  useEffect(() => {
+    if (!passcodeNotice) return undefined;
+    const timer = window.setTimeout(() => setPasscodeNotice(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [passcodeNotice]);
 
   function update(key) {
     return (event) => {
       const value = event.target.value;
       setForm((current) => ({ ...current, [key]: value }));
       setErrors((current) => ({ ...current, [key]: undefined, form: undefined }));
+      if (key === "operatorPasscode" || key === "role") setPasscodeNotice(null);
     };
+  }
+
+  function showWrongPasscode() {
+    setForm((current) => ({ ...current, operatorPasscode: "" }));
+    setPasscodeNotice({ id: Date.now(), text: WRONG_OPERATOR_PASSCODE });
+    setErrors((current) => ({ ...current, operatorPasscode: WRONG_OPERATOR_PASSCODE }));
   }
 
   async function handleSubmit(event) {
@@ -38,6 +63,11 @@ export default function CreateAccount() {
 
     if (Object.values(issues).some(Boolean)) {
       setErrors(issues);
+      return;
+    }
+
+    if (form.role === "operator" && !isValidOperatorPasscode(form.operatorPasscode)) {
+      showWrongPasscode();
       return;
     }
 
@@ -54,10 +84,15 @@ export default function CreateAccount() {
           role: form.role,
           storeCode: form.role === "groceries" ? form.storeCode.trim() : "",
           defaultAddress: form.role === "customer" ? form.defaultAddress.trim() : "",
+          operatorPasscode: form.role === "operator" ? form.operatorPasscode.trim() : "",
         }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (form.role === "operator" && payload.error === WRONG_OPERATOR_PASSCODE) {
+          showWrongPasscode();
+          return;
+        }
         setErrors({ form: payload.error || "The account could not be saved." });
         return;
       }
@@ -265,6 +300,33 @@ export default function CreateAccount() {
                 </label>
               )}
 
+              {form.role === "operator" && (
+                <label className="field">
+                  <span>Authentication passcode</span>
+                  <input
+                    id="operator-passcode"
+                    name="operatorPasscode"
+                    type="password"
+                    autoComplete="off"
+                    spellCheck="false"
+                    value={form.operatorPasscode}
+                    onChange={update("operatorPasscode")}
+                    aria-invalid={errors.operatorPasscode ? "true" : "false"}
+                    aria-describedby={
+                      errors.operatorPasscode ? "operator-passcode-error" : "operator-passcode-hint"
+                    }
+                  />
+                  <span className="field-hint" id="operator-passcode-hint">
+                    Required to create an operator account.
+                  </span>
+                  {errors.operatorPasscode && (
+                    <span id="operator-passcode-error" className="field-error">
+                      {errors.operatorPasscode}
+                    </span>
+                  )}
+                </label>
+              )}
+
               <button className="button-primary" type="submit">
                 Create account
               </button>
@@ -272,6 +334,12 @@ export default function CreateAccount() {
           </div>
         </section>
       </main>
+      {passcodeNotice && createPortal(
+        <p key={passcodeNotice.id} className="passcode-toast" role="alert">
+          {passcodeNotice.text}
+        </p>,
+        document.body,
+      )}
     </>
   );
 }

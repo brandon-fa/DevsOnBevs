@@ -35,7 +35,8 @@ public class ReadyOrderState extends OrderState {
     }
 
     public void pickupOrder(){
-        //To be implemented in next phase
+        order.setState(new TransitOrderState(order));
+        order.addTransitionEvent(new TransitionEvent("ready", "picked_up"));
     }
 
     public void handoffOrder(){

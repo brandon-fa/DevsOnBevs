@@ -1,7 +1,9 @@
 package com.littleisles.infrastructure.http;
 
+import com.littleisles.application.ord.CityCatalog;
 import com.littleisles.application.reg.RegistrationService;
 import com.littleisles.application.reg.AuthController;
+import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.Account;
 import com.littleisles.domain.reg.AccountDraft;
@@ -18,20 +20,26 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 public final class RegistrationServer {
+    private static final String OPERATOR_AUTH_PASSCODE = "111";
+
     private final RegistrationService registrationService;
     private final AccountStore accountStore;
     private final AuthController authController;
+    private final CityCatalog cityCatalog;
 
-    public RegistrationServer(RegistrationService registrationService, AccountStore accountStore, AuthController authController) {
+    public RegistrationServer(RegistrationService registrationService, AccountStore accountStore, AuthController authController, CityCatalog cityCatalog) {
         this.registrationService = registrationService;
         this.accountStore = accountStore;
         this.authController = authController;
+        this.cityCatalog = cityCatalog;
     }
 
     public HttpServer start(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
+        server.setExecutor(Executors.newCachedThreadPool());
         server.createContext("/api/accounts", this::handle);
         server.createContext("/api/login", this::handleLogin);
         server.createContext("/api/session", this::handleSession);
@@ -105,11 +113,32 @@ public final class RegistrationServer {
         return null;
     }
 
-    private static String accountJson(AuthenticatedAccount account) {
+    private String accountJson(AuthenticatedAccount account) {
+        String storeCode = "";
+        String storeAddress = "";
+        if ("groceries".equals(account.role().label()) && cityCatalog != null) {
+            try {
+                String code = accountStore.registrationStoreCode(account.id());
+                String storeId = accountStore.linkedStoreId(account.id());
+                if (code != null) storeCode = code;
+                if (storeId != null) {
+                    for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+                        if (store.getId().equals(storeId) && store.getLocation() != null) {
+                            storeAddress = store.getLocation();
+                        }
+                    }
+                }
+            } catch (SQLException exception) {
+                storeCode = "";
+                storeAddress = "";
+            }
+        }
         return "{\"id\":" + account.id() + ",\"fullName\":" + quote(account.fullName())
                 + ",\"email\":" + quote(account.email()) + ",\"phone\":" + quote(account.phone())
                 + ",\"role\":" + quote(account.role().label())
-                + ",\"defaultAddress\":" + quote(account.defaultAddress() == null ? "" : account.defaultAddress()) + "}";
+                + ",\"defaultAddress\":" + quote(account.defaultAddress() == null ? "" : account.defaultAddress())
+                + ",\"storeCode\":" + quote(storeCode)
+                + ",\"storeAddress\":" + quote(storeAddress) + "}";
     }
 
     private void handle(HttpExchange exchange) throws IOException {
@@ -147,6 +176,12 @@ public final class RegistrationServer {
                 }
                 groceries.setStoreCode(storeCode.trim());
             }
+            if ("operator".equals(fields.get("role"))) {
+                String operatorPasscode = fields.get("operatorPasscode");
+                if (operatorPasscode == null || !OPERATOR_AUTH_PASSCODE.equals(operatorPasscode.trim())) {
+                    throw new IllegalArgumentException("wrong passcode, try again");
+                }
+            }
             long id = accountStore.insert(account);
             send(exchange, 201, accountJson(id, account));
         } catch (IllegalArgumentException | IllegalStateException exception) {
@@ -177,7 +212,7 @@ public final class RegistrationServer {
 
     private static Map<String, String> readFields(String body) {
         Map<String, String> fields = new LinkedHashMap<>();
-        for (String key : new String[] {"fullName", "email", "password", "phone", "role", "storeCode", "defaultAddress"}) {
+        for (String key : new String[] {"fullName", "email", "password", "phone", "role", "storeCode", "defaultAddress", "operatorPasscode"}) {
             fields.put(key, stringField(body, key));
         }
         return fields;

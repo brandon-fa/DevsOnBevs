@@ -21,7 +21,7 @@ public final class CityConfigLoader {
     private static final Set<String> CITY_FIELDS = Set.of("minLat", "maxLat", "minLon", "maxLon");
     private static final Set<String> STORE_FIELDS = Set.of("name", "open", "lat", "lon");
     private static final Set<String> PRODUCT_FIELDS = Set.of("name", "priceCents", "soldOut", "image");
-    private static final Set<String> COURIER_FIELDS = Set.of("lat", "lon", "status");
+    private static final Set<String> COURIER_FIELDS = Set.of("name", "lat", "lon", "status");
     private static final Set<String> CUSTOMER_FIELDS = Set.of("name", "lat", "lon");
 
     private final Path configFile;
@@ -49,7 +49,9 @@ public final class CityConfigLoader {
         }
         for (String id : findIds(properties, "courier.")) {
             String prefix = "courier." + id + ".";
+            String name = properties.getProperty(prefix + "name");
             city.addCourier(new CourierPin(id,
+                    name == null || name.isBlank() ? id : name,
                     readDouble(properties, prefix + "lat"),
                     readDouble(properties, prefix + "lon"),
                     CourierStatus.fromLabel(required(properties, prefix + "status"))));
