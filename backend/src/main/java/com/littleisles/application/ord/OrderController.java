@@ -744,6 +744,14 @@ public final class OrderController {
     public synchronized void reset(CitySnapshot freshCity) throws SQLException {
         orderStore.deleteAllOrders();
         cityCatalog.replace(freshCity);
+        deliveries.clear();
+        // DLV keeps courier status and position in the database; put them back to the initial city.
+        for (CourierPin courier : freshCity.couriers()) {
+            Long userId = accountRepository.courierUserId(courier.id());
+            if (userId == null) continue;
+            accountRepository.updateCourierStatus(userId, courier.status().label());
+            accountRepository.updateCourierLocation(userId, courier.lat(), courier.lon());
+        }
         customers.clear();
         savedOrdersByCustomer.clear();
         // Groceries accounts still point at the old stores; move each one to its matching new store.
