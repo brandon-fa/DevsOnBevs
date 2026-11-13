@@ -14,6 +14,7 @@ import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
+import com.littleisles.domain.prc.Fare;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.infrastructure.db.OrderStore;
 import com.sun.net.httpserver.HttpExchange;
@@ -37,6 +38,7 @@ public final class OrderHandler {
     }
 
     public void bind(HttpServer server) {
+        server.createContext("/api/history", this::handleOrderHistory);
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
         server.createContext("/api/operator/orders", this::handleOperatorOrders);
@@ -88,7 +90,6 @@ public final class OrderHandler {
             sendError(exchange, 404, "The operator order endpoint does not exist.");
             return;
         }
-
         String method = exchange.getRequestMethod();
         exchange.getResponseHeaders().set("Allow", "GET, OPTIONS");
         if (method.equals("OPTIONS")) {
@@ -99,13 +100,11 @@ public final class OrderHandler {
             sendError(exchange, 405, "Use GET to view all orders.");
             return;
         }
-
         AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
         if (account == null) {
             sendError(exchange, 401, "Log in to continue.");
             return;
         }
-
         try {
             JsonArray orders = new JsonArray();
             for (OrderStore.OperatorOrder order : dispatcher.operatorOrders(account)) {
@@ -118,6 +117,37 @@ public final class OrderHandler {
             sendError(exchange, 403, exception.getMessage());
         } catch (SQLException exception) {
             sendError(exchange, 500, "The orders could not be loaded. Please try again.");
+        }
+    }
+
+    private void handleOrderHistory(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestURI().getPath().equals("/api/history")) {
+            sendError(exchange, 404, "The order history endpoint does not exist.");
+            return;
+        }
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "GET, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("GET")) {
+            sendError(exchange, 405, "Use GET to view order history.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            JsonObject response = new JsonObject();
+            response.add("entries", JSON.toJsonTree(dispatcher.orderHistory(account)));
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "Order history could not be loaded. Please try again.");
         }
     }
 
@@ -501,7 +531,16 @@ public final class OrderHandler {
             subtotalCents += priceCents * line.getQuantity();
         }
         result.add("lines", lines);
-        result.addProperty("subtotalCents", subtotalCents);
+        Fare fare = order.getFare();
+        if (fare != null) {
+            result.addProperty("subtotalCents", fare.subtotalCents());
+            result.addProperty("deliveryFeeCents", fare.deliveryFeeCents());
+            result.addProperty("serviceFeeCents", fare.serviceFeeCents());
+            result.addProperty("smallOrderSurchargeCents", fare.smallOrderSurchargeCents());
+            result.addProperty("totalCents", fare.totalCents());
+        } else {
+            result.addProperty("subtotalCents", subtotalCents);
+        }
         result.add("transitionEvents", JSON.toJsonTree(order.getTransitionEvents()));
         return result;
     }

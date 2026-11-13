@@ -41,7 +41,10 @@ CREATE TABLE orders (
     delivery_address TEXT NOT NULL,
     subtotal_cents INTEGER NOT NULL CHECK (subtotal_cents >= 0),
     delivery_fee_cents INTEGER NOT NULL CHECK (delivery_fee_cents >= 0),
-    total_cents INTEGER NOT NULL CHECK (total_cents = subtotal_cents + delivery_fee_cents),
+    service_fee_cents INTEGER NOT NULL DEFAULT 0 CHECK (service_fee_cents >= 0),
+    small_order_surcharge_cents INTEGER NOT NULL DEFAULT 0 CHECK (small_order_surcharge_cents >= 0),
+    total_cents INTEGER NOT NULL CHECK (total_cents = subtotal_cents + delivery_fee_cents + service_fee_cents + small_order_surcharge_cents),
+    fare_version INTEGER NOT NULL DEFAULT 1 CHECK (fare_version >= 0),
     created_at TEXT NOT NULL
 );
 
@@ -52,6 +55,37 @@ CREATE TABLE order_items (
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0)
 );
+
+CREATE TABLE order_transition_events (
+    order_id INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
+    sequence_number INTEGER NOT NULL,
+    from_state TEXT NOT NULL,
+    to_state TEXT NOT NULL,
+    occurred_at TEXT NOT NULL,
+    reason TEXT,
+    PRIMARY KEY (order_id, sequence_number)
+);
+
+CREATE TABLE ledger_entries (
+    id TEXT PRIMARY KEY,
+    order_id INTEGER NOT NULL REFERENCES orders (id),
+    entry_type TEXT NOT NULL CHECK (entry_type IN ('CHARGE', 'REFUND')),
+    final_state TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    recorded_at TEXT NOT NULL
+);
+
+CREATE TABLE ledger_entry_timestamps (
+    ledger_entry_id TEXT NOT NULL REFERENCES ledger_entries (id) ON DELETE CASCADE,
+    sequence_number INTEGER NOT NULL,
+    order_state TEXT NOT NULL,
+    occurred_at TEXT NOT NULL,
+    PRIMARY KEY (ledger_entry_id, sequence_number)
+);
+
+CREATE UNIQUE INDEX one_charge_per_order
+ON ledger_entries (order_id)
+WHERE entry_type = 'CHARGE';
 
 CREATE TRIGGER products_groceries_role
 BEFORE INSERT ON products

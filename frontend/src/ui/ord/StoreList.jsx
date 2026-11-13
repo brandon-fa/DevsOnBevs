@@ -28,6 +28,7 @@ function upsertLine(baskets, store, product) {
     id: product.id,
     name: product.name,
     priceCents: product.priceCents,
+    image: product.image || "",
     quantity: 1,
   };
   let foundStore = false;
