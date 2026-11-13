@@ -30,6 +30,7 @@ public final class OrderController {
     private final AccountRepository accountRepository;
     private final OrderStore orderStore;
     private final CourierAvailability courierAvailability = new CourierAvailability();
+    private final DispatchQueue dispatchQueue = new DispatchQueue();
     // Keep one domain customer per database id, shared by all of that customer's sessions.
     private final Map<Long, CustomerAccount> customers = new HashMap<>();
     private final Map<Long, List<Order>> savedOrdersByCustomer = new HashMap<>();
@@ -142,6 +143,11 @@ public final class OrderController {
         }
         store.readyNextOrder(orderId);
         orderStore.updateStatus(orderId, "ready");
+        Order readyOrder = findAssignedOrder(orderId);
+        if (readyOrder == null) {
+            throw new IllegalStateException("The ready order could not be found for dispatch.");
+        }
+        dispatchQueue.enqueue(readyOrder);
         offerUnassignedReadyOrders();
         return store;
     }
@@ -585,7 +591,7 @@ public final class OrderController {
         return false;
     }
 
-    private void offerToNearestIdleCourier(GroceryStore store, Order order) throws SQLException {
+    private boolean offerToNearestIdleCourier(GroceryStore store, Order order) throws SQLException {
         CourierPin nearest = null;
         long nearestUserId = 0;
         double best = Double.MAX_VALUE;
@@ -595,6 +601,9 @@ public final class OrderController {
             }
             Long userId = accountRepository.courierUserId(pin.id());
             if (userId == null) {
+                continue;
+            }
+            if (hasActiveOrder(userId, order.getOrderId())) {
                 continue;
             }
             double dLat = store.getLat() - pin.lat();
@@ -608,11 +617,32 @@ public final class OrderController {
             }
         }
         if (nearest == null) {
-            return;
+            return false;
         }
         order.setOfferedCourierUserId(nearestUserId);
         orderStore.assignCourier(order.getOrderId(), nearestUserId);
         cityCatalog.markOpenOffer(nearest.id());
+        return true;
+    }
+
+    private boolean hasActiveOrder(long courierUserId, int exceptOrderId) {
+        for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
+            for (Order order : store.getReadyOrders()) {
+                if (order.getOrderId() != exceptOrderId
+                        && Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId())
+                        && !"delivered".equals(order.getStatus())) {
+                    return true;
+                }
+            }
+        }
+        for (Order order : deliveries) {
+            if (order.getOrderId() != exceptOrderId
+                    && Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId())
+                    && !"delivered".equals(order.getStatus())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Order findAssignedOrder(int orderId) {
@@ -668,7 +698,18 @@ public final class OrderController {
                 if (order.getOfferedCourierUserId() != null || order.isCourierAccepted()) {
                     continue;
                 }
-                offerToNearestIdleCourier(store, order);
+                dispatchQueue.enqueue(order);
+            }
+        }
+        for (Order order : dispatchQueue.snapshot()) {
+            GroceryStore store = order.getStore();
+            if (!store.getReadyOrders().contains(order) || order.getOfferedCourierUserId() != null
+                    || order.isCourierAccepted()) {
+                dispatchQueue.remove(order);
+                continue;
+            }
+            if (offerToNearestIdleCourier(store, order)) {
+                dispatchQueue.remove(order);
             }
         }
     }
