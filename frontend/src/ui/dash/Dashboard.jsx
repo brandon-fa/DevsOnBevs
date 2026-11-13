@@ -4,6 +4,7 @@ import { dashboardPathForRole } from "../reg/accountFactory.js";
 import StoreOrders from "../ord/StoreOrders.jsx";
 import StoreList from "../ord/StoreList.jsx";
 import CityMap from "./CityMap.jsx";
+import OperatorDashboard from "./OperatorDashboard.jsx";
 import RoleDashboardView from "./RoleDashboardView.jsx";
 import SiteHeader from "./SiteHeader.jsx";
 import { appendConsoleMessage } from "./consoleFeed.js";
@@ -38,6 +39,8 @@ export default function Dashboard() {
     view = <CustomerView onFeedback={addFeedback} />;
   } else if (account.role === "groceries") {
     view = <StoreOrders onFeedback={addFeedback} />;
+  } else if (account.role === "operator") {
+    view = <OperatorDashboard onFeedback={addFeedback} />;
   } else {
     view = <RoleDashboardView role={account.role} onFeedback={addFeedback} />;
   }

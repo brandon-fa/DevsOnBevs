@@ -37,7 +37,13 @@ function isOrderResponse(order) {
   if (typeof order.status !== "string") return false;
   if (!Array.isArray(order.lines)) return false;
   if (!Array.isArray(order.transitionEvents)) return false;
-  return Number.isFinite(order.subtotalCents);
+  return [
+    order.subtotalCents,
+    order.deliveryFeeCents,
+    order.serviceFeeCents,
+    order.smallOrderSurchargeCents,
+    order.totalCents,
+  ].every(Number.isFinite);
 }
 
 export async function placeOrder(storeId, cart, destination, saveAsDefault) {
@@ -93,6 +99,24 @@ export async function loadStoreOrders(signal) {
     throw new Error("Store orders could not be loaded.");
   }
   return data;
+}
+
+export async function loadOperatorOrders(signal) {
+  const data = await request("/api/operator/orders", "GET", null, signal);
+  if (!data || !Array.isArray(data.orders)) {
+    throw new Error("Orders could not be loaded.");
+  }
+  return data.orders;
+}
+
+export function setStoreOpen(storeId, open) {
+  const action = open ? "open" : "close";
+  return request("/api/operator/stores/" + encodeURIComponent(storeId) + "/" + action, "POST");
+}
+
+// The store's staff pause their own store; only the operator can reopen it.
+export function pauseStore(storeId) {
+  return request("/api/stores/" + encodeURIComponent(storeId) + "/pause", "POST");
 }
 
 export function updateStoreOrder(orderId, action, reason = "") {

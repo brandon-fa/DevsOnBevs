@@ -14,7 +14,9 @@ import com.littleisles.domain.ord.CourierStatus;
 import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
+import com.littleisles.domain.prc.Fare;
 import com.littleisles.domain.reg.AuthenticatedAccount;
+import com.littleisles.infrastructure.db.OrderStore;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -36,11 +38,117 @@ public final class OrderHandler {
     }
 
     public void bind(HttpServer server) {
+        server.createContext("/api/history", this::handleOrderHistory);
         server.createContext("/api/orders", this::handleCustomerOrders);
         server.createContext("/api/store/orders", this::handleStoreOrders);
+        server.createContext("/api/operator/orders", this::handleOperatorOrders);
+        server.createContext("/api/operator/stores", this::handleOperatorStores);
         server.createContext("/api/courier/orders", this::handleCourierOrders);
         server.createContext("/api/courier/status", this::handleCourierStatus);
         server.createContext("/api/operator/couriers", this::handleOperatorCouriers);
+    }
+
+    private void handleOperatorStores(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+
+        // An action URL contains a store id followed by open or close.
+        if (!path.matches("/api/operator/stores/[^/]+/(open|close)")) {
+            sendError(exchange, 404, "The operator store endpoint does not exist.");
+            return;
+        }
+
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "POST, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("POST")) {
+            sendError(exchange, 405, "Use POST to open or close a grocery store.");
+            return;
+        }
+
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+
+        try {
+            String[] parts = path.split("/");
+            GroceryStore store = dispatcher.setStoreOpen(account, parts[4], parts[5].equals("open"));
+            send(exchange, 200, storeStatusJson(store));
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        }
+    }
+
+    private void handleOperatorOrders(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestURI().getPath().equals("/api/operator/orders")) {
+            sendError(exchange, 404, "The operator order endpoint does not exist.");
+            return;
+        }
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "GET, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("GET")) {
+            sendError(exchange, 405, "Use GET to view all orders.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            JsonArray orders = new JsonArray();
+            for (OrderStore.OperatorOrder order : dispatcher.operatorOrders(account)) {
+                orders.add(operatorOrderJson(order));
+            }
+            JsonObject response = new JsonObject();
+            response.add("orders", orders);
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The orders could not be loaded. Please try again.");
+        }
+    }
+
+    private void handleOrderHistory(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestURI().getPath().equals("/api/history")) {
+            sendError(exchange, 404, "The order history endpoint does not exist.");
+            return;
+        }
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "GET, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("GET")) {
+            sendError(exchange, 405, "Use GET to view order history.");
+            return;
+        }
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+        try {
+            JsonObject response = new JsonObject();
+            response.add("entries", JSON.toJsonTree(dispatcher.orderHistory(account)));
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "Order history could not be loaded. Please try again.");
+        }
     }
 
     private void handleCustomerOrders(HttpExchange exchange) throws IOException {
@@ -311,7 +419,7 @@ public final class OrderHandler {
 
     private JsonObject operatorBoard(AuthenticatedAccount account) throws SQLException {
         JsonArray couriers = new JsonArray();
-        List<Order> orders = dispatcher.operatorOrders(account);
+        List<Order> orders = dispatcher.operatorCourierOrders(account);
         for (CourierRosterEntry courier : dispatcher.operatorCouriers(account)) {
             JsonObject entry = new JsonObject();
             entry.addProperty("userId", courier.userId());
@@ -391,6 +499,7 @@ public final class OrderHandler {
         JsonObject result = new JsonObject();
         result.addProperty("storeId", store.getId());
         result.addProperty("storeName", store.getName());
+        result.addProperty("status", store.getStatus().label());
         result.add("pending", ordersJson(store.getPendingOrders()));
         result.add("preparing", ordersJson(store.getPreparationQueue().getOrders()));
         result.add("ready", ordersJson(store.getReadyOrders()));
@@ -422,8 +531,41 @@ public final class OrderHandler {
             subtotalCents += priceCents * line.getQuantity();
         }
         result.add("lines", lines);
-        result.addProperty("subtotalCents", subtotalCents);
+        Fare fare = order.getFare();
+        if (fare != null) {
+            result.addProperty("subtotalCents", fare.subtotalCents());
+            result.addProperty("deliveryFeeCents", fare.deliveryFeeCents());
+            result.addProperty("serviceFeeCents", fare.serviceFeeCents());
+            result.addProperty("smallOrderSurchargeCents", fare.smallOrderSurchargeCents());
+            result.addProperty("totalCents", fare.totalCents());
+        } else {
+            result.addProperty("subtotalCents", subtotalCents);
+        }
         result.add("transitionEvents", JSON.toJsonTree(order.getTransitionEvents()));
+        return result;
+    }
+
+    /** Uses the same field names as /api/city so the page can merge it into its store. */
+    private static JsonObject storeStatusJson(GroceryStore store) {
+        JsonObject result = new JsonObject();
+        result.addProperty("open", store.isOpen());
+        result.addProperty("status", store.getStatus().label());
+        result.addProperty("queued", store.getQueuedOrderCount());
+        result.addProperty("queueBand", store.getQueueBand().label());
+        return result;
+    }
+
+    private static JsonObject operatorOrderJson(OrderStore.OperatorOrder order) {
+        JsonObject result = new JsonObject();
+        result.addProperty("orderId", order.id());
+        result.addProperty("storeId", order.storeId());
+        result.addProperty("status", order.status());
+        result.addProperty("customer", order.customer());
+        result.addProperty("courier", order.courier());
+        result.addProperty("destination", order.destination());
+        result.addProperty("itemCount", order.itemCount());
+        result.addProperty("totalCents", order.totalCents());
+        result.addProperty("createdAt", order.createdAt());
         return result;
     }
 

@@ -79,4 +79,4 @@ Credentials to use for the seeded accounts based on its respective role:
 
 Note that these are only for demonstration purposes.
 
-authentification passcode for any new opeartor account: 111
+Authentication passcode for any new operator account: 111

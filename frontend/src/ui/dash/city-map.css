@@ -41,6 +41,10 @@
   background: #b42318;
 }
 
+.city-status-label.is-paused {
+  background: #c27c0e;
+}
+
 .city-map-status,
 .city-item-status,
 .city-map-note {
@@ -103,6 +107,23 @@
 
 .city-marker-dot.is-groceryStore.is-closed {
   background: #b42318;
+}
+
+.city-marker-dot.is-groceryStore.is-band-short {
+  background: #2f7d4a;
+}
+
+.city-marker-dot.is-groceryStore.is-band-building {
+  background: #c27c0e;
+}
+
+.city-marker-dot.is-groceryStore.is-band-long {
+  background: #b42318;
+}
+
+.city-marker-dot.is-groceryStore.is-closed {
+  opacity: 0.55;
+  border-style: dashed;
 }
 
 .city-marker-dot.is-courier {

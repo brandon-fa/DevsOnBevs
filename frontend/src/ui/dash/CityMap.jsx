@@ -3,11 +3,18 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { formatMoney } from "../../data/mockData.js";
 import "./city-map.css";
+import { subscribeConsole } from "./consoleFeed.js";
 
 const KIND_LABEL = {
   groceryStore: "Market",
   courier: "Courier",
   customer: "Customer",
+};
+
+const STATUS_LABEL = { 
+  open: "Open", 
+  paused: "Paused", 
+  closed: "Closed" 
 };
 
 const MAP_COPY = {
@@ -74,37 +81,48 @@ export default function CityMap({ role, account, order, onFeedback }) {
   const [selected, setSelected] = useState(null);
   const mapCopy = MAP_COPY[role] ?? MAP_COPY.operator;
 
+  // R-DASH-06: reload the city on start, after every console message
+  // (a command just ran), and every few seconds (changes from other sessions).
   useEffect(() => {
     let cancelled = false;
-    let timer;
-    const controller = new AbortController();
+    let lastJson = "";
+    let errorShown = false;
 
-    async function load() {
-      try {
-        const response = await fetch("/api/city", { credentials: "include", signal: controller.signal });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(payload.error || "The city could not be loaded.");
-        }
-        if (!cancelled) {
-          setCity(payload);
+    function loadCity() {
+      fetch("/api/city", { credentials: "include" })
+        .then(async (response) => {
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.error || "The city could not be loaded.");
+          }
+          return payload;
+        })
+        .then((payload) => {
+          if (cancelled) return;
+          errorShown = false;
           setError("");
-        }
-      } catch (loadError) {
-        if (!cancelled && loadError.name !== "AbortError") {
-          setError(loadError.message || "The city could not be loaded.");
-          onFeedback?.(loadError.message || "The city could not be loaded.", "error");
-        }
-      } finally {
-        if (!cancelled) timer = window.setTimeout(load, 5000);
-      }
+          const json = JSON.stringify(payload);
+          if (json === lastJson) return; // nothing changed, keep the map as it is
+          lastJson = json;
+          setCity(payload);
+        })
+        .catch((loadError) => {
+          if (cancelled || errorShown) return;
+          errorShown = true; // report once, otherwise the console message would trigger another reload
+          const message = loadError.message || "The city could not be loaded.";
+          setError(message);
+          onFeedback(message, "error");
+        });
     }
 
-    load();
+    loadCity();
+    const unsubscribe = subscribeConsole(loadCity);
+    const timer = setInterval(loadCity, 5000);
+
     return () => {
       cancelled = true;
-      controller.abort();
-      window.clearTimeout(timer);
+      unsubscribe();
+      clearInterval(timer);
     };
   }, [onFeedback]);
 
@@ -114,6 +132,11 @@ export default function CityMap({ role, account, order, onFeedback }) {
     if (!visibleCity) return false;
     return visibleCity.groceryStores.length + visibleCity.couriers.length + visibleCity.customers.length === 0;
   }, [visibleCity]);
+
+  // Show the store's latest status, not the copy taken when its marker was clicked.
+  const selectedDetails = selected?.kind === "groceryStore"
+    ? { ...selected, ...visibleCity?.groceryStores.find((store) => store.id === selected.id) }
+    : selected;
 
   useEffect(() => {
     return () => {
@@ -146,13 +169,16 @@ export default function CityMap({ role, account, order, onFeedback }) {
     const occupiedKeys = new Set();
 
     visibleCity.groceryStores.forEach((groceryStore) => {
+      const status = groceryStore.status || (groceryStore.open ? "open" : "closed");
+      const band = groceryStore.queueBand || "short";
+      const queued = groceryStore.queued ?? 0;
       occupiedKeys.add(positionKey(groceryStore.lat, groceryStore.lon));
       const marker = L.marker([groceryStore.lat, groceryStore.lon], {
-        icon: markerIcon("groceryStore", groceryStore.open ? "open" : "closed"),
-        title: groceryStore.name,
+        icon: markerIcon("groceryStore", `${status} is-band-${band}`),
+        title: `${groceryStore.name} · ${queued} queued`,
         zIndexOffset: 200,
       });
-      marker.bindPopup(`${groceryStore.name} · ${groceryStore.open ? "open" : "closed"}`);
+      marker.bindPopup(`${groceryStore.name} · ${queued} queued · ${status}`);
       marker.on("click", () => setSelected({ kind: "groceryStore", ...groceryStore }));
       layer.addLayer(marker);
     });
@@ -223,7 +249,7 @@ export default function CityMap({ role, account, order, onFeedback }) {
         <div className="city-map-layout">
           <div className="city-map-canvas" ref={mapNode} role="application" aria-label="Little Isles city map" />
           <aside className="city-map-details" aria-live="polite">
-            {selected ? <SelectedDetails selected={selected} /> : <p>Select a marker to read its details.</p>}
+            {selectedDetails ? <SelectedDetails selected={selectedDetails} /> : <p>Select a marker to read its details.</p>}
           </aside>
         </div>
       )}
@@ -237,8 +263,8 @@ function SelectedDetails({ selected }) {
       <>
         <p className="section-kicker">{KIND_LABEL.groceryStore}</p>
         <h3>{selected.name}</h3>
-        <p className={`city-status-label ${selected.open ? "is-open" : "is-closed"}`}>
-          {selected.open ? "Open" : "Closed"}
+        <p className={`city-status-label is-${selected.status || (selected.open ? "open" : "closed")}`}>
+          {STATUS_LABEL[selected.status] || (selected.open ? "Open" : "Closed")}
         </p>
         <ul className="city-product-list">
           {selected.products.map((product) => (

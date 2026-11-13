@@ -10,27 +10,43 @@ import com.littleisles.domain.ord.GroceryStore;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
 import com.littleisles.domain.ord.Product;
+import com.littleisles.domain.ord.StoreStatus;
+import com.littleisles.domain.ord.TransitionEvent;
+import com.littleisles.domain.prc.Fare;
+import com.littleisles.domain.prc.PricingFacts;
+import com.littleisles.application.prc.PricingService;
+import com.littleisles.application.prc.LedgerService;
+import com.littleisles.application.prc.OrderHistoryRecord;
+import com.littleisles.domain.prc.LedgerEntry;
+import com.littleisles.domain.prc.StandardPricingStrategy;
 import com.littleisles.domain.reg.AccountCredentials;
 import com.littleisles.domain.reg.AuthenticatedAccount;
 import com.littleisles.domain.reg.CustomerAccount;
 import com.littleisles.domain.reg.GroceriesAccount;
 import com.littleisles.domain.reg.Role;
 import com.littleisles.infrastructure.db.OrderStore;
+import com.littleisles.infrastructure.db.LedgerStore;
+import com.littleisles.domain.prc.PricingConfiguration;
+import com.littleisles.technicalservices.prc.PricingConfigLoader;
 import com.littleisles.technicalservices.reg.AccountRepository;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public final class OrderController {
     private final CityCatalog cityCatalog;
     private final AccountRepository accountRepository;
     private final OrderStore orderStore;
+    private final PricingService pricingService;
+    private final LedgerService ledgerService;
     private final CourierAvailability courierAvailability = new CourierAvailability();
-    private final DispatchQueue dispatchQueue = new DispatchQueue();
     // Keep one domain customer per database id, shared by all of that customer's sessions.
     private final Map<Long, CustomerAccount> customers = new HashMap<>();
     private final Map<Long, List<Order>> savedOrdersByCustomer = new HashMap<>();
@@ -38,13 +54,32 @@ public final class OrderController {
     private final List<Order> deliveries = new ArrayList<>();
 
     public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository) throws SQLException {
-        this(cityCatalog, accountRepository, new OrderStore());
+        this(cityCatalog, accountRepository, new OrderStore(), defaultPricingService());
     }
 
     public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository, OrderStore orderStore) throws SQLException {
-        this.cityCatalog = cityCatalog;
-        this.accountRepository = accountRepository;
-        this.orderStore = orderStore;
+        this(cityCatalog, accountRepository, orderStore, defaultPricingService());
+    }
+
+    public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository,
+                           PricingService pricingService) throws SQLException {
+        this(cityCatalog, accountRepository, new OrderStore(), pricingService);
+    }
+
+    public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository,
+                           OrderStore orderStore, PricingService pricingService) throws SQLException {
+        this(cityCatalog, accountRepository, orderStore, pricingService,
+                new LedgerService(new LedgerStore(orderStore.databaseFile())));
+    }
+
+    public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository,
+                           OrderStore orderStore, PricingService pricingService,
+                           LedgerService ledgerService) throws SQLException {
+        this.cityCatalog = Objects.requireNonNull(cityCatalog, "A city catalog is required.");
+        this.accountRepository = Objects.requireNonNull(accountRepository, "An account repository is required.");
+        this.orderStore = Objects.requireNonNull(orderStore, "An order store is required.");
+        this.pricingService = Objects.requireNonNull(pricingService, "A pricing service is required.");
+        this.ledgerService = Objects.requireNonNull(ledgerService, "A ledger service is required.");
         courierAvailability.addObserver(ignoredCourierUserId -> offerUnassignedReadyOrders());
         restoreCourierStatuses();
         loadSavedOrders();
@@ -65,6 +100,9 @@ public final class OrderController {
         // Resolve coordinates up front so the map pin matches the typed street address.
         AddressLocator.locate(destination.trim(), cityCatalog.snapshot().bounds());
         GroceryStore store = findStore(storeId);
+        if (store.isPaused()) {
+            throw new IllegalStateException("This grocery store is paused and is not taking new orders.");
+        }
         if (!store.isOpen()) {
             throw new IllegalStateException("This grocery store is closed.");
         }
@@ -93,6 +131,7 @@ public final class OrderController {
         for (OrderLine line : validatedLines) {
             order.addOrderLine(line.getProduct(), line.getQuantity());
         }
+        order.assignFare(pricingService.calculate(PricingFacts.from(order)));
         order.placeOrder();
         try {
             int savedId = orderStore.savePlacedOrder(account.id(), store.getId(), order.getDestination(), order);
@@ -111,6 +150,54 @@ public final class OrderController {
     public synchronized List<Order> customerOrders(AuthenticatedAccount account) throws SQLException {
         CustomerAccount customer = customerFor(account);
         return List.copyOf(customer.getOrders());
+    }
+
+    public synchronized List<OrderHistoryRecord> orderHistory(AuthenticatedAccount account) throws SQLException {
+        if (account == null || account.role() == null) {
+            throw new SecurityException("Log in to view order history.");
+        }
+        String linkedStoreId = account.role() == Role.GROCERIES
+                ? accountRepository.linkedStoreId(account.id())
+                : null;
+        Map<Long, OrderStore.SavedOrder> ordersById = new HashMap<>();
+        for (OrderStore.SavedOrder order : orderStore.loadAll()) {
+            ordersById.put((long) order.id(), order);
+        }
+        return ledgerService.entries().stream()
+                .map(entry -> historyRecord(account, linkedStoreId, ordersById, entry))
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(OrderHistoryRecord::recordedAt).reversed())
+                .toList();
+    }
+
+    private OrderHistoryRecord historyRecord(AuthenticatedAccount account, String linkedStoreId,
+                                             Map<Long, OrderStore.SavedOrder> ordersById,
+                                             LedgerEntry entry) {
+        OrderStore.SavedOrder order = ordersById.get(entry.orderId());
+        if (order == null || !canViewHistory(account, linkedStoreId, order)) {
+            return null;
+        }
+        String storeName = cityCatalog.snapshot().groceryStores().stream()
+                .filter(store -> store.getId().equals(order.storeId()))
+                .map(GroceryStore::getName)
+                .findFirst()
+                .orElse(order.storeId());
+        List<OrderHistoryRecord.HistoryTimestamp> timestamps = entry.timestamps().stream()
+                .map(timestamp -> new OrderHistoryRecord.HistoryTimestamp(
+                        timestamp.state(), timestamp.occurredAt().toString()))
+                .toList();
+        return new OrderHistoryRecord(entry.entryId(), entry.orderId(), order.storeId(), storeName,
+                entry.entryType(), entry.finalState(), timestamps, entry.amountCents(), entry.recordedAt().toString());
+    }
+
+    private static boolean canViewHistory(AuthenticatedAccount account, String linkedStoreId,
+                                          OrderStore.SavedOrder order) {
+        return switch (account.role()) {
+            case CUSTOMER -> order.customerId() == account.id();
+            case GROCERIES -> linkedStoreId != null && linkedStoreId.equalsIgnoreCase(order.storeId());
+            case COURIER -> order.courierUserId() != null && order.courierUserId() == account.id();
+            case OPERATOR -> true;
+        };
     }
 
     public synchronized void associateGroceriesAccount(String email, String storeId) throws SQLException {
@@ -132,7 +219,7 @@ public final class OrderController {
         GroceryStore store = storeFor(account);
         Order order = findPendingOrder(store, orderId);
         store.acceptPendingOrder(order);
-        orderStore.updateStatus(order.getOrderId(), order.getStatus());
+        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
         return store;
     }
 
@@ -142,12 +229,11 @@ public final class OrderController {
             throw new IllegalArgumentException("Choose a valid order id.");
         }
         store.readyNextOrder(orderId);
-        orderStore.updateStatus(orderId, "ready");
-        Order readyOrder = findAssignedOrder(orderId);
-        if (readyOrder == null) {
-            throw new IllegalStateException("The ready order could not be found for dispatch.");
-        }
-        dispatchQueue.enqueue(readyOrder);
+        Order ready = store.getReadyOrders().stream()
+                .filter(order -> order.getOrderId() == orderId)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("The ready order could not be found."));
+        orderStore.updateStatus(orderId, "ready", latestTransition(ready));
         offerUnassignedReadyOrders();
         return store;
     }
@@ -232,7 +318,7 @@ public final class OrderController {
         }
         ensureNoOtherActiveOrder(account.id(), order.getOrderId());
         order.pickupOrder();
-        orderStore.updateStatus(order.getOrderId(), order.getStatus());
+        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
         String pin = accountRepository.courierPinForUser(account.id());
         rememberCourierStatus(account.id(), pin, CourierStatus.CARRYING);
         rememberCourierLocation(account.id(), pin, order.getStore().getLat(), order.getStore().getLon());
@@ -246,7 +332,7 @@ public final class OrderController {
         return accountRepository.listCouriers();
     }
 
-    public synchronized List<Order> operatorOrders(AuthenticatedAccount account) throws SQLException {
+    public synchronized List<Order> operatorCourierOrders(AuthenticatedAccount account) throws SQLException {
         requireOperator(account);
         List<Order> orders = new ArrayList<>();
         for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
@@ -305,7 +391,8 @@ public final class OrderController {
             throw new IllegalStateException("Pick up the order before marking it delivered.");
         }
         order.deliverOrder();
-        orderStore.updateStatus(order.getOrderId(), order.getStatus());
+        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
+        ledgerService.recordCharge(order);
         deliveries.remove(order);
         String pin = accountRepository.courierPinForUser(account.id());
         double[] delivery = AddressLocator.locate(order.getDestination(), cityCatalog.snapshot().bounds());
@@ -591,7 +678,7 @@ public final class OrderController {
         return false;
     }
 
-    private boolean offerToNearestIdleCourier(GroceryStore store, Order order) throws SQLException {
+    private void offerToNearestIdleCourier(GroceryStore store, Order order) throws SQLException {
         CourierPin nearest = null;
         long nearestUserId = 0;
         double best = Double.MAX_VALUE;
@@ -601,9 +688,6 @@ public final class OrderController {
             }
             Long userId = accountRepository.courierUserId(pin.id());
             if (userId == null) {
-                continue;
-            }
-            if (hasActiveOrder(userId, order.getOrderId())) {
                 continue;
             }
             double dLat = store.getLat() - pin.lat();
@@ -617,32 +701,11 @@ public final class OrderController {
             }
         }
         if (nearest == null) {
-            return false;
+            return;
         }
         order.setOfferedCourierUserId(nearestUserId);
         orderStore.assignCourier(order.getOrderId(), nearestUserId);
         cityCatalog.markOpenOffer(nearest.id());
-        return true;
-    }
-
-    private boolean hasActiveOrder(long courierUserId, int exceptOrderId) {
-        for (GroceryStore store : cityCatalog.snapshot().groceryStores()) {
-            for (Order order : store.getReadyOrders()) {
-                if (order.getOrderId() != exceptOrderId
-                        && Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId())
-                        && !"delivered".equals(order.getStatus())) {
-                    return true;
-                }
-            }
-        }
-        for (Order order : deliveries) {
-            if (order.getOrderId() != exceptOrderId
-                    && Long.valueOf(courierUserId).equals(order.getOfferedCourierUserId())
-                    && !"delivered".equals(order.getStatus())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Order findAssignedOrder(int orderId) {
@@ -698,18 +761,7 @@ public final class OrderController {
                 if (order.getOfferedCourierUserId() != null || order.isCourierAccepted()) {
                     continue;
                 }
-                dispatchQueue.enqueue(order);
-            }
-        }
-        for (Order order : dispatchQueue.snapshot()) {
-            GroceryStore store = order.getStore();
-            if (!store.getReadyOrders().contains(order) || order.getOfferedCourierUserId() != null
-                    || order.isCourierAccepted()) {
-                dispatchQueue.remove(order);
-                continue;
-            }
-            if (offerToNearestIdleCourier(store, order)) {
-                dispatchQueue.remove(order);
+                offerToNearestIdleCourier(store, order);
             }
         }
     }
@@ -767,9 +819,68 @@ public final class OrderController {
         GroceryStore store = storeFor(account);
         Order order = findPendingOrder(store, orderId);
         store.rejectPendingOrder(order, reason);
-        // Drop the persisted row instead of leaving a cancelled status behind.
-        orderStore.delete(order.getOrderId());
+        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
+        ledgerService.recordCharge(order);
         return store;
+    }
+
+    public List<OrderStore.OperatorOrder> operatorOrders() throws SQLException {
+        return orderStore.loadOperatorOrders();
+    }
+
+    /** Changes the live city only; a reset or restart returns the store to its configured status. */
+    public synchronized GroceryStore setStoreStatus(String storeId, StoreStatus status) {
+        GroceryStore store = findStore(storeId);
+        store.setStatus(status);
+        return store;
+    }
+
+    /** Reset: deletes every saved order and swaps in a freshly loaded city. */
+    public synchronized void reset(CitySnapshot freshCity) throws SQLException {
+        orderStore.deleteAllOrders();
+        cityCatalog.replace(freshCity);
+        deliveries.clear();
+        // DLV keeps courier status and position in the database; put them back to the initial city.
+        for (CourierPin courier : freshCity.couriers()) {
+            Long userId = accountRepository.courierUserId(courier.id());
+            if (userId == null) continue;
+            accountRepository.updateCourierStatus(userId, courier.status().label());
+            accountRepository.updateCourierLocation(userId, courier.lat(), courier.lon());
+        }
+        customers.clear();
+        savedOrdersByCustomer.clear();
+        // Groceries accounts still point at the old stores; move each one to its matching new store.
+        for (GroceriesAccount groceries : groceriesAccounts.values()) {
+            groceries.setStore(findStore(groceries.getStore().getId()));
+        }
+    }
+
+    /** Pause a store: its own groceries account, or the operator for any store (R-DASH-01). */
+    public synchronized GroceryStore pauseStore(AuthenticatedAccount account, String storeId) {
+        GroceryStore store = storeAllowedToPause(account, storeId);
+        store.pause();
+        return store;
+    }
+
+    /** Reopen a paused store (the dispatcher already checked that this is the operator). */
+    public synchronized GroceryStore reopenStore(String storeId) {
+        GroceryStore store = findStore(storeId);
+        store.reopen();
+        return store;
+    }
+
+    private GroceryStore storeAllowedToPause(AuthenticatedAccount account, String storeId) {
+        if (account != null && account.role() == Role.OPERATOR) {
+            return findStore(storeId);
+        }
+        if (account == null || account.role() != Role.GROCERIES) {
+            throw new SecurityException("Only the store's staff or the operator can pause a grocery store.");
+        }
+        GroceryStore ownStore = storeFor(account); // refuses anyone who is not a groceries account
+        if (!ownStore.getId().equals(storeId)) {
+            throw new SecurityException("You can only pause your own grocery store.");
+        }
+        return ownStore;
     }
 
     private GroceryStore findStore(String storeId) {
@@ -858,7 +969,17 @@ public final class OrderController {
             }
             Order order = new Order(store, saved.destination());
             order.setCustomerUserId(saved.customerId());
-            order.restoreSaved(saved.id(), saved.status(), saved.lines());
+            order.restoreSaved(saved.id(), saved.status(), saved.lines(), saved.transitions());
+            Fare fare = saved.fare();
+            if (saved.fareVersion() == 0) {
+                fare = pricingService.calculate(PricingFacts.from(order));
+                orderStore.updateFare(saved.id(), fare);
+            }
+            order.assignFare(fare);
+            if (("delivered".equals(saved.status()) || "canceled".equals(saved.status()))
+                    && !ledgerService.hasChargeForOrder(saved.id())) {
+                ledgerService.recordCharge(order);
+            }
             if ("placed".equals(saved.status())) {
                 store.addPendingOrder(order);
             } else if ("preparing".equals(saved.status())) {
@@ -888,4 +1009,23 @@ public final class OrderController {
         }
         offerUnassignedReadyOrders();
     }
+
+    private static TransitionEvent latestTransition(Order order) {
+        List<TransitionEvent> transitions = order.getTransitionEvents();
+        if (transitions.isEmpty()) {
+            throw new IllegalStateException("The order state changed without a transition timestamp.");
+        }
+        return transitions.get(transitions.size() - 1);
+    }
+
+    private static PricingService defaultPricingService() {
+        try {
+            PricingConfiguration configuration = new PricingConfigLoader(
+                    PricingConfigLoader.locateConfigFile()).load();
+            return new PricingService(new StandardPricingStrategy(), configuration);
+        } catch (IOException exception) {
+            throw new IllegalStateException("Pricing rules could not be loaded.", exception);
+        }
+    }
+
 }

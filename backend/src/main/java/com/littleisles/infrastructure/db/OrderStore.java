@@ -3,6 +3,8 @@ package com.littleisles.infrastructure.db;
 import com.littleisles.domain.ord.Order;
 import com.littleisles.domain.ord.OrderLine;
 import com.littleisles.domain.ord.Product;
+import com.littleisles.domain.ord.TransitionEvent;
+import com.littleisles.domain.prc.Fare;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class OrderStore {
+    private final Path databaseFile;
     private final String jdbcUrl;
 
     public OrderStore() {
@@ -25,20 +28,28 @@ public final class OrderStore {
     }
 
     public OrderStore(Path databaseFile) {
-        this.jdbcUrl = "jdbc:sqlite:" + databaseFile.toAbsolutePath();
+        this.databaseFile = databaseFile.toAbsolutePath().normalize();
+        this.jdbcUrl = "jdbc:sqlite:" + this.databaseFile;
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (ClassNotFoundException exception) {
             throw new IllegalStateException("SQLite JDBC driver is not on the classpath.", exception);
         }
+        migrateFareColumns();
+        ensureTransitionSchema();
+    }
+
+    public Path databaseFile() {
+        return databaseFile;
     }
 
     public int savePlacedOrder(long customerId, String storeId, String destination, Order order) throws SQLException {
         String orderSql = """
                 INSERT INTO orders (
                     customer_id, groceries_id, status, delivery_address,
-                    subtotal_cents, delivery_fee_cents, total_cents, created_at
-                ) VALUES (?, ?, 'placed', ?, ?, 0, ?, datetime('now'))
+                    subtotal_cents, delivery_fee_cents, service_fee_cents,
+                    small_order_surcharge_cents, total_cents, fare_version, created_at
+                ) VALUES (?, ?, 'placed', ?, ?, ?, ?, ?, ?, 1, datetime('now'))
                 """;
         String lineSql = """
                 INSERT INTO order_items (order_id, product_id, quantity, unit_price_cents)
@@ -48,21 +59,26 @@ public final class OrderStore {
             connection.setAutoCommit(false);
             try {
                 long groceriesId = groceriesUserId(connection, storeId);
-                int subtotalCents = 0;
+                Fare fare = order.getFare();
+                if (fare == null) {
+                    throw new SQLException("The order must have a computed fare before it can be saved.");
+                }
                 List<int[]> pricedLines = new ArrayList<>();
                 for (OrderLine line : order.getOrderLines()) {
-                    int unitPriceCents = Math.toIntExact(Math.round(line.getProduct().getPrice() * 100));
+                    int unitPriceCents = Math.toIntExact(line.getUnitPriceCents());
                     int productId = productId(connection, groceriesId, line.getProduct().getName(), unitPriceCents);
                     pricedLines.add(new int[] {productId, line.getQuantity(), unitPriceCents});
-                    subtotalCents = Math.addExact(subtotalCents, Math.multiplyExact(unitPriceCents, line.getQuantity()));
                 }
                 int orderId;
                 try (PreparedStatement statement = connection.prepareStatement(orderSql)) {
                     statement.setLong(1, customerId);
                     statement.setLong(2, groceriesId);
                     statement.setString(3, destination);
-                    statement.setInt(4, subtotalCents);
-                    statement.setInt(5, subtotalCents);
+                    statement.setLong(4, fare.subtotalCents());
+                    statement.setLong(5, fare.deliveryFeeCents());
+                    statement.setLong(6, fare.serviceFeeCents());
+                    statement.setLong(7, fare.smallOrderSurchargeCents());
+                    statement.setLong(8, fare.totalCents());
                     statement.executeUpdate();
                 }
                 try (PreparedStatement idStatement = connection.prepareStatement("SELECT last_insert_rowid()");
@@ -85,6 +101,7 @@ public final class OrderStore {
                         lineStatement.executeUpdate();
                     }
                 }
+                insertTransitions(connection, orderId, order.getTransitionEvents());
                 connection.commit();
                 return orderId;
             } catch (SQLException | ArithmeticException exception) {
@@ -110,14 +127,54 @@ public final class OrderStore {
     }
 
     public void updateStatus(int orderId, String status) throws SQLException {
+        updateStatus(orderId, status, null);
+    }
+
+    public void updateStatus(int orderId, String status, TransitionEvent transition) throws SQLException {
         String sql = "UPDATE orders SET status = ? WHERE id = ?";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, databaseStatus(status));
+                statement.setInt(2, orderId);
+                if (statement.executeUpdate() != 1) {
+                    throw new SQLException("The saved order could not be updated.");
+                }
+                if (transition != null) {
+                    insertTransition(connection, orderId, transition);
+                }
+                connection.commit();
+            } catch (SQLException exception) {
+                connection.rollback();
+                throw exception;
+            }
+        }
+    }
+
+    public void updateFare(int orderId, Fare fare) throws SQLException {
+        String sql = "UPDATE orders SET subtotal_cents = ?, delivery_fee_cents = ?, service_fee_cents = ?, small_order_surcharge_cents = ?, total_cents = ?, fare_version = 1 WHERE id = ?";
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, databaseStatus(status));
-            statement.setInt(2, orderId);
+            statement.setLong(1, fare.subtotalCents());
+            statement.setLong(2, fare.deliveryFeeCents());
+            statement.setLong(3, fare.serviceFeeCents());
+            statement.setLong(4, fare.smallOrderSurchargeCents());
+            statement.setLong(5, fare.totalCents());
+            statement.setInt(6, orderId);
             if (statement.executeUpdate() != 1) {
-                throw new SQLException("The saved order could not be updated.");
+                throw new SQLException("The saved order fare could not be updated.");
             }
+        }
+    }
+    
+    /** Reset: removes every saved order so the demo restarts from the initial scenario. */
+    public void deleteAllOrders() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            statement.executeUpdate("DELETE FROM order_items");
+            statement.executeUpdate("DELETE FROM orders");
+            connection.commit();
         }
     }
 
@@ -131,6 +188,10 @@ public final class OrderStore {
                 try (PreparedStatement items = connection.prepareStatement("DELETE FROM order_items WHERE order_id = ?")) {
                     items.setInt(1, orderId);
                     items.executeUpdate();
+                }
+                try (PreparedStatement transitions = connection.prepareStatement("DELETE FROM order_transition_events WHERE order_id = ?")) {
+                    transitions.setInt(1, orderId);
+                    transitions.executeUpdate();
                 }
                 try (PreparedStatement orders = connection.prepareStatement("DELETE FROM orders WHERE id = ?")) {
                     orders.setInt(1, orderId);
@@ -148,7 +209,10 @@ public final class OrderStore {
 
     public List<SavedOrder> loadAll() throws SQLException {
         String orderSql = """
-                SELECT o.id, o.customer_id, gs.id AS store_id, o.delivery_address, o.status, o.courier_id
+                SELECT o.id, o.customer_id, gs.id AS store_id, o.delivery_address, o.status,
+                       o.subtotal_cents, o.delivery_fee_cents, o.service_fee_cents,
+                       o.small_order_surcharge_cents, o.total_cents, o.fare_version,
+                       o.courier_id
                 FROM orders o
                 JOIN users u ON u.id = o.groceries_id AND u.role = 'groceries'
                 JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
@@ -161,6 +225,11 @@ public final class OrderStore {
                 FROM order_items oi
                 JOIN products p ON p.id = oi.product_id
                 ORDER BY oi.id
+                """;
+        String transitionSql = """
+                SELECT order_id, from_state, to_state, occurred_at, reason
+                FROM order_transition_events
+                ORDER BY order_id, sequence_number
                 """;
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              Statement statement = connection.createStatement();
@@ -176,7 +245,12 @@ public final class OrderStore {
                         orders.getString("store_id"),
                         orders.getString("delivery_address"),
                         domainStatus(orders.getString("status")),
+                        new Fare(orders.getLong("subtotal_cents"), orders.getLong("delivery_fee_cents"),
+                                orders.getLong("service_fee_cents"), orders.getLong("small_order_surcharge_cents"),
+                                orders.getLong("total_cents")),
+                        orders.getInt("fare_version"),
                         courierUserId,
+                        new ArrayList<>(),
                         new ArrayList<>()));
             }
             try (Statement lineStatement = connection.createStatement();
@@ -186,10 +260,60 @@ public final class OrderStore {
                     if (order == null) continue;
                     order.lines().add(new OrderLine(
                             new Product(Integer.toString(lines.getInt("product_id")), lines.getString("name"), lines.getInt("unit_price_cents") / 100.0),
-                            lines.getInt("quantity")));
+                            lines.getInt("quantity"),
+                            lines.getLong("unit_price_cents")));
+                }
+            }
+            try (Statement transitionStatement = connection.createStatement();
+                 ResultSet transitions = transitionStatement.executeQuery(transitionSql)) {
+                while (transitions.next()) {
+                    SavedOrder order = byId.get(transitions.getInt("order_id"));
+                    if (order == null) continue;
+                    order.transitions().add(TransitionEvent.restore(
+                            transitions.getString("from_state"),
+                            transitions.getString("to_state"),
+                            transitions.getString("occurred_at"),
+                            transitions.getString("reason")));
                 }
             }
             return List.copyOf(byId.values());
+        }
+    }
+
+    /** Every order that was not cancelled, with the names and totals the operator screens show. */
+    public List<OperatorOrder> loadOperatorOrders() throws SQLException {
+        String sql = """
+                SELECT o.id, gs.id AS store_id, o.status, o.delivery_address, o.total_cents,
+                       strftime('%Y-%m-%dT%H:%M:%SZ', o.created_at) AS created_at,
+                       customer.full_name AS customer_name,
+                       courier.full_name AS courier_name,
+                       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id = o.id), 0) AS item_count
+                FROM orders o
+                JOIN users u ON u.id = o.groceries_id AND u.role = 'groceries'
+                JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
+                    OR upper(u.store_code) = upper(gs.store_code)
+                JOIN users customer ON customer.id = o.customer_id
+                LEFT JOIN users courier ON courier.id = o.courier_id
+                WHERE o.status <> 'cancelled'
+                ORDER BY o.id
+                """;
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement();
+             ResultSet orders = statement.executeQuery(sql)) {
+            List<OperatorOrder> result = new ArrayList<>();
+            while (orders.next()) {
+                result.add(new OperatorOrder(
+                        orders.getInt("id"),
+                        orders.getString("store_id"),
+                        orders.getString("status"),
+                        orders.getString("customer_name"),
+                        orders.getString("courier_name"),
+                        orders.getString("delivery_address"),
+                        orders.getInt("item_count"),
+                        orders.getInt("total_cents"),
+                        orders.getString("created_at")));
+            }
+            return List.copyOf(result);
         }
     }
 
@@ -251,10 +375,139 @@ public final class OrderStore {
         if ("canceled".equals(status)) {
             return "cancelled";
         }
-        if ("picked_up".equals(status)) {
-            return "picked up";
-        }
         return status;
+    }
+
+    private static void insertTransitions(Connection connection, int orderId,
+                                          List<TransitionEvent> transitions) throws SQLException {
+        for (TransitionEvent transition : transitions) {
+            insertTransition(connection, orderId, transition);
+        }
+    }
+
+    private static void insertTransition(Connection connection, int orderId,
+                                         TransitionEvent transition) throws SQLException {
+        int sequence;
+        try (PreparedStatement next = connection.prepareStatement(
+                "SELECT COALESCE(MAX(sequence_number), -1) + 1 FROM order_transition_events WHERE order_id = ?")) {
+            next.setInt(1, orderId);
+            try (ResultSet result = next.executeQuery()) {
+                sequence = result.next() ? result.getInt(1) : 0;
+            }
+        }
+        String sql = """
+                INSERT INTO order_transition_events (
+                    order_id, sequence_number, from_state, to_state, occurred_at, reason
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.setInt(2, sequence);
+            statement.setString(3, transition.getFromState());
+            statement.setString(4, transition.getToState());
+            statement.setString(5, transition.getTimestamp());
+            statement.setString(6, transition.getReason());
+            statement.executeUpdate();
+        }
+    }
+
+    private void ensureTransitionSchema() {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement()) {
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS order_transition_events (
+                        order_id INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
+                        sequence_number INTEGER NOT NULL,
+                        from_state TEXT NOT NULL,
+                        to_state TEXT NOT NULL,
+                        occurred_at TEXT NOT NULL,
+                        reason TEXT,
+                        PRIMARY KEY (order_id, sequence_number)
+                    )
+                    """);
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Order transition history could not be prepared.", exception);
+        }
+    }
+
+    private void migrateFareColumns() {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement()) {
+            boolean hasServiceFee = hasColumn(connection, "service_fee_cents");
+            boolean hasSurcharge = hasColumn(connection, "small_order_surcharge_cents");
+            boolean hasFareVersion = hasColumn(connection, "fare_version");
+            if (hasServiceFee && hasSurcharge && hasFareVersion) return;
+
+            statement.execute("PRAGMA foreign_keys = OFF");
+            connection.setAutoCommit(false);
+            try {
+                statement.execute("""
+                        CREATE TABLE orders_with_fare (
+                            id INTEGER PRIMARY KEY,
+                            customer_id INTEGER NOT NULL REFERENCES users (id),
+                            groceries_id INTEGER NOT NULL REFERENCES users (id),
+                            courier_id INTEGER REFERENCES users (id),
+                            status TEXT NOT NULL CHECK (status IN ('placed', 'accepted', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled')),
+                            delivery_address TEXT NOT NULL,
+                            subtotal_cents INTEGER NOT NULL CHECK (subtotal_cents >= 0),
+                            delivery_fee_cents INTEGER NOT NULL CHECK (delivery_fee_cents >= 0),
+                            service_fee_cents INTEGER NOT NULL DEFAULT 0 CHECK (service_fee_cents >= 0),
+                            small_order_surcharge_cents INTEGER NOT NULL DEFAULT 0 CHECK (small_order_surcharge_cents >= 0),
+                            total_cents INTEGER NOT NULL CHECK (total_cents = subtotal_cents + delivery_fee_cents + service_fee_cents + small_order_surcharge_cents),
+                            fare_version INTEGER NOT NULL DEFAULT 1 CHECK (fare_version >= 0),
+                            created_at TEXT NOT NULL
+                        )
+                        """);
+                String serviceFee = hasServiceFee ? "service_fee_cents" : "0";
+                String surcharge = hasSurcharge ? "small_order_surcharge_cents" : "0";
+                String fareVersion = hasFareVersion
+                        ? "fare_version"
+                        : "CASE WHEN delivery_fee_cents = 0 AND total_cents = subtotal_cents THEN 0 ELSE 1 END";
+                statement.execute("""
+                        INSERT INTO orders_with_fare (
+                            id, customer_id, groceries_id, courier_id, status, delivery_address,
+                            subtotal_cents, delivery_fee_cents, service_fee_cents,
+                            small_order_surcharge_cents, total_cents, fare_version, created_at
+                        )
+                        SELECT id, customer_id, groceries_id, courier_id, status, delivery_address,
+                               subtotal_cents, delivery_fee_cents, %s, %s, total_cents, %s, created_at
+                        FROM orders
+                        """.formatted(serviceFee, surcharge, fareVersion));
+                statement.execute("DROP TABLE orders");
+                statement.execute("ALTER TABLE orders_with_fare RENAME TO orders");
+                statement.execute("""
+                        CREATE TRIGGER orders_party_roles
+                        BEFORE INSERT ON orders
+                        FOR EACH ROW
+                        WHEN (SELECT role FROM users WHERE id = NEW.customer_id) IS NOT 'customer'
+                          OR (SELECT role FROM users WHERE id = NEW.groceries_id) IS NOT 'groceries'
+                          OR (NEW.courier_id IS NOT NULL
+                              AND (SELECT role FROM users WHERE id = NEW.courier_id) IS NOT 'courier')
+                        BEGIN
+                            SELECT RAISE(ABORT, 'order parties must match their roles');
+                        END
+                        """);
+                connection.commit();
+            } catch (SQLException exception) {
+                connection.rollback();
+                throw exception;
+            } finally {
+                connection.setAutoCommit(true);
+                statement.execute("PRAGMA foreign_keys = ON");
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Order fare columns could not be prepared.", exception);
+        }
+    }
+
+    private static boolean hasColumn(Connection connection, String columnName) throws SQLException {
+        try (Statement statement = connection.createStatement();
+             ResultSet columns = statement.executeQuery("PRAGMA table_info(orders)")) {
+            while (columns.next()) {
+                if (columnName.equals(columns.getString("name"))) return true;
+            }
+        }
+        return false;
     }
 
     private static String domainStatus(String status) {
@@ -280,7 +533,13 @@ public final class OrderStore {
         throw new IllegalStateException("Could not find database/littleisle.sqlite.");
     }
 
-    public record SavedOrder(int id, long customerId, String storeId, String destination, String status,
-                             Long courierUserId, ArrayList<OrderLine> lines) {
+    public record SavedOrder(int id, long customerId, String storeId, String destination, String status, Fare fare,
+                             int fareVersion, Long courierUserId, ArrayList<OrderLine> lines,
+                             ArrayList<TransitionEvent> transitions) {
+    }
+
+    /** {@code createdAt} is UTC in ISO-8601; {@code courier} is null until one is assigned. */
+    public record OperatorOrder(int id, String storeId, String status, String customer, String courier,
+                                String destination, int itemCount, int totalCents, String createdAt) {
     }
 }
