@@ -3,6 +3,7 @@ package com.littleisles.domain.ord;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.littleisles.domain.common.Billing;
+import com.littleisles.domain.prc.Fare;
 
 public class Order {
     private static final AtomicInteger nextOrderId = new AtomicInteger(1);
@@ -13,6 +14,7 @@ public class Order {
     private ArrayList<TransitionEvent> transitionEvents;
     private String destination;
     private String rejectionReason;
+    private Fare fare;
     private Long offeredCourierUserId;
     private boolean courierAccepted;
     private Long customerUserId;
@@ -114,6 +116,11 @@ public class Order {
     }
 
     public void restoreSaved(int persistedId, String status, ArrayList<OrderLine> lines) {
+        restoreSaved(persistedId, status, lines, List.of());
+    }
+
+    public void restoreSaved(int persistedId, String status, ArrayList<OrderLine> lines,
+                             List<TransitionEvent> savedTransitions) {
         assignPersistedId(persistedId);
         this.orderLines = lines;
         if ("preparing".equals(status)) {
@@ -129,7 +136,12 @@ public class Order {
         } else {
             this.state = new PlacedOrderState(this);
         }
-        addTransitionEvent(new TransitionEvent("open", getStatus()));
+        transitionEvents.clear();
+        if (savedTransitions == null || savedTransitions.isEmpty()) {
+            addTransitionEvent(new TransitionEvent("open", getStatus()));
+        } else {
+            transitionEvents.addAll(savedTransitions);
+        }
     }
 
     public void setStore(GroceryStore store) {
@@ -154,6 +166,14 @@ public class Order {
 
     public String getDestination() {
         return destination;
+    }
+
+    public Fare getFare() {
+        return fare;
+    }
+
+    public void assignFare(Fare fare) {
+        this.fare = Objects.requireNonNull(fare, "A computed fare is required.");
     }
 
     public Long getOfferedCourierUserId() {

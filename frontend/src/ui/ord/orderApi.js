@@ -37,7 +37,13 @@ function isOrderResponse(order) {
   if (typeof order.status !== "string") return false;
   if (!Array.isArray(order.lines)) return false;
   if (!Array.isArray(order.transitionEvents)) return false;
-  return Number.isFinite(order.subtotalCents);
+  return [
+    order.subtotalCents,
+    order.deliveryFeeCents,
+    order.serviceFeeCents,
+    order.smallOrderSurchargeCents,
+    order.totalCents,
+  ].every(Number.isFinite);
 }
 
 export async function placeOrder(storeId, cart, destination, saveAsDefault) {
