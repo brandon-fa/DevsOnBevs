@@ -836,6 +836,7 @@ public final class OrderController {
             throw new IllegalStateException("Order " + orderId + " is not delivered or has already been refunded.");
         }
         order.refund();
+        ledgerService.recordRefund(order);
     }
 
     /** Reset: deletes every saved order and swaps in a freshly loaded city. */

@@ -41,4 +41,10 @@ public record LedgerEntry(UUID entryId,
         return new LedgerEntry(UUID.randomUUID(), orderId, LedgerEntryType.CHARGE,
                 finalState, timestamps, totalChargeCents, recordedAt);
     }
+    
+    public static LedgerEntry refund(long orderId, List<OrderTimestamp> timestamps,
+                                     long refundedCents, Instant recordedAt) {
+        return new LedgerEntry(UUID.randomUUID(), orderId, LedgerEntryType.REFUND,
+                "refunded", timestamps, -refundedCents, recordedAt);
+    }
 }
