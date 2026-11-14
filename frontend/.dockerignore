@@ -1,0 +1,3 @@
+# Installed and built inside the image; a local node_modules has Windows/macOS binaries.
+node_modules
+dist

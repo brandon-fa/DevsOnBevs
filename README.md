@@ -64,6 +64,21 @@ backend:
 cd backend
 mvn compile exec:java
 
+## Run with Docker
+
+Needs Docker Desktop (or Docker Engine with Compose v2) and nothing else: no Java, Maven or Node. From the repository root:
+
+```
+docker compose up --build
+```
+
+Then open http://localhost:3000. Stop with `Ctrl+C` or `docker compose down`.
+
+- The `frontend` container serves the built React app with nginx and forwards `/api` requests to the `backend` container, like `npm run dev` does.
+- The database is a copy of `database/littleisle.sqlite` kept in a Docker volume, so Docker never changes the file in git. It survives `docker compose down`. To start over from the committed file, run `docker compose down -v`.
+- The backend reads `config/` from your checkout. After editing a `.properties` file, run `docker compose restart backend`. After code changes, run `docker compose up --build` again.
+- To use a port other than 3000, set `WEB_PORT`. In PowerShell: `$env:WEB_PORT=8000; docker compose up --build`.
+
 ## Seeded demonstration accounts
 
 The backend reads `config/seeded-accounts.properties` during startup and ensures there is a demonstration account for each role in `database/littleisle.sqlite`. It prints the role and email for each loaded account in the backend console.
