@@ -85,8 +85,49 @@ public final class OrderHandler {
         }
     }
 
+    private void handleRefund(HttpExchange exchange, String path) throws IOException {
+        String method = exchange.getRequestMethod();
+        exchange.getResponseHeaders().set("Allow", "POST, OPTIONS");
+        if (method.equals("OPTIONS")) {
+            send(exchange, 204, null);
+            return;
+        }
+        if (!method.equals("POST")) {
+            sendError(exchange, 405, "Use POST to refund an order.");
+            return;
+        }
+
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+            return;
+        }
+
+        try {
+            dispatcher.refundOrder(account, Integer.parseInt(path.split("/")[4]));
+            JsonObject response = new JsonObject();
+            response.addProperty("refunded", true);
+            send(exchange, 200, response);
+        } catch (SecurityException exception) {
+            sendError(exchange, 403, exception.getMessage());
+        } catch (NumberFormatException exception) {
+            sendError(exchange, 400, "Choose a valid order id.");
+        } catch (IllegalArgumentException exception) {
+            sendError(exchange, 400, exception.getMessage());
+        } catch (IllegalStateException exception) {
+            sendError(exchange, 409, exception.getMessage());
+        } catch (SQLException exception) {
+            sendError(exchange, 500, "The refund could not be saved. Please try again.");
+        }
+    }
+
     private void handleOperatorOrders(HttpExchange exchange) throws IOException {
-        if (!exchange.getRequestURI().getPath().equals("/api/operator/orders")) {
+        String path = exchange.getRequestURI().getPath();
+        if (path.matches("/api/operator/orders/[1-9][0-9]*/refund")) {
+            handleRefund(exchange, path);
+            return;
+        }
+        if (!path.equals("/api/operator/orders")) {
             sendError(exchange, 404, "The operator order endpoint does not exist.");
             return;
         }
@@ -566,6 +607,7 @@ public final class OrderHandler {
         result.addProperty("itemCount", order.itemCount());
         result.addProperty("totalCents", order.totalCents());
         result.addProperty("createdAt", order.createdAt());
+        result.addProperty("refunded", order.refunded());
         return result;
     }
 

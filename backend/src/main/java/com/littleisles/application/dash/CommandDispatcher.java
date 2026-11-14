@@ -67,6 +67,11 @@ public final class CommandDispatcher {
         return orderController.setStoreStatus(storeId, open ? StoreStatus.OPEN : StoreStatus.CLOSED);
     }
 
+    public void refundOrder(AuthenticatedAccount account, int orderId) throws SQLException {
+        requireOperator(account, "refund an order");
+        orderController.refundOrder(orderId);
+    }
+
     /** Reset (operator only): restore the initial scenario from the configuration file. */
     public void reset(AuthenticatedAccount account) throws IOException, SQLException {
         requireOperator(account, "reset the simulator");
@@ -127,7 +132,6 @@ public final class CommandDispatcher {
             throw new SecurityException("Only customers can place or view their orders.");
         }
     }
-
     private static void requireOperator(AuthenticatedAccount account, String action) {
         if (account == null || account.role() != Role.OPERATOR) {
             throw new SecurityException("Only the platform operator can " + action + ".");

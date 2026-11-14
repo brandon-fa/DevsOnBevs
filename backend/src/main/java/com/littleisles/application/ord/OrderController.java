@@ -829,6 +829,15 @@ public final class OrderController {
         return store;
     }
 
+    /** Saves first, so a failed save cannot leave the customer seeing a refund that never happened. */
+    public synchronized void refundOrder(int orderId) throws SQLException {
+        Order order = findOrder(orderId);
+        if (!orderStore.markRefunded(orderId)) {
+            throw new IllegalStateException("Order " + orderId + " is not delivered or has already been refunded.");
+        }
+        order.refund();
+    }
+
     /** Reset: deletes every saved order and swaps in a freshly loaded city. */
     public synchronized void reset(CitySnapshot freshCity) throws SQLException {
         orderStore.deleteAllOrders();
@@ -893,6 +902,23 @@ public final class OrderController {
             }
         }
         throw new IllegalArgumentException("A product does not belong to this grocery store.");
+    }
+
+    // Customers who have not logged in since startup still have their orders in savedOrdersByCustomer.
+    private Order findOrder(int orderId) {
+        List<Order> orders = new ArrayList<>();
+        for (CustomerAccount customer : customers.values()) {
+            orders.addAll(customer.getOrders());
+        }
+        for (List<Order> saved : savedOrdersByCustomer.values()) {
+            orders.addAll(saved);
+        }
+        for (Order order : orders) {
+            if (order.getOrderId() == orderId) {
+                return order;
+            }
+        }
+        throw new IllegalArgumentException("The order does not exist: " + orderId);
     }
 
     private Order findPendingOrder(GroceryStore store, int orderId) {
@@ -973,6 +999,9 @@ public final class OrderController {
             if (("delivered".equals(saved.status()) || "canceled".equals(saved.status()))
                     && !ledgerService.hasChargeForOrder(saved.id())) {
                 ledgerService.recordCharge(order);
+            }
+            if (saved.refunded()) {
+                order.refund();
             }
             if ("placed".equals(saved.status())) {
                 store.addPendingOrder(order);

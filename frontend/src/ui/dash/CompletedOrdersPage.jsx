@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { formatMoney } from "../../data/mockData.js";
 import { dashboardPathForRole } from "../reg/accountFactory.js";
+import { refundOrder } from "../ord/orderApi.js";
 import { storeFontClass } from "../ord/storeFonts.js";
 import { appendConsoleMessage } from "./consoleFeed.js";
 import SiteHeader from "./SiteHeader.jsx";
@@ -60,7 +62,7 @@ export default function CompletedOrdersPage() {
 }
 
 function CompletedOrders() {
-  const { stores, error } = useOperatorStores(appendConsoleMessage);
+  const { stores, error, updateOrder } = useOperatorStores(appendConsoleMessage);
 
   if (error) return <p role="alert">{error}</p>;
   if (!stores) return <p role="status">Loading completed orders…</p>;
@@ -80,19 +82,11 @@ function CompletedOrders() {
               <h3 className="operator-completed-date">{day.date}</h3>
               <ul className="operator-completed-list">
                 {day.orders.map((order) => (
-                  <li key={order.orderId} className="operator-completed-order">
-                    <span className="operator-completed-id">Order {order.orderId}</span>
-                    <span className="operator-completed-time">{order.time}</span>
-                    <span>{order.customer}</span>
-                    <span className="money">{formatMoney(order.totalCents)}</span>
-                    <button
-                      type="button"
-                      className="store-order-button store-order-button-secondary"
-                      aria-label={`Refund order ${order.orderId}`}
-                    >
-                      Refund
-                    </button>
-                  </li>
+                  <CompletedOrder
+                    key={order.orderId}
+                    order={order}
+                    onChange={(changes) => updateOrder(order.orderId, changes)}
+                  />
                 ))}
               </ul>
             </section>
@@ -101,4 +95,49 @@ function CompletedOrders() {
       </section>
     );
   });
+}
+
+function CompletedOrder({ order, onChange }) {
+  const [refunding, setRefunding] = useState(false);
+  const [refundError, setRefundError] = useState("");
+
+  let label = "Refund";
+  if (order.refunded) label = "Refunded";
+  else if (refunding) label = "Refunding…";
+
+  async function refund() {
+    setRefunding(true);
+    setRefundError("");
+    appendConsoleMessage(`Operator command: refund order ${order.orderId}.`, "info");
+    try {
+      onChange(await refundOrder(order.orderId));
+      appendConsoleMessage(`Order ${order.orderId} was refunded.`, "success");
+    } catch (error) {
+      let message = error.message || `Order ${order.orderId} could not be refunded.`;
+      if (error instanceof TypeError) message = `Order ${order.orderId} could not be refunded. Check your connection.`;
+      setRefundError(message);
+      appendConsoleMessage(message, "error");
+    } finally {
+      setRefunding(false);
+    }
+  }
+
+  return (
+    <li className="operator-completed-order">
+      <span className="operator-completed-id">Order {order.orderId}</span>
+      <span className="operator-completed-time">{order.time}</span>
+      <span>{order.customer}</span>
+      <span className="money">{formatMoney(order.totalCents)}</span>
+      <button
+        type="button"
+        className="store-order-button store-order-button-secondary"
+        aria-label={order.refunded ? `Order ${order.orderId} has been refunded` : `Refund order ${order.orderId}`}
+        disabled={order.refunded || refunding}
+        onClick={refund}
+      >
+        {label}
+      </button>
+      {refundError && <p role="alert" className="operator-completed-error">{refundError}</p>}
+    </li>
+  );
 }

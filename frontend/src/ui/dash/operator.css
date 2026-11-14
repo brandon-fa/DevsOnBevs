@@ -137,7 +137,7 @@
 
 .operator-completed-order {
   display: grid;
-  grid-template-columns: 6.5rem 5.5rem minmax(0, 1fr) auto 6rem;
+  grid-template-columns: 6.5rem 5.5rem minmax(0, 1fr) auto 7rem;
   align-items: center;
   gap: 0.25rem 1rem;
   padding: 0.5rem 0.5rem 0.5rem 1rem;
@@ -158,6 +158,12 @@
 
 .operator-completed-empty {
   padding: 0.75rem 1rem;
+}
+
+.operator-completed-error {
+  grid-column: 1 / -1;
+  color: #b42318;
+  font-weight: 600;
 }
 
 @media (max-width: 1000px) {

@@ -36,6 +36,8 @@ public final class OrderStore {
             throw new IllegalStateException("SQLite JDBC driver is not on the classpath.", exception);
         }
         migrateFareColumns();
+        // After the fare migration, which rebuilds the orders table without this column.
+        ensureRefundedColumn();
         ensureTransitionSchema();
     }
 
@@ -167,6 +169,16 @@ public final class OrderStore {
         }
     }
     
+    /** @return false, changing nothing, unless the order is delivered and not yet refunded. */
+    public boolean markRefunded(int orderId) throws SQLException {
+        String sql = "UPDATE orders SET refunded = 1 WHERE id = ? AND status = 'delivered' AND refunded = 0";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            return statement.executeUpdate() == 1;
+        }
+    }
+
     /** Reset: removes every saved order so the demo restarts from the initial scenario. */
     public void deleteAllOrders() throws SQLException {
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
@@ -212,7 +224,7 @@ public final class OrderStore {
                 SELECT o.id, o.customer_id, gs.id AS store_id, o.delivery_address, o.status,
                        o.subtotal_cents, o.delivery_fee_cents, o.service_fee_cents,
                        o.small_order_surcharge_cents, o.total_cents, o.fare_version,
-                       o.courier_id
+                       o.courier_id, o.refunded
                 FROM orders o
                 JOIN users u ON u.id = o.groceries_id AND u.role = 'groceries'
                 JOIN grocery_stores gs ON lower(u.store_code) = lower(gs.id)
@@ -250,6 +262,7 @@ public final class OrderStore {
                                 orders.getLong("total_cents")),
                         orders.getInt("fare_version"),
                         courierUserId,
+                        orders.getBoolean("refunded"),
                         new ArrayList<>(),
                         new ArrayList<>()));
             }
@@ -283,7 +296,7 @@ public final class OrderStore {
     /** Every order that was not cancelled, with the names and totals the operator screens show. */
     public List<OperatorOrder> loadOperatorOrders() throws SQLException {
         String sql = """
-                SELECT o.id, gs.id AS store_id, o.status, o.delivery_address, o.total_cents,
+                SELECT o.id, gs.id AS store_id, o.status, o.delivery_address, o.total_cents, o.refunded,
                        strftime('%Y-%m-%dT%H:%M:%SZ', o.created_at) AS created_at,
                        customer.full_name AS customer_name,
                        courier.full_name AS courier_name,
@@ -311,9 +324,27 @@ public final class OrderStore {
                         orders.getString("delivery_address"),
                         orders.getInt("item_count"),
                         orders.getInt("total_cents"),
-                        orders.getString("created_at")));
+                        orders.getString("created_at"),
+                        orders.getBoolean("refunded")));
             }
             return List.copyOf(result);
+        }
+    }
+
+    private void ensureRefundedColumn() {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl);
+             Statement statement = connection.createStatement()) {
+            boolean hasRefunded = false;
+            try (ResultSet columns = statement.executeQuery("PRAGMA table_info(orders)")) {
+                while (columns.next()) {
+                    if ("refunded".equalsIgnoreCase(columns.getString("name"))) hasRefunded = true;
+                }
+            }
+            if (!hasRefunded) {
+                statement.execute("ALTER TABLE orders ADD COLUMN refunded INTEGER NOT NULL DEFAULT 0 CHECK (refunded IN (0, 1))");
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("The orders table could not be prepared.", exception);
         }
     }
 
@@ -534,12 +565,13 @@ public final class OrderStore {
     }
 
     public record SavedOrder(int id, long customerId, String storeId, String destination, String status, Fare fare,
-                             int fareVersion, Long courierUserId, ArrayList<OrderLine> lines,
+                             int fareVersion, Long courierUserId, boolean refunded, ArrayList<OrderLine> lines,
                              ArrayList<TransitionEvent> transitions) {
     }
 
     /** {@code createdAt} is UTC in ISO-8601; {@code courier} is null until one is assigned. */
     public record OperatorOrder(int id, String storeId, String status, String customer, String courier,
-                                String destination, int itemCount, int totalCents, String createdAt) {
+                                String destination, int itemCount, int totalCents, String createdAt,
+                                boolean refunded) {
     }
 }

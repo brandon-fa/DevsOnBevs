@@ -249,7 +249,13 @@ export default function CityMap({ role, account, order, onFeedback }) {
         <div className="city-map-layout">
           <div className="city-map-canvas" ref={mapNode} role="application" aria-label="Little Isles city map" />
           <aside className="city-map-details" aria-live="polite">
-            {selectedDetails ? <SelectedDetails selected={selectedDetails} /> : <p>Select a marker to read its details.</p>}
+            {selectedDetails ? <SelectedDetails selected={selectedDetails} /> : <p>Select a marker to read its seeded details.</p>}
+            {role === "customer" && !visibleCity.customers.length && (
+              <p className="city-map-note">No seeded delivery pin matches this customer account.</p>
+            )}
+            {role === "customer" && visibleCity.couriers.length > 0 && (
+              <p className="city-map-note">Showing the seeded courier location; this demo does not update it live.</p>
+            )}
           </aside>
         </div>
       )}

@@ -50,8 +50,17 @@ export default function Dashboard() {
       <a className="skip-link" href="#main">Skip to content</a>
       <SiteHeader account={account} />
       <main id="main" className="dash-main">
-        {view}
-        <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+        {account.role === "customer" ? (
+          <>
+            {view}
+            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+          </>
+        ) : (
+          <>
+            <CityMap role={account.role} account={account} order={null} onFeedback={addFeedback} />
+            {view}
+          </>
+        )}
       </main>
     </div>
   );
