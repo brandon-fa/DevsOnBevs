@@ -54,6 +54,21 @@ public final class LedgerService {
                 .toList();
         return recordCharge(order.getOrderId(), finalState, timestamps, order.getFare());
     }
+    
+    public synchronized LedgerEntry recordRefund(Order order) throws SQLException {
+        Objects.requireNonNull(order, "An order is required to record its refund.");
+        LedgerEntry charge = ledger.entriesForOrder(order.getOrderId()).stream()
+                .filter(entry -> entry.entryType() == LedgerEntryType.CHARGE)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("This order has no charge to refund."));
+        List<OrderTimestamp> timestamps = order.getTransitionEvents().stream()
+                .map(event -> new OrderTimestamp(event.getToState(), Instant.parse(event.getTimestamp())))
+                .toList();
+        LedgerEntry refund = LedgerEntry.refund(order.getOrderId(), timestamps, charge.amountCents(), clock.instant());
+        repository.save(refund);
+        ledger.append(refund);
+        return refund;
+    }
 
     public synchronized boolean hasChargeForOrder(long orderId) {
         return ledger.entriesForOrder(orderId).stream()
