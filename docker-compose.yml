@@ -1,0 +1,23 @@
+# Little Isles in Docker: the Java backend, plus nginx serving the React frontend.
+#   docker compose up --build      then open http://localhost:3000
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    volumes:
+      # The SQLite database lives in a Docker volume, first filled from database/ in the image.
+      # It survives restarts, and Docker never edits the database/littleisle.sqlite in git.
+      - database:/app/database
+      # Use config/*.properties from this checkout: edit one, then `docker compose restart backend`.
+      - ./config:/app/config:ro
+
+  frontend:
+    build: frontend
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      - backend
+
+volumes:
+  database:

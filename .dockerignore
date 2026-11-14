@@ -1,0 +1,7 @@
+# The backend image is built from the repository root (see backend/Dockerfile).
+# Send Docker only what that build uses, not .git, node_modules or docs.
+*
+!backend/pom.xml
+!backend/src
+!config
+!database
