@@ -79,7 +79,7 @@ class CityConfigLoaderTest {
                 city.minLon=-73.64
                 city.maxLon=-73.54
                 groceryStore.olive-rye.name=Olive & Rye
-                groceryStore.olive-rye.open=true
+                groceryStore.olive-rye.status=open
                 groceryStore.olive-rye.lat=45.52
                 """);
 
@@ -100,7 +100,7 @@ class CityConfigLoaderTest {
                 city.minLon=-73.64
                 city.maxLon=-73.54
                 groceryStore.olive-rye.name=Olive & Rye
-                groceryStore.olive-rye.open=true
+                groceryStore.olive-rye.status=open
                 groceryStore.olive-rye.lat=45.5234
                 groceryStore.olive-rye.lon=-73.5801
                 groceryStore.olive-rye.product.halloumi.name=Halloumi
