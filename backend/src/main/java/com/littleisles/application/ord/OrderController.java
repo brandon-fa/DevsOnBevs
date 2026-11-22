@@ -107,18 +107,7 @@ public final class OrderController {
             throw new IllegalStateException("This grocery store is closed.");
         }
 
-        List<OrderLine> validatedLines = new ArrayList<>();
-        for (String productId : products.keySet()) {
-            Integer quantity = products.get(productId);
-            if (productId == null || productId.isBlank() || quantity == null || quantity <= 0) {
-                throw new IllegalArgumentException("Each product needs an id and a positive whole-number quantity.");
-            }
-            Product product = findProduct(store, productId);
-            if (product.isSoldOut()) {
-                throw new IllegalStateException(product.getName() + " is sold out.");
-            }
-            validatedLines.add(new OrderLine(product, quantity));
-        }
+        List<OrderLine> validatedLines = buildValidatedLines(store, products);
 
         Order order = new Order(store, destination.trim());
         order.setCustomerUserId(account.id());
@@ -139,6 +128,22 @@ public final class OrderController {
         }
         customer.addOrder(order);
         return order;
+    }
+
+    private List<OrderLine> buildValidatedLines(GroceryStore store, Map<String, Integer> products) {
+        List<OrderLine> validatedLines = new ArrayList<>();
+        for (String productId : products.keySet()) {
+            Integer quantity = products.get(productId);
+            if (productId == null || productId.isBlank() || quantity == null || quantity <= 0) {
+                throw new IllegalArgumentException("Each product needs an id and a positive whole-number quantity.");
+            }
+            Product product = findProduct(store, productId);
+            if (product.isSoldOut()) {
+                throw new IllegalStateException(product.getName() + " is sold out.");
+            }
+            validatedLines.add(new OrderLine(product, quantity));
+        }
+        return validatedLines;
     }
 
     public synchronized List<Order> customerOrders(AuthenticatedAccount account) throws SQLException {
@@ -974,34 +979,39 @@ public final class OrderController {
                     && !ledgerService.hasChargeForOrder(saved.id())) {
                 ledgerService.recordCharge(order);
             }
-            if ("placed".equals(saved.status())) {
-                store.addPendingOrder(order);
-            } else if ("preparing".equals(saved.status())) {
-                store.addOrderToQueue(order);
-            } else if ("ready".equals(saved.status()) || "accepted".equals(saved.status())) {
-                store.restoreReadyOrder(order);
-                if (saved.courierUserId() != null) {
-                    order.setOfferedCourierUserId(saved.courierUserId());
-                    String pin = accountRepository.courierPinForUser(saved.courierUserId());
-                    boolean accepted = "accepted".equals(saved.status()) || (pin != null && cityCatalog.snapshot().couriers().stream()
-                            .anyMatch(courier -> courier.id().equals(pin) && courier.status() != CourierStatus.IDLE));
-                    if (accepted) {
-                        order.markCourierAccepted();
-                    } else if (pin != null && !pin.isBlank()) {
-                        cityCatalog.markOpenOffer(pin);
-                    }
-                }
-            } else if ("picked_up".equals(saved.status()) && saved.courierUserId() != null) {
-                order.setOfferedCourierUserId(saved.courierUserId());
-                order.markCourierAccepted();
-                deliveries.add(order);
-                String pin = accountRepository.courierPinForUser(saved.courierUserId());
-                rememberCourierStatus(saved.courierUserId(), pin, CourierStatus.CARRYING);
-                rememberCourierLocation(saved.courierUserId(), pin, store.getLat(), store.getLon());
-            }
+            restoreSavedOrderPlacement(saved, order, store);
             savedOrdersByCustomer.computeIfAbsent(saved.customerId(), id -> new ArrayList<>()).add(order);
         }
         offerUnassignedReadyOrders();
+    }
+
+    private void restoreSavedOrderPlacement(OrderStore.SavedOrder saved, Order order, GroceryStore store)
+            throws SQLException {
+        if ("placed".equals(saved.status())) {
+            store.addPendingOrder(order);
+        } else if ("preparing".equals(saved.status())) {
+            store.addOrderToQueue(order);
+        } else if ("ready".equals(saved.status()) || "accepted".equals(saved.status())) {
+            store.restoreReadyOrder(order);
+            if (saved.courierUserId() != null) {
+                order.setOfferedCourierUserId(saved.courierUserId());
+                String pin = accountRepository.courierPinForUser(saved.courierUserId());
+                boolean accepted = "accepted".equals(saved.status()) || (pin != null && cityCatalog.snapshot().couriers().stream()
+                        .anyMatch(courier -> courier.id().equals(pin) && courier.status() != CourierStatus.IDLE));
+                if (accepted) {
+                    order.markCourierAccepted();
+                } else if (pin != null && !pin.isBlank()) {
+                    cityCatalog.markOpenOffer(pin);
+                }
+            }
+        } else if ("picked_up".equals(saved.status()) && saved.courierUserId() != null) {
+            order.setOfferedCourierUserId(saved.courierUserId());
+            order.markCourierAccepted();
+            deliveries.add(order);
+            String pin = accountRepository.courierPinForUser(saved.courierUserId());
+            rememberCourierStatus(saved.courierUserId(), pin, CourierStatus.CARRYING);
+            rememberCourierLocation(saved.courierUserId(), pin, store.getLat(), store.getLon());
+        }
     }
 
     private static TransitionEvent latestTransition(Order order) {
