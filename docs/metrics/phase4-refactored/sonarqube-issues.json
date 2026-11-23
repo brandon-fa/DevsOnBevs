@@ -1,0 +1,875 @@
+{
+  "total": 16,
+  "p": 1,
+  "ps": 500,
+  "paging": {
+    "pageIndex": 1,
+    "pageSize": 500,
+    "total": 16
+  },
+  "effortTotal": 130,
+  "issues": [
+    {
+      "key": "e0d1715a-12ca-4d6b-87b5-925fd0bd2176",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/dash/HistoryPage.jsx",
+      "project": "DevsOnBevs",
+      "line": 58,
+      "hash": "330bbfbab972653f04048b548fc143fe",
+      "textRange": {
+        "startLine": 58,
+        "endLine": 58,
+        "startOffset": 4,
+        "endOffset": 18
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "y.zakariab@outlook.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-11-12T23:42:02+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "874f8f14-fdd9-46ed-9ad6-52eacf247494",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/dash/useOperatorStores.js",
+      "project": "DevsOnBevs",
+      "line": 32,
+      "hash": "eae67ff96afcbd0aa8348c6ac1503a8a",
+      "textRange": {
+        "startLine": 32,
+        "endLine": 32,
+        "startOffset": 4,
+        "endOffset": 11
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "sheryl.ingabire@gmail.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-11-12T21:22:08+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "a28c2426-78b2-4d3c-9dd2-e128d2617cdd",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/ord/Cart.jsx",
+      "project": "DevsOnBevs",
+      "line": 39,
+      "hash": "eae67ff96afcbd0aa8348c6ac1503a8a",
+      "textRange": {
+        "startLine": 39,
+        "endLine": 39,
+        "startOffset": 4,
+        "endOffset": 11
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "sheryl.ingabire@gmail.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-11-12T21:22:08+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "51c1315e-3f25-4105-9ef0-0d8c6450424d",
+      "rule": "java:S2201",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/TransitionEvent.java",
+      "project": "DevsOnBevs",
+      "line": 24,
+      "hash": "a9fd57f0f5442b91bd1334a3b11b5854",
+      "textRange": {
+        "startLine": 24,
+        "endLine": 24,
+        "startOffset": 16,
+        "endOffset": 21
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "The return value of \"parse\" must be used.",
+      "effort": "10min",
+      "debt": "10min",
+      "author": "falconaguilarb@gmail.com",
+      "tags": [
+        "cert"
+      ],
+      "creationDate": "2026-11-11T01:08:58+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": false,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "bb0cde2d-30e2-43e8-a86a-93ca6ea0e1f8",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/dash/RoleDashboardView.jsx",
+      "project": "DevsOnBevs",
+      "line": 66,
+      "hash": "eae67ff96afcbd0aa8348c6ac1503a8a",
+      "textRange": {
+        "startLine": 66,
+        "endLine": 66,
+        "startOffset": 4,
+        "endOffset": 11
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "t_thanhl@live.concordia.ca",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-11-10T17:35:24+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "53efe429-636d-41c7-9ec3-c4166da9a341",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/dash/RoleDashboardView.jsx",
+      "project": "DevsOnBevs",
+      "line": 206,
+      "hash": "eae67ff96afcbd0aa8348c6ac1503a8a",
+      "textRange": {
+        "startLine": 206,
+        "endLine": 206,
+        "startOffset": 4,
+        "endOffset": 11
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "t_thanhl@live.concordia.ca",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-11-10T17:35:24+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "dc2f0edd-9eb0-4dd1-89ac-4616418a162d",
+      "rule": "java:S2077",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/db/OrderStore.java",
+      "project": "DevsOnBevs",
+      "line": 497,
+      "hash": "0d95772fedfd00310ead3655dbe648ea",
+      "textRange": {
+        "startLine": 497,
+        "endLine": 506,
+        "startOffset": 34,
+        "endOffset": 73
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Make sure using a dynamically formatted SQL query is safe here.",
+      "effort": "20min",
+      "debt": "20min",
+      "author": "y.zakariab@outlook.com",
+      "tags": [
+        "cwe",
+        "spring",
+        "bad-practice",
+        "cert",
+        "hibernate",
+        "former-hotspot",
+        "sql"
+      ],
+      "creationDate": "2026-11-09T23:51:08+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "VULNERABILITY",
+      "scope": "MAIN",
+      "quickFixAvailable": false,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "COMPLETE",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "SECURITY",
+          "severity": "MEDIUM"
+        },
+        {
+          "softwareQuality": "MAINTAINABILITY",
+          "severity": "LOW"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "2f966d57-3f1a-4856-bc38-d4f9c244ff63",
+      "rule": "javascript:S6853",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/ord/Checkout.jsx",
+      "project": "DevsOnBevs",
+      "line": 206,
+      "hash": "4f38dea81ed75e8942901f643d875fab",
+      "textRange": {
+        "startLine": 206,
+        "endLine": 206,
+        "startOffset": 21,
+        "endOffset": 26
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "A form label must have accessible text.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "falconaguilarb@gmail.com",
+      "tags": [
+        "accessibility",
+        "react"
+      ],
+      "creationDate": "2026-11-08T18:30:28+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "CODE_SMELL",
+      "scope": "MAIN",
+      "quickFixAvailable": false,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "affcca3e-7f42-4df6-9abe-6e9aab449f4a",
+      "rule": "javascript:S6853",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/ord/Checkout.jsx",
+      "project": "DevsOnBevs",
+      "line": 219,
+      "hash": "e0e2181e12335907b97190b9b12f333b",
+      "textRange": {
+        "startLine": 219,
+        "endLine": 219,
+        "startOffset": 21,
+        "endOffset": 26
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "A form label must have accessible text.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "falconaguilarb@gmail.com",
+      "tags": [
+        "accessibility",
+        "react"
+      ],
+      "creationDate": "2026-11-08T18:30:28+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "CODE_SMELL",
+      "scope": "MAIN",
+      "quickFixAvailable": false,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "dcc88ce2-64fe-42b4-b614-b4343b1fff8b",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/dash/useSessionAccount.js",
+      "project": "DevsOnBevs",
+      "line": 26,
+      "hash": "4aee0940e1a8d1e945cddbd54d2fbec6",
+      "textRange": {
+        "startLine": 26,
+        "endLine": 26,
+        "startOffset": 4,
+        "endOffset": 18
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "yasmine.rabbath@gmail.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-11-03T22:30:12+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "3adb613f-6fe6-4cf1-8fd2-35c5c42d011e",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/ord/CustomerOrders.jsx",
+      "project": "DevsOnBevs",
+      "line": 132,
+      "hash": "eae67ff96afcbd0aa8348c6ac1503a8a",
+      "textRange": {
+        "startLine": 132,
+        "endLine": 132,
+        "startOffset": 4,
+        "endOffset": 11
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "jeremiebeaudoin1@gmail.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-10-24T02:13:27+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "bedb2479-776d-4e43-8671-d465fd9fb203",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/ord/StoreList.jsx",
+      "project": "DevsOnBevs",
+      "line": 99,
+      "hash": "86d3bf48ef23a3cd0e0edaad17f79c7e",
+      "textRange": {
+        "startLine": 99,
+        "endLine": 99,
+        "startOffset": 4,
+        "endOffset": 16
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "jeremiebeaudoin1@gmail.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-10-24T02:13:27+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "08228b73-576d-489f-a505-9b3ff236744e",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/ord/StoreOrders.jsx",
+      "project": "DevsOnBevs",
+      "line": 53,
+      "hash": "eae67ff96afcbd0aa8348c6ac1503a8a",
+      "textRange": {
+        "startLine": 53,
+        "endLine": 53,
+        "startOffset": 8,
+        "endOffset": 15
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "jeremiebeaudoin1@gmail.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-10-24T02:13:27+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "709bce72-fefa-4b2a-8230-ad521e24eb18",
+      "rule": "javascript:S9383",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/ord/StoreOrders.jsx",
+      "project": "DevsOnBevs",
+      "line": 159,
+      "hash": "c79be95ea413311f75c012503be3df4c",
+      "textRange": {
+        "startLine": 159,
+        "endLine": 159,
+        "startOffset": 48,
+        "endOffset": 116
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator.",
+      "effort": "5min",
+      "debt": "5min",
+      "author": "jeremiebeaudoin1@gmail.com",
+      "tags": [
+        "async",
+        "es2017",
+        "type-dependent",
+        "promise"
+      ],
+      "creationDate": "2026-10-24T02:13:27+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "BUG",
+      "scope": "MAIN",
+      "quickFixAvailable": true,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "LOGICAL",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "dea41ee7-3e72-4348-b2d4-3bd48f324b88",
+      "rule": "java:S8786",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/AccountCreator.java",
+      "project": "DevsOnBevs",
+      "line": 10,
+      "hash": "4477224a8ddaaeadd227a418093352d1",
+      "textRange": {
+        "startLine": 10,
+        "endLine": 10,
+        "startOffset": 49,
+        "endOffset": 56
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Simplify this regular expression to reduce its runtime, as it has super-linear performance due to backtracking.",
+      "effort": "20min",
+      "debt": "20min",
+      "author": "yasmine.rabbath@gmail.com",
+      "tags": [
+        "regex",
+        "performance"
+      ],
+      "creationDate": "2026-10-17T14:28:56+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "CODE_SMELL",
+      "scope": "MAIN",
+      "quickFixAvailable": false,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    },
+    {
+      "key": "e2f71f3d-6be6-42ca-abec-a1e5cf78342d",
+      "rule": "javascript:S8786",
+      "severity": "MAJOR",
+      "component": "DevsOnBevs:frontend/src/ui/reg/accountFactory.js",
+      "project": "DevsOnBevs",
+      "line": 19,
+      "hash": "3e1f98bbe5b3a50e8563adc7070902f4",
+      "textRange": {
+        "startLine": 19,
+        "endLine": 19,
+        "startOffset": 14,
+        "endOffset": 42
+      },
+      "flows": [],
+      "status": "OPEN",
+      "message": "Simplify this regular expression to reduce its runtime, as it has super-linear performance due to backtracking.",
+      "effort": "20min",
+      "debt": "20min",
+      "author": "yasmine.rabbath@gmail.com",
+      "tags": [
+        "regex",
+        "performance"
+      ],
+      "creationDate": "2026-10-16T22:04:21+0000",
+      "updateDate": "2026-11-20T19:46:08+0000",
+      "type": "CODE_SMELL",
+      "scope": "MAIN",
+      "quickFixAvailable": false,
+      "messageFormattings": [],
+      "codeVariants": [],
+      "cleanCodeAttribute": "EFFICIENT",
+      "cleanCodeAttributeCategory": "INTENTIONAL",
+      "impacts": [
+        {
+          "softwareQuality": "RELIABILITY",
+          "severity": "MEDIUM"
+        }
+      ],
+      "issueStatus": "OPEN",
+      "prioritizedRule": false,
+      "fromSonarQubeUpdate": false,
+      "internalTags": [],
+      "linkedTicketStatus": "NOT_LINKED"
+    }
+  ],
+  "components": [
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/StoreOrders.jsx",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "StoreOrders.jsx",
+      "longName": "frontend/src/ui/ord/StoreOrders.jsx",
+      "path": "frontend/src/ui/ord/StoreOrders.jsx"
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/TransitionEvent.java",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "TransitionEvent.java",
+      "longName": "backend/src/main/java/com/littleisles/domain/ord/TransitionEvent.java",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/TransitionEvent.java"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/Checkout.jsx",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "Checkout.jsx",
+      "longName": "frontend/src/ui/ord/Checkout.jsx",
+      "path": "frontend/src/ui/ord/Checkout.jsx"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/reg/accountFactory.js",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "accountFactory.js",
+      "longName": "frontend/src/ui/reg/accountFactory.js",
+      "path": "frontend/src/ui/reg/accountFactory.js"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/useOperatorStores.js",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "useOperatorStores.js",
+      "longName": "frontend/src/ui/dash/useOperatorStores.js",
+      "path": "frontend/src/ui/dash/useOperatorStores.js"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/RoleDashboardView.jsx",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "RoleDashboardView.jsx",
+      "longName": "frontend/src/ui/dash/RoleDashboardView.jsx",
+      "path": "frontend/src/ui/dash/RoleDashboardView.jsx"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/StoreList.jsx",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "StoreList.jsx",
+      "longName": "frontend/src/ui/ord/StoreList.jsx",
+      "path": "frontend/src/ui/ord/StoreList.jsx"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/Cart.jsx",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "Cart.jsx",
+      "longName": "frontend/src/ui/ord/Cart.jsx",
+      "path": "frontend/src/ui/ord/Cart.jsx"
+    },
+    {
+      "key": "DevsOnBevs",
+      "enabled": true,
+      "qualifier": "TRK",
+      "name": "DevsOnBevs",
+      "longName": "DevsOnBevs"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/useSessionAccount.js",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "useSessionAccount.js",
+      "longName": "frontend/src/ui/dash/useSessionAccount.js",
+      "path": "frontend/src/ui/dash/useSessionAccount.js"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/HistoryPage.jsx",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "HistoryPage.jsx",
+      "longName": "frontend/src/ui/dash/HistoryPage.jsx",
+      "path": "frontend/src/ui/dash/HistoryPage.jsx"
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/db/OrderStore.java",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "OrderStore.java",
+      "longName": "backend/src/main/java/com/littleisles/infrastructure/db/OrderStore.java",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/db/OrderStore.java"
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/AccountCreator.java",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "AccountCreator.java",
+      "longName": "backend/src/main/java/com/littleisles/domain/reg/AccountCreator.java",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/AccountCreator.java"
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/CustomerOrders.jsx",
+      "enabled": true,
+      "qualifier": "FIL",
+      "name": "CustomerOrders.jsx",
+      "longName": "frontend/src/ui/ord/CustomerOrders.jsx",
+      "path": "frontend/src/ui/ord/CustomerOrders.jsx"
+    }
+  ],
+  "facets": []
+}
