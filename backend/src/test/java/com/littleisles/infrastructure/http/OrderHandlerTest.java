@@ -3,6 +3,7 @@ package com.littleisles.infrastructure.http;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.littleisles.application.dash.CommandDispatcher;
+import com.littleisles.application.ntf.NotificationCenter;
 import com.littleisles.application.ord.CityCatalog;
 import com.littleisles.application.ord.OrderController;
 import com.littleisles.application.prc.LedgerService;
@@ -88,7 +89,7 @@ class OrderHandlerTest {
                 2, "Store", "store@example.com", "555-0101", Role.GROCERIES, null));
 
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        new OrderHandler(auth, new CommandDispatcher(controller, null)).bind(server);
+        new OrderHandler(auth, new CommandDispatcher(controller, null, new NotificationCenter(Duration.ofSeconds(60)))).bind(server);
         server.start();
         client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     }

@@ -1,5 +1,6 @@
 package com.littleisles.application.dash;
 
+import com.littleisles.application.ntf.NotificationCenter;
 import com.littleisles.application.ord.OrderController;
 import com.littleisles.application.prc.OrderHistoryRecord;
 import com.littleisles.domain.ord.CourierRosterEntry;
@@ -20,10 +21,13 @@ import java.util.Map;
 public final class CommandDispatcher {
     private final OrderController orderController;
     private final CityConfigLoader cityLoader;
+    private final NotificationCenter notificationCenter;
 
-    public CommandDispatcher(OrderController orderController, CityConfigLoader cityLoader) {
+    public CommandDispatcher(OrderController orderController, CityConfigLoader cityLoader,
+                             NotificationCenter notificationCenter) {
         this.orderController = orderController;
         this.cityLoader = cityLoader;
+        this.notificationCenter = notificationCenter;
     }
 
     public Order placeOrder(AuthenticatedAccount account, String storeId, String destination,
@@ -39,6 +43,10 @@ public final class CommandDispatcher {
 
     public List<OrderHistoryRecord> orderHistory(AuthenticatedAccount account) throws SQLException {
         return orderController.orderHistory(account);
+    }
+
+    public List<NotificationCenter.Notification> notifications(AuthenticatedAccount account) {
+        return notificationCenter.forAccount(account);
     }
 
     public GroceryStore acceptPendingOrder(AuthenticatedAccount account, int orderId) throws SQLException {
@@ -76,6 +84,7 @@ public final class CommandDispatcher {
     public void reset(AuthenticatedAccount account) throws IOException, SQLException {
         requireOperator(account, "reset the simulator");
         orderController.reset(cityLoader.load());
+        notificationCenter.clear();
     }
 
     public GroceryStore pauseStore(AuthenticatedAccount account, String storeId) {

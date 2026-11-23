@@ -1,0 +1,35 @@
+.notification-panel {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--color-linen);
+  border-radius: var(--radius-outer);
+  background: var(--color-cream);
+  box-shadow: var(--shadow-card);
+}
+
+.notification-empty {
+  margin-top: 0.4rem;
+  color: var(--color-taupe);
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  max-height: 11rem;
+  overflow-y: auto;
+}
+
+.notification-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--color-linen);
+}
+
+.notification-list time {
+  flex-shrink: 0;
+  color: var(--color-taupe);
+  font-size: var(--text-caption);
+}

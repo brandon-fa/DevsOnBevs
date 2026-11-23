@@ -46,6 +46,21 @@ public final class OrderHandler {
         server.createContext("/api/courier/orders", this::handleCourierOrders);
         server.createContext("/api/courier/status", this::handleCourierStatus);
         server.createContext("/api/operator/couriers", this::handleOperatorCouriers);
+        server.createContext("/api/notifications", this::handleNotifications);
+    }
+
+    private void handleNotifications(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestMethod().equals("GET")) {
+            sendError(exchange, 405, "Use GET to view notifications.");
+            return;
+        }
+        AuthenticatedAccount account = requireAuthenticatedAccount(exchange);
+        if (account == null) {
+            return;
+        }
+        JsonObject response = new JsonObject();
+        response.add("notifications", JSON.toJsonTree(dispatcher.notifications(account)));
+        send(exchange, 200, response);
     }
 
     private void handleOperatorStores(HttpExchange exchange) throws IOException {
