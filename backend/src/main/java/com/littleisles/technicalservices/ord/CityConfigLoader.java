@@ -105,27 +105,40 @@ public final class CityConfigLoader {
 
     private static void validateKeys(Properties properties) {
         for (String key : properties.stringPropertyNames()) {
-            String[] parts = key.split("\\.", -1);
-            boolean valid = false;
-
-            if (parts.length == 2 && parts[0].equals("city")) {
-                valid = CITY_FIELDS.contains(parts[1]);
-            } else if (parts.length == 3 && !parts[1].isBlank()) {
-                if (parts[0].equals("groceryStore")) {
-                    valid = STORE_FIELDS.contains(parts[2]);
-                } else if (parts[0].equals("courier")) {
-                    valid = COURIER_FIELDS.contains(parts[2]);
-                } else if (parts[0].equals("customer")) {
-                    valid = CUSTOMER_FIELDS.contains(parts[2]);
-                }
-            } else if (parts.length == 5 && parts[0].equals("groceryStore") && parts[2].equals("product")) {
-                valid = !parts[1].isBlank() && !parts[3].isBlank() && PRODUCT_FIELDS.contains(parts[4]);
-            }
-
-            if (!valid) {
+            if (!isSupportedKey(key)) {
                 throw new IllegalArgumentException("Unknown city setting: " + key);
             }
         }
+    }
+
+    private static boolean isSupportedKey(String key) {
+        String[] parts = key.split("\\.", -1);
+        return isCityFieldKey(parts) || isEntityFieldKey(parts) || isStoreProductFieldKey(parts);
+    }
+
+    private static boolean isCityFieldKey(String[] parts) {
+        return parts.length == 2 && parts[0].equals("city") && CITY_FIELDS.contains(parts[1]);
+    }
+
+    private static boolean isEntityFieldKey(String[] parts) {
+        if (parts.length != 3 || parts[1].isBlank()) {
+            return false;
+        }
+
+        String category = parts[0];
+        String field = parts[2];
+        return (category.equals("groceryStore") && STORE_FIELDS.contains(field))
+                || (category.equals("courier") && COURIER_FIELDS.contains(field))
+                || (category.equals("customer") && CUSTOMER_FIELDS.contains(field));
+    }
+
+    private static boolean isStoreProductFieldKey(String[] parts) {
+        return parts.length == 5
+                && parts[0].equals("groceryStore")
+                && parts[2].equals("product")
+                && !parts[1].isBlank()
+                && !parts[3].isBlank()
+                && PRODUCT_FIELDS.contains(parts[4]);
     }
 
     private static String required(Properties properties, String key) {
