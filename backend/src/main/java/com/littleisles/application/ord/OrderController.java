@@ -52,6 +52,7 @@ public final class OrderController {
     private final Map<Long, List<Order>> savedOrdersByCustomer = new HashMap<>();
     private final Map<Long, GroceriesAccount> groceriesAccounts = new HashMap<>();
     private final List<Order> deliveries = new ArrayList<>();
+    private final List<OrderStatusListener> statusListeners = new ArrayList<>();
 
     public OrderController(CityCatalog cityCatalog, AccountRepository accountRepository) throws SQLException {
         this(cityCatalog, accountRepository, new OrderStore(), defaultPricingService());
@@ -133,6 +134,7 @@ public final class OrderController {
             throw exception;
         }
         customer.addOrder(order);
+        announceStatusChange(order, order.getStatus());
         return order;
     }
 
@@ -224,7 +226,7 @@ public final class OrderController {
         GroceryStore store = storeFor(account);
         Order order = findPendingOrder(store, orderId);
         store.acceptPendingOrder(order);
-        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
+        saveStatusChange(order);
         return store;
     }
 
@@ -238,7 +240,7 @@ public final class OrderController {
                 .filter(order -> order.getOrderId() == orderId)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("The ready order could not be found."));
-        orderStore.updateStatus(orderId, "ready", latestTransition(ready));
+        saveStatusChange(ready);
         offerUnassignedReadyOrders();
         return store;
     }
@@ -310,7 +312,7 @@ public final class OrderController {
             throw new IllegalStateException("Your courier account is not on the city map.");
         }
         offered.markCourierAccepted();
-        orderStore.updateStatus(offered.getOrderId(), "accepted");
+        saveStatusChange(offered, "accepted", null);
         rememberCourierStatus(courierUserId, pin, CourierStatus.ASSIGNED);
         cityCatalog.clearOpenOffer(pin);
         offerUnassignedReadyOrders();
@@ -323,7 +325,7 @@ public final class OrderController {
         }
         ensureNoOtherActiveOrder(account.id(), order.getOrderId());
         order.pickupOrder();
-        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
+        saveStatusChange(order);
         String pin = accountRepository.courierPinForUser(account.id());
         rememberCourierStatus(account.id(), pin, CourierStatus.CARRYING);
         rememberCourierLocation(account.id(), pin, order.getStore().getLat(), order.getStore().getLon());
@@ -396,7 +398,7 @@ public final class OrderController {
             throw new IllegalStateException("Pick up the order before marking it delivered.");
         }
         order.deliverOrder();
-        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
+        saveStatusChange(order);
         ledgerService.recordCharge(order);
         deliveries.remove(order);
         String pin = accountRepository.courierPinForUser(account.id());
@@ -824,7 +826,7 @@ public final class OrderController {
         GroceryStore store = storeFor(account);
         Order order = findPendingOrder(store, orderId);
         store.rejectPendingOrder(order, reason);
-        orderStore.updateStatus(order.getOrderId(), order.getStatus(), latestTransition(order));
+        saveStatusChange(order);
         ledgerService.recordCharge(order);
         return store;
     }
@@ -848,6 +850,28 @@ public final class OrderController {
         }
         order.refund();
         ledgerService.recordRefund(order);
+        announceStatusChange(order, "refunded");
+    }
+
+    /** Extension point: listeners are told about every saved status change (none are registered by default). */
+    public synchronized void addStatusListener(OrderStatusListener listener) {
+        statusListeners.add(Objects.requireNonNull(listener, "listener"));
+    }
+
+    /** Saves the order's current status with its latest transition, then tells the listeners. */
+    private void saveStatusChange(Order order) throws SQLException {
+        saveStatusChange(order, order.getStatus(), latestTransition(order));
+    }
+
+    private void saveStatusChange(Order order, String status, TransitionEvent transition) throws SQLException {
+        orderStore.updateStatus(order.getOrderId(), status, transition);
+        announceStatusChange(order, status);
+    }
+
+    private void announceStatusChange(Order order, String status) {
+        for (OrderStatusListener listener : List.copyOf(statusListeners)) {
+            listener.orderStatusChanged(order, status);
+        }
     }
 
     /** Reset: deletes every saved order and swaps in a freshly loaded city. */
