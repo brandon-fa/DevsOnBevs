@@ -30,7 +30,6 @@ import java.util.Set;
 public final class NotificationCenter implements OrderStatusListener {
     private static final int MAX_PER_USER = 10;
     private static final String THRESHOLD_KEY = "ntf.dispatchQueue.thresholdSeconds";
-    private static final Duration DEFAULT_THRESHOLD = Duration.ofSeconds(60);
 
     public record Notification(long id, String message, String createdAt) {
     }
@@ -148,11 +147,21 @@ public final class NotificationCenter implements OrderStatusListener {
             try (Reader reader = Files.newBufferedReader(file)) {
                 Properties properties = new Properties();
                 properties.load(reader);
-                return Duration.ofSeconds(Long.parseLong(properties.getProperty(THRESHOLD_KEY).trim()));
-            } catch (IOException | RuntimeException exception) {
-                return DEFAULT_THRESHOLD;
+                String value = properties.getProperty(THRESHOLD_KEY);
+                if (value == null || value.isBlank()) {
+                    throw new IllegalStateException(file + " must set " + THRESHOLD_KEY + ".");
+                }
+                long seconds = Long.parseLong(value.trim());
+                if (seconds <= 0) {
+                    throw new IllegalStateException(THRESHOLD_KEY + " must be a positive number of seconds.");
+                }
+                return Duration.ofSeconds(seconds);
+            } catch (IOException exception) {
+                throw new IllegalStateException("Could not read " + file + ".", exception);
+            } catch (NumberFormatException exception) {
+                throw new IllegalStateException(THRESHOLD_KEY + " must be a whole number of seconds.", exception);
             }
         }
-        return DEFAULT_THRESHOLD;
+        throw new IllegalStateException("config/notifications.properties was not found; it sets the R-NTF-02 threshold.");
     }
 }
