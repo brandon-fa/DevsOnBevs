@@ -107,13 +107,6 @@ public final class OrderController {
         if (!store.isOpen()) {
             throw new IllegalStateException("This grocery store is closed.");
         }
-        for (Order existing : customer.getOrders()) {
-            if (Order.isCurrent(existing.getStatus()) && store.getId().equals(existing.getStore().getId())) {
-                throw new IllegalStateException(
-                        "You already have an open order at " + store.getName() + ". Finish or cancel it before ordering again there.");
-            }
-        }
-
         List<OrderLine> validatedLines = buildValidatedLines(store, products);
 
         Order order = new Order(store, destination.trim());
