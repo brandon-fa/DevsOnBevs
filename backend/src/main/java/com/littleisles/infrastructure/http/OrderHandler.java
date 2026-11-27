@@ -46,6 +46,21 @@ public final class OrderHandler {
         server.createContext("/api/courier/orders", this::handleCourierOrders);
         server.createContext("/api/courier/status", this::handleCourierStatus);
         server.createContext("/api/operator/couriers", this::handleOperatorCouriers);
+        server.createContext("/api/notifications", this::handleNotifications);
+    }
+
+    private void handleNotifications(HttpExchange exchange) throws IOException {
+        if (!exchange.getRequestMethod().equals("GET")) {
+            sendError(exchange, 405, "Use GET to view notifications.");
+            return;
+        }
+        AuthenticatedAccount account = requireAuthenticatedAccount(exchange);
+        if (account == null) {
+            return;
+        }
+        JsonObject response = new JsonObject();
+        response.add("notifications", JSON.toJsonTree(dispatcher.notifications(account)));
+        send(exchange, 200, response);
     }
 
     private void handleOperatorStores(HttpExchange exchange) throws IOException {
@@ -210,9 +225,8 @@ public final class OrderHandler {
             return;
         }
 
-        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        AuthenticatedAccount account = requireAuthenticatedAccount(exchange);
         if (account == null) {
-            sendError(exchange, 401, "Log in to continue.");
             return;
         }
 
@@ -273,9 +287,8 @@ public final class OrderHandler {
             return;
         }
 
-        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        AuthenticatedAccount account = requireAuthenticatedAccount(exchange);
         if (account == null) {
-            sendError(exchange, 401, "Log in to continue.");
             return;
         }
 
@@ -284,18 +297,7 @@ public final class OrderHandler {
             if (listing) {
                 store = dispatcher.storeOrders(account);
             } else {
-                String[] parts = path.split("/");
-                int orderId = Integer.parseInt(parts[4]);
-                String action = parts[5];
-
-                if (action.equals("accept")) {
-                    store = dispatcher.acceptPendingOrder(account, orderId);
-                } else if (action.equals("ready")) {
-                    store = dispatcher.readyNextOrder(account, orderId);
-                } else {
-                    String reason = requiredString(readBody(exchange), "reason");
-                    store = dispatcher.rejectPendingOrder(account, orderId, reason);
-                }
+                store = dispatchStoreOrderAction(exchange, account, path);
             }
             send(exchange, 200, storeJson(store));
         } catch (SecurityException exception) {
@@ -311,6 +313,30 @@ public final class OrderHandler {
         } catch (SQLException exception) {
             sendError(exchange, 500, "The order could not be saved. Please try again.");
         }
+    }
+
+    private AuthenticatedAccount requireAuthenticatedAccount(HttpExchange exchange) throws IOException {
+        AuthenticatedAccount account = authController.currentAccount(sessionCookie(exchange));
+        if (account == null) {
+            sendError(exchange, 401, "Log in to continue.");
+        }
+        return account;
+    }
+
+    private GroceryStore dispatchStoreOrderAction(HttpExchange exchange, AuthenticatedAccount account, String path)
+            throws IOException, SQLException {
+        String[] parts = path.split("/");
+        int orderId = Integer.parseInt(parts[4]);
+        String action = parts[5];
+
+        if (action.equals("accept")) {
+            return dispatcher.acceptPendingOrder(account, orderId);
+        }
+        if (action.equals("ready")) {
+            return dispatcher.readyNextOrder(account, orderId);
+        }
+        String reason = requiredString(readBody(exchange), "reason");
+        return dispatcher.rejectPendingOrder(account, orderId, reason);
     }
 
     private void handleCourierOrders(HttpExchange exchange) throws IOException {

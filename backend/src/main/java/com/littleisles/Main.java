@@ -1,5 +1,6 @@
 package com.littleisles;
 
+import com.littleisles.application.ntf.NotificationCenter;
 import com.littleisles.application.ord.CityCatalog;
 import com.littleisles.application.ord.OrderController;
 import com.littleisles.application.prc.PricingService;
@@ -45,6 +46,9 @@ public final class Main {
         cityCatalog.overlayStoredCouriers(accountStore.couriersWithLocation());
         OrderController orderController = new OrderController(
                 cityCatalog, accountStore, new OrderStore(), pricingService, ledgerService);
+        // NTF plugs into the R4 extension point: OrderController never references it.
+        NotificationCenter notificationCenter = new NotificationCenter();
+        orderController.addStatusListener(notificationCenter);
         for (SeedAccountLoader.SeededAccount account : seededAccounts) {
             if (account.role() == Role.GROCERIES) {
                 orderController.associateGroceriesAccount(account.email(), account.storeId());
@@ -52,7 +56,7 @@ public final class Main {
         }
         RegistrationServer registrationServer = new RegistrationServer(registrationService, accountStore, authController, cityCatalog);
         HttpServer server = registrationServer.start(port);
-        CommandDispatcher dispatcher = new CommandDispatcher(orderController, cityLoader);
+        CommandDispatcher dispatcher = new CommandDispatcher(orderController, cityLoader, notificationCenter);
         new CityCatalogHandler(authController, dispatcher).bind(server);
         new OrderHandler(authController, dispatcher).bind(server);
         new ResetHandler(authController, dispatcher).bind(server);

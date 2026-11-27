@@ -3,6 +3,7 @@ import { Navigate, useParams } from "react-router-dom";
 import { dashboardPathForRole } from "../reg/accountFactory.js";
 import StoreOrders from "../ord/StoreOrders.jsx";
 import StoreList from "../ord/StoreList.jsx";
+import NotificationList from "../ntf/NotificationList.jsx";
 import CityMap from "./CityMap.jsx";
 import OperatorDashboard from "./OperatorDashboard.jsx";
 import RoleDashboardView from "./RoleDashboardView.jsx";
@@ -50,6 +51,7 @@ export default function Dashboard() {
       <a className="skip-link" href="#main">Skip to content</a>
       <SiteHeader account={account} />
       <main id="main" className="dash-main">
+        {(account.role === "customer" || account.role === "operator") && <NotificationList />}
         {account.role === "customer" ? (
           <>
             {view}

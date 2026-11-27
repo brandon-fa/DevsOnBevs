@@ -8,6 +8,8 @@ import com.littleisles.domain.ord.CustomerPin;
 import com.littleisles.domain.ord.GroceryStore;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -79,12 +81,77 @@ class CityConfigLoaderTest {
                 city.minLon=-73.64
                 city.maxLon=-73.54
                 groceryStore.olive-rye.name=Olive & Rye
-                groceryStore.olive-rye.open=true
+                groceryStore.olive-rye.status=open
                 groceryStore.olive-rye.lat=45.52
                 """);
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> new CityConfigLoader(config).load());
         assertTrue(error.getMessage().contains("groceryStore.olive-rye.lon"));
+    }
+
+    @Test
+    void acceptsAllSupportedKeyCategoriesIncludingOptionalFields() throws IOException {
+        Path config = writeConfig(fullCity() + """
+                groceryStore.olive-rye.product.halloumi.image=halloumi.png
+                courier.nadia.name=Nadia
+                """);
+
+        CitySnapshot city = new CityConfigLoader(config).load();
+
+        assertEquals("Nadia", city.couriers().get(0).name());
+        assertEquals("halloumi.png", city.groceryStores().get(0).getProducts().stream()
+                .filter(product -> product.getId().equals("halloumi")).findFirst().orElseThrow().getImage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "region.minLat",
+            "city.population",
+            "groceryStore.olive-rye.open",
+            "groceryStore.olive-rye.product.halloumi.weight",
+            "courier.nadia.phone",
+            "customer.demo-customer.email"
+    })
+    void rejectsUnknownKeyCategoriesAndFields(String key) throws IOException {
+        assertUnknownCitySetting(key);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "city",
+            "city.minLat.extra",
+            "courier.nadia",
+            "customer.demo-customer.lat.",
+            "groceryStore.olive-rye.product.name",
+            "groceryStore.olive-rye.products.halloumi.name"
+    })
+    void rejectsMalformedKeyStructures(String key) throws IOException {
+        assertUnknownCitySetting(key);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "groceryStore..name",
+            "courier..lat",
+            "customer..name",
+            "groceryStore..product.halloumi.name",
+            "groceryStore.olive-rye.product..name",
+            "courier. .lat",
+            "groceryStore. .product.halloumi.name",
+            "groceryStore.olive-rye.product. .name"
+    })
+    void rejectsEmptyAndWhitespaceOnlyIdentifiers(String key) throws IOException {
+        assertUnknownCitySetting(key);
+    }
+
+    private void assertUnknownCitySetting(String key) throws IOException {
+        // Escape spaces so Properties.load preserves whitespace inside the key.
+        Path config = writeConfig(fullCity() + key.replace(" ", "\\ ") + "=unused\n");
+
+        IllegalArgumentException error = assertThrowsExactly(
+                IllegalArgumentException.class, () -> new CityConfigLoader(config).load());
+
+        assertEquals("Unknown city setting: " + key, error.getMessage());
     }
 
     private Path writeConfig(String contents) throws IOException {
@@ -100,7 +167,7 @@ class CityConfigLoaderTest {
                 city.minLon=-73.64
                 city.maxLon=-73.54
                 groceryStore.olive-rye.name=Olive & Rye
-                groceryStore.olive-rye.open=true
+                groceryStore.olive-rye.status=open
                 groceryStore.olive-rye.lat=45.5234
                 groceryStore.olive-rye.lon=-73.5801
                 groceryStore.olive-rye.product.halloumi.name=Halloumi
