@@ -292,16 +292,24 @@ class OrderControllerTest {
     }
 
     @Test
-    void rejectsSecondOpenOrderBeforeProductLineValidation() throws SQLException {
+    void allowsSeveralOpenOrdersFromOneCustomerAtTheSameStore() throws SQLException {
+        Order first = placeRiceOrder();
+        Order second = placeRiceOrder();
+
+        assertEquals(List.of(first, second), store.getPendingOrders());
+        assertEquals(List.of(first, second), controller.customerOrders(CUSTOMER));
+        assertEquals(2, countRows("orders"));
+    }
+
+    @Test
+    void secondOrderWithInvalidLinesIsRejectedByLineValidation() throws SQLException {
         Order existing = placeRiceOrder();
 
-        var error = assertThrowsExactly(IllegalStateException.class,
+        var error = assertThrowsExactly(IllegalArgumentException.class,
                 () -> controller.placeOrder(CUSTOMER, STORE_ID, ADDRESS, Map.of("unknown", 0), true));
 
-        assertEquals("You already have an open order at Test Store. Finish or cancel it before ordering again there.",
-                error.getMessage());
+        assertEquals("Each product needs an id and a positive whole-number quantity.", error.getMessage());
         assertEquals(List.of(existing), store.getPendingOrders());
-        assertEquals(List.of(existing), controller.customerOrders(CUSTOMER));
         assertEquals(1, countRows("orders"));
         assertNull(accounts.savedAddress);
     }

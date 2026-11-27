@@ -80,6 +80,17 @@ public final class LedgerStore implements LedgerRepository {
     }
 
     @Override
+    public void deleteAll() throws SQLException {
+        try (Connection connection = openConnection();
+             Statement statement = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            statement.executeUpdate("DELETE FROM ledger_entry_timestamps");
+            statement.executeUpdate("DELETE FROM ledger_entries");
+            connection.commit();
+        }
+    }
+
+    @Override
     public List<LedgerEntry> findAll() throws SQLException {
         String entrySql = """
                 SELECT id, order_id, entry_type, final_state, amount_cents, recorded_at

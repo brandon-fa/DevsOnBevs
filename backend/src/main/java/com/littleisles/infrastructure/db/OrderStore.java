@@ -184,6 +184,7 @@ public final class OrderStore {
         try (Connection connection = DriverManager.getConnection(jdbcUrl);
              Statement statement = connection.createStatement()) {
             connection.setAutoCommit(false);
+            statement.executeUpdate("DELETE FROM order_transition_events");
             statement.executeUpdate("DELETE FROM order_items");
             statement.executeUpdate("DELETE FROM orders");
             connection.commit();
