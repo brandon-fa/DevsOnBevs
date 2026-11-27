@@ -16,10 +16,10 @@ export default function NotificationList() {
       } catch {
         // Keep the last list; the next poll retries.
       } finally {
-        if (!cancelled) timer = setTimeout(load, 5000);
+        if (!cancelled) timer = setTimeout(() => { void load(); }, 5000);
       }
     }
-    load();
+    void load();
     return () => {
       cancelled = true;
       clearTimeout(timer);
