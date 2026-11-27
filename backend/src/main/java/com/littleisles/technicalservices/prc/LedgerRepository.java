@@ -9,4 +9,6 @@ public interface LedgerRepository {
     void save(LedgerEntry entry) throws SQLException;
 
     List<LedgerEntry> findAll() throws SQLException;
+
+    void deleteAll() throws SQLException;
 }

@@ -70,6 +70,12 @@ public final class LedgerService {
         return refund;
     }
 
+    /** Reset: empties the ledger in the database and in memory. */
+    public synchronized void clear() throws SQLException {
+        repository.deleteAll();
+        ledger.clear();
+    }
+
     public synchronized boolean hasChargeForOrder(long orderId) {
         return ledger.entriesForOrder(orderId).stream()
                 .anyMatch(entry -> entry.entryType() == LedgerEntryType.CHARGE);

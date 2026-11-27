@@ -60,12 +60,7 @@ class OrderStatusPersistenceTest {
         database = tempDirectory.resolve("orders.sqlite");
         createDatabase(database);
         orderStore = new OrderStore(database);
-        GroceryStore store = new GroceryStore(STORE_ID, "Test Store", 45.50, -73.57);
-        store.addProduct(new Product("rice", "Rice", 7.50));
-        CityCatalog city = new CityCatalog(CitySnapshot.builder(new CityBounds(45.45, 45.56, -73.68, -73.40))
-                .addGroceryStore(store)
-                .addCourier(new CourierPin(COURIER_PIN, "Courier", 45.51, -73.56, CourierStatus.IDLE))
-                .build());
+        CityCatalog city = new CityCatalog(initialCity());
         PricingService pricing = new PricingService(new StandardPricingStrategy(),
                 new PricingConfiguration(299, 0, 150, 1500, 250));
         ledger = new LedgerService(new LedgerStore(database));
@@ -161,6 +156,36 @@ class OrderStatusPersistenceTest {
         assertEquals(List.of("placed", "preparing", "ready", "picked_up", "delivered", "refunded"),
                 liveOrder().getTransitionEvents().stream().map(TransitionEvent::getToState).toList());
         assertEquals(2, ledger.entries().size());
+    }
+
+    @Test
+    void resetClearsLedgerAndHistorySoReusedOrderIdsCanBeChargedAgain() throws SQLException {
+        int first = deliveredOrder();
+
+        controller.reset(initialCity());
+        controller.associateGroceriesAccount(GROCERIES.email(), STORE_ID);
+        int second = deliveredOrder();
+
+        assertEquals(first, second);
+        assertEquals(1, ledger.entries().size());
+        assertEquals(List.of("placed", "preparing", "ready", "picked_up", "delivered"), savedStates(second));
+    }
+
+    private static CitySnapshot initialCity() {
+        GroceryStore store = new GroceryStore(STORE_ID, "Test Store", 45.50, -73.57);
+        store.addProduct(new Product("rice", "Rice", 7.50));
+        return CitySnapshot.builder(new CityBounds(45.45, 45.56, -73.68, -73.40))
+                .addGroceryStore(store)
+                .addCourier(new CourierPin(COURIER_PIN, "Courier", 45.51, -73.56, CourierStatus.IDLE))
+                .build();
+    }
+
+    private int deliveredOrder() throws SQLException {
+        int id = readyOrder();
+        controller.acceptCourierOffer(COURIER, id);
+        controller.pickupCourierOrder(COURIER, id);
+        controller.deliverCourierOrder(COURIER, id);
+        return id;
     }
 
     private int placeOrder() throws SQLException {

@@ -876,6 +876,8 @@ public final class OrderController {
 
     /** Reset: deletes every saved order and swaps in a freshly loaded city. */
     public synchronized void reset(CitySnapshot freshCity) throws SQLException {
+        // Order ids restart at 1 after the orders are deleted, so old charges and history must go too.
+        ledgerService.clear();
         orderStore.deleteAllOrders();
         cityCatalog.replace(freshCity);
         deliveries.clear();

@@ -8,6 +8,11 @@ import java.util.Objects;
 public final class OrderLedger {
     private final List<LedgerEntry> entries = new ArrayList<>();
 
+    /** Reset: the ledger returns to empty with the rest of the initial scenario. */
+    public synchronized void clear() {
+        entries.clear();
+    }
+
     public OrderLedger() {
     }
 

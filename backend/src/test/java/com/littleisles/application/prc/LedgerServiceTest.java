@@ -62,6 +62,11 @@ class LedgerServiceTest {
     }
 
     private static final class InMemoryLedgerRepository implements LedgerRepository {
+        @Override
+        public void deleteAll() {
+            entries.clear();
+        }
+
         private final List<LedgerEntry> entries = new ArrayList<>();
 
         @Override
