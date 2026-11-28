@@ -1,0 +1,2566 @@
+{
+  "paging": {
+    "pageIndex": 1,
+    "pageSize": 500,
+    "total": 127
+  },
+  "baseComponent": {
+    "key": "DevsOnBevs",
+    "name": "DevsOnBevs",
+    "qualifier": "TRK",
+    "measures": []
+  },
+  "components": [
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/Account.java",
+      "name": "Account.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/Account.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "15"
+        },
+        {
+          "metric": "ncloc",
+          "value": "45"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/AccountCreator.java",
+      "name": "AccountCreator.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/AccountCreator.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "code_smells",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "cognitive_complexity",
+          "value": "10",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "12"
+        },
+        {
+          "metric": "ncloc",
+          "value": "50"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/AccountCredentials.java",
+      "name": "AccountCredentials.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/AccountCredentials.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/AccountDraft.java",
+      "name": "AccountDraft.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/AccountDraft.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/reg/accountFactory.js",
+      "name": "accountFactory.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/reg/accountFactory.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "code_smells",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "cognitive_complexity",
+          "value": "12",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "43"
+        },
+        {
+          "metric": "ncloc",
+          "value": "142"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/AccountPage.jsx",
+      "name": "AccountPage.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/AccountPage.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "29",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "49"
+        },
+        {
+          "metric": "ncloc",
+          "value": "205"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/technicalservices/reg/AccountRepository.java",
+      "name": "AccountRepository.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/technicalservices/reg/AccountRepository.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "9"
+        },
+        {
+          "metric": "ncloc",
+          "value": "37"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/AccountService.java",
+      "name": "AccountService.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/AccountService.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "6",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "8"
+        },
+        {
+          "metric": "ncloc",
+          "value": "31"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/reg/accountSession.js",
+      "name": "accountSession.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/reg/accountSession.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "4",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "10"
+        },
+        {
+          "metric": "ncloc",
+          "value": "27"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/db/AccountStore.java",
+      "name": "AccountStore.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/db/AccountStore.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "76",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "83"
+        },
+        {
+          "metric": "ncloc",
+          "value": "411"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/AddressLocator.java",
+      "name": "AddressLocator.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/AddressLocator.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "65",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "63"
+        },
+        {
+          "metric": "ncloc",
+          "value": "236"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/App.jsx",
+      "name": "App.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/App.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "1"
+        },
+        {
+          "metric": "ncloc",
+          "value": "33"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/reg/AuthController.java",
+      "name": "AuthController.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/reg/AuthController.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "22",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "27"
+        },
+        {
+          "metric": "ncloc",
+          "value": "79"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/AuthenticatedAccount.java",
+      "name": "AuthenticatedAccount.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/AuthenticatedAccount.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/common/Billing.java",
+      "name": "Billing.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/common/Billing.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "6"
+        },
+        {
+          "metric": "ncloc",
+          "value": "26"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CanceledOrderState.java",
+      "name": "CanceledOrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CanceledOrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "11"
+        },
+        {
+          "metric": "ncloc",
+          "value": "27"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/Cart.jsx",
+      "name": "Cart.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/Cart.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "28",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "53"
+        },
+        {
+          "metric": "ncloc",
+          "value": "181"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/cartContext.js",
+      "name": "cartContext.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/cartContext.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "5"
+        },
+        {
+          "metric": "ncloc",
+          "value": "15"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/ord/CatalogController.java",
+      "name": "CatalogController.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/ord/CatalogController.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/Checkout.jsx",
+      "name": "Checkout.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/Checkout.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "code_smells",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "cognitive_complexity",
+          "value": "43",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "61"
+        },
+        {
+          "metric": "ncloc",
+          "value": "349"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/city-map.css",
+      "name": "city-map.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/city-map.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "119"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CityBounds.java",
+      "name": "CityBounds.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CityBounds.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "3"
+        },
+        {
+          "metric": "ncloc",
+          "value": "8"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/ord/CityCatalog.java",
+      "name": "CityCatalog.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/ord/CityCatalog.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "27",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "25"
+        },
+        {
+          "metric": "ncloc",
+          "value": "84"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/http/CityCatalogHandler.java",
+      "name": "CityCatalogHandler.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/http/CityCatalogHandler.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "12",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "15"
+        },
+        {
+          "metric": "ncloc",
+          "value": "71"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/technicalservices/ord/CityConfigLoader.java",
+      "name": "CityConfigLoader.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/technicalservices/ord/CityConfigLoader.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "35",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "48"
+        },
+        {
+          "metric": "ncloc",
+          "value": "169"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/CityMap.jsx",
+      "name": "CityMap.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/CityMap.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "51",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "78"
+        },
+        {
+          "metric": "ncloc",
+          "value": "292"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CitySnapshot.java",
+      "name": "CitySnapshot.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CitySnapshot.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "21",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "26"
+        },
+        {
+          "metric": "ncloc",
+          "value": "134"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/dash/CommandDispatcher.java",
+      "name": "CommandDispatcher.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/dash/CommandDispatcher.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "5",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "32"
+        },
+        {
+          "metric": "ncloc",
+          "value": "119"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/CompletedOrdersPage.jsx",
+      "name": "CompletedOrdersPage.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/CompletedOrdersPage.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "16",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "30"
+        },
+        {
+          "metric": "ncloc",
+          "value": "130"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CompletedOrderState.java",
+      "name": "CompletedOrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CompletedOrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "12"
+        },
+        {
+          "metric": "ncloc",
+          "value": "49"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/console.css",
+      "name": "console.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/console.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "72"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/dash/ConsoleController.java",
+      "name": "ConsoleController.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/dash/ConsoleController.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/consoleFeed.js",
+      "name": "consoleFeed.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/consoleFeed.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "7"
+        },
+        {
+          "metric": "ncloc",
+          "value": "24"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/ConsolePanel.jsx",
+      "name": "ConsolePanel.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/ConsolePanel.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "3",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "11"
+        },
+        {
+          "metric": "ncloc",
+          "value": "63"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/CourierAccount.java",
+      "name": "CourierAccount.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/CourierAccount.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "5"
+        },
+        {
+          "metric": "ncloc",
+          "value": "16"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/ord/CourierAvailability.java",
+      "name": "CourierAvailability.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/ord/CourierAvailability.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "4"
+        },
+        {
+          "metric": "ncloc",
+          "value": "27"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/CourierCreator.java",
+      "name": "CourierCreator.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/CourierCreator.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "11"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CourierPin.java",
+      "name": "CourierPin.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CourierPin.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "5",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "6"
+        },
+        {
+          "metric": "ncloc",
+          "value": "14"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CourierRosterEntry.java",
+      "name": "CourierRosterEntry.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CourierRosterEntry.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "3"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CourierStatus.java",
+      "name": "CourierStatus.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CourierStatus.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "6",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "7"
+        },
+        {
+          "metric": "ncloc",
+          "value": "27"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/reg/create-account.css",
+      "name": "create-account.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/reg/create-account.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "152"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/reg/CreateAccount.jsx",
+      "name": "CreateAccount.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/reg/CreateAccount.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "29",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "60"
+        },
+        {
+          "metric": "ncloc",
+          "value": "332"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/customer-orders.css",
+      "name": "customer-orders.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/customer-orders.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "144"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/CustomerAccount.java",
+      "name": "CustomerAccount.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/CustomerAccount.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "8"
+        },
+        {
+          "metric": "ncloc",
+          "value": "26"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/CustomerCreator.java",
+      "name": "CustomerCreator.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/CustomerCreator.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "11"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/CustomerOrders.jsx",
+      "name": "CustomerOrders.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/CustomerOrders.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "66",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "77"
+        },
+        {
+          "metric": "ncloc",
+          "value": "285"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/CustomerPin.java",
+      "name": "CustomerPin.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/CustomerPin.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "11"
+        },
+        {
+          "metric": "ncloc",
+          "value": "31"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/dashboard.css",
+      "name": "dashboard.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/dashboard.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "549"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/Dashboard.jsx",
+      "name": "Dashboard.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/Dashboard.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "13"
+        },
+        {
+          "metric": "ncloc",
+          "value": "67"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/ord/DispatchQueue.java",
+      "name": "DispatchQueue.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/ord/DispatchQueue.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "4"
+        },
+        {
+          "metric": "ncloc",
+          "value": "21"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/Fare.java",
+      "name": "Fare.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/Fare.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "3",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "7"
+        },
+        {
+          "metric": "ncloc",
+          "value": "19"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/GeoPoint.java",
+      "name": "GeoPoint.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/GeoPoint.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "4",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "7"
+        },
+        {
+          "metric": "ncloc",
+          "value": "11"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/styles/global.css",
+      "name": "global.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/styles/global.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "149"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/GroceriesAccount.java",
+      "name": "GroceriesAccount.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/GroceriesAccount.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "7"
+        },
+        {
+          "metric": "ncloc",
+          "value": "25"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/GroceriesCreator.java",
+      "name": "GroceriesCreator.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/GroceriesCreator.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "11"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/GroceryStore.java",
+      "name": "GroceryStore.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/GroceryStore.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "15",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "55"
+        },
+        {
+          "metric": "ncloc",
+          "value": "166"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/HaversineDistance.java",
+      "name": "HaversineDistance.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/HaversineDistance.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "19"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/HistoryPage.jsx",
+      "name": "HistoryPage.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/HistoryPage.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "19",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "38"
+        },
+        {
+          "metric": "ncloc",
+          "value": "120"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/LedgerEntry.java",
+      "name": "LedgerEntry.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/LedgerEntry.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "12"
+        },
+        {
+          "metric": "ncloc",
+          "value": "46"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/LedgerEntryType.java",
+      "name": "LedgerEntryType.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/LedgerEntryType.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "5"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/technicalservices/prc/LedgerRepository.java",
+      "name": "LedgerRepository.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/technicalservices/prc/LedgerRepository.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "9"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/prc/LedgerService.java",
+      "name": "LedgerService.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/prc/LedgerService.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "15"
+        },
+        {
+          "metric": "ncloc",
+          "value": "75"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/db/LedgerStore.java",
+      "name": "LedgerStore.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/db/LedgerStore.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "11",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "15"
+        },
+        {
+          "metric": "ncloc",
+          "value": "151"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/reg/Login.jsx",
+      "name": "Login.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/reg/Login.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "3",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "10"
+        },
+        {
+          "metric": "ncloc",
+          "value": "71"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/Main.java",
+      "name": "Main.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/Main.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "4",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "5"
+        },
+        {
+          "metric": "ncloc",
+          "value": "68"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/main.jsx",
+      "name": "main.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/main.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "10"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/data/mockData.js",
+      "name": "mockData.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/data/mockData.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "1"
+        },
+        {
+          "metric": "ncloc",
+          "value": "104"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/ntf/NotificationCenter.java",
+      "name": "NotificationCenter.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/ntf/NotificationCenter.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "26",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "36"
+        },
+        {
+          "metric": "ncloc",
+          "value": "138"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ntf/NotificationList.jsx",
+      "name": "NotificationList.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ntf/NotificationList.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "7",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "12"
+        },
+        {
+          "metric": "ncloc",
+          "value": "38"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ntf/notifications.css",
+      "name": "notifications.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ntf/notifications.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "31"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/OpenOrderState.java",
+      "name": "OpenOrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/OpenOrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "10",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "16"
+        },
+        {
+          "metric": "ncloc",
+          "value": "50"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/operator.css",
+      "name": "operator.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/operator.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "186"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/OperatorAccount.java",
+      "name": "OperatorAccount.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/OperatorAccount.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "1"
+        },
+        {
+          "metric": "ncloc",
+          "value": "6"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/OperatorCreator.java",
+      "name": "OperatorCreator.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/OperatorCreator.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "11"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/OperatorDashboard.jsx",
+      "name": "OperatorDashboard.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/OperatorDashboard.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "30"
+        },
+        {
+          "metric": "ncloc",
+          "value": "155"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/Order.java",
+      "name": "Order.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/Order.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "15",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "57"
+        },
+        {
+          "metric": "ncloc",
+          "value": "178"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/orderApi.js",
+      "name": "orderApi.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/orderApi.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "25",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "38"
+        },
+        {
+          "metric": "ncloc",
+          "value": "117"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/ord/OrderController.java",
+      "name": "OrderController.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/ord/OrderController.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "362",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "338"
+        },
+        {
+          "metric": "ncloc",
+          "value": "995"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/http/OrderHandler.java",
+      "name": "OrderHandler.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/http/OrderHandler.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "140",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "115"
+        },
+        {
+          "metric": "ncloc",
+          "value": "624"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/prc/OrderHistoryRecord.java",
+      "name": "OrderHistoryRecord.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/prc/OrderHistoryRecord.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "1"
+        },
+        {
+          "metric": "ncloc",
+          "value": "12"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/OrderLedger.java",
+      "name": "OrderLedger.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/OrderLedger.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "7",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "15"
+        },
+        {
+          "metric": "ncloc",
+          "value": "38"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/OrderLine.java",
+      "name": "OrderLine.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/OrderLine.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "6",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "14"
+        },
+        {
+          "metric": "ncloc",
+          "value": "51"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/OrderPlacedAnimation.jsx",
+      "name": "OrderPlacedAnimation.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/OrderPlacedAnimation.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "1"
+        },
+        {
+          "metric": "ncloc",
+          "value": "9"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/OrderState.java",
+      "name": "OrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/OrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "20"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/ord/OrderStatusListener.java",
+      "name": "OrderStatusListener.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/ord/OrderStatusListener.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "6"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/db/OrderStore.java",
+      "name": "OrderStore.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/db/OrderStore.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "56",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "66"
+        },
+        {
+          "metric": "ncloc",
+          "value": "449"
+        },
+        {
+          "metric": "software_quality_maintainability_issues",
+          "value": "1",
+          "bestValue": false
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/OrderTimestamp.java",
+      "name": "OrderTimestamp.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/OrderTimestamp.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "3",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "4"
+        },
+        {
+          "metric": "ncloc",
+          "value": "13"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/PermissionPolicy.java",
+      "name": "PermissionPolicy.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/PermissionPolicy.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "7"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/PlacedOrderState.java",
+      "name": "PlacedOrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/PlacedOrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "14"
+        },
+        {
+          "metric": "ncloc",
+          "value": "42"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/PreparationQueue.java",
+      "name": "PreparationQueue.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/PreparationQueue.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "3",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "10"
+        },
+        {
+          "metric": "ncloc",
+          "value": "30"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/PreparingOrderState.java",
+      "name": "PreparingOrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/PreparingOrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "12"
+        },
+        {
+          "metric": "ncloc",
+          "value": "35"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/PricedOrderLine.java",
+      "name": "PricedOrderLine.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/PricedOrderLine.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "4"
+        },
+        {
+          "metric": "ncloc",
+          "value": "14"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/technicalservices/prc/PricingConfigLoader.java",
+      "name": "PricingConfigLoader.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/technicalservices/prc/PricingConfigLoader.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "10"
+        },
+        {
+          "metric": "ncloc",
+          "value": "62"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/PricingConfiguration.java",
+      "name": "PricingConfiguration.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/PricingConfiguration.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "6"
+        },
+        {
+          "metric": "ncloc",
+          "value": "16"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/PricingFacts.java",
+      "name": "PricingFacts.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/PricingFacts.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "5",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "9"
+        },
+        {
+          "metric": "ncloc",
+          "value": "44"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/prc/PricingService.java",
+      "name": "PricingService.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/prc/PricingService.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "17"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/PricingStrategy.java",
+      "name": "PricingStrategy.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/PricingStrategy.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "0"
+        },
+        {
+          "metric": "ncloc",
+          "value": "4"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/Product.java",
+      "name": "Product.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/Product.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "23"
+        },
+        {
+          "metric": "ncloc",
+          "value": "61"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/productImages.js",
+      "name": "productImages.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/productImages.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "1",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "4"
+        },
+        {
+          "metric": "ncloc",
+          "value": "17"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/QueueBand.java",
+      "name": "QueueBand.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/QueueBand.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "3",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "6"
+        },
+        {
+          "metric": "ncloc",
+          "value": "24"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/ReadyOrderState.java",
+      "name": "ReadyOrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/ReadyOrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "11"
+        },
+        {
+          "metric": "ncloc",
+          "value": "32"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/http/RegistrationServer.java",
+      "name": "RegistrationServer.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/http/RegistrationServer.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "66",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "62"
+        },
+        {
+          "metric": "ncloc",
+          "value": "261"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/reg/RegistrationService.java",
+      "name": "RegistrationService.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/reg/RegistrationService.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "10"
+        },
+        {
+          "metric": "ncloc",
+          "value": "34"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/reset-control.css",
+      "name": "reset-control.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/reset-control.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "13"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/ResetControl.jsx",
+      "name": "ResetControl.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/ResetControl.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "5",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "11"
+        },
+        {
+          "metric": "ncloc",
+          "value": "45"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/http/ResetHandler.java",
+      "name": "ResetHandler.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/http/ResetHandler.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "11",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "14"
+        },
+        {
+          "metric": "ncloc",
+          "value": "76"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/reg/Role.java",
+      "name": "Role.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/reg/Role.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "4",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "6"
+        },
+        {
+          "metric": "ncloc",
+          "value": "25"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/RoleDashboardView.jsx",
+      "name": "RoleDashboardView.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/RoleDashboardView.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "65",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "126"
+        },
+        {
+          "metric": "ncloc",
+          "value": "306"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/technicalservices/reg/SeedAccountLoader.java",
+      "name": "SeedAccountLoader.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/technicalservices/reg/SeedAccountLoader.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "35",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "31"
+        },
+        {
+          "metric": "ncloc",
+          "value": "135"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/application/reg/SessionGate.java",
+      "name": "SessionGate.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/application/reg/SessionGate.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "4",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "10"
+        },
+        {
+          "metric": "ncloc",
+          "value": "32"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/shopping.css",
+      "name": "shopping.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/shopping.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "745"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/SiteHeader.jsx",
+      "name": "SiteHeader.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/SiteHeader.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "8",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "26"
+        },
+        {
+          "metric": "ncloc",
+          "value": "116"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/prc/StandardPricingStrategy.java",
+      "name": "StandardPricingStrategy.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/prc/StandardPricingStrategy.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "3"
+        },
+        {
+          "metric": "ncloc",
+          "value": "22"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/store-orders.css",
+      "name": "store-orders.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/store-orders.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "159"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/storeFonts.js",
+      "name": "storeFonts.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/storeFonts.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "2"
+        },
+        {
+          "metric": "ncloc",
+          "value": "10"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/StoreList.jsx",
+      "name": "StoreList.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/StoreList.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "40",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "63"
+        },
+        {
+          "metric": "ncloc",
+          "value": "206"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/StoreOrders.jsx",
+      "name": "StoreOrders.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/StoreOrders.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "26",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "54"
+        },
+        {
+          "metric": "ncloc",
+          "value": "177"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/StorePauseControl.jsx",
+      "name": "StorePauseControl.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/StorePauseControl.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "6",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "10"
+        },
+        {
+          "metric": "ncloc",
+          "value": "48"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/StoreProducts.jsx",
+      "name": "StoreProducts.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/StoreProducts.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "5",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "14"
+        },
+        {
+          "metric": "ncloc",
+          "value": "49"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/StoreStatus.java",
+      "name": "StoreStatus.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/StoreStatus.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "3",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "5"
+        },
+        {
+          "metric": "ncloc",
+          "value": "21"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/infrastructure/http/StoreStatusHandler.java",
+      "name": "StoreStatusHandler.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/infrastructure/http/StoreStatusHandler.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "16",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "17"
+        },
+        {
+          "metric": "ncloc",
+          "value": "98"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/styles/tokens.css",
+      "name": "tokens.css",
+      "qualifier": "FIL",
+      "path": "frontend/src/styles/tokens.css",
+      "language": "css",
+      "measures": [
+        {
+          "metric": "ncloc",
+          "value": "28"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/ord/TrackOrdersPage.jsx",
+      "name": "TrackOrdersPage.jsx",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/ord/TrackOrdersPage.jsx",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "4",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "6"
+        },
+        {
+          "metric": "ncloc",
+          "value": "33"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/TransitionEvent.java",
+      "name": "TransitionEvent.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/TransitionEvent.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "2",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "11"
+        },
+        {
+          "metric": "ncloc",
+          "value": "43"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:backend/src/main/java/com/littleisles/domain/ord/TransitOrderState.java",
+      "name": "TransitOrderState.java",
+      "qualifier": "FIL",
+      "path": "backend/src/main/java/com/littleisles/domain/ord/TransitOrderState.java",
+      "language": "java",
+      "measures": [
+        {
+          "metric": "complexity",
+          "value": "11"
+        },
+        {
+          "metric": "ncloc",
+          "value": "29"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/useOperatorStores.js",
+      "name": "useOperatorStores.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/useOperatorStores.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "17",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "19"
+        },
+        {
+          "metric": "ncloc",
+          "value": "40"
+        }
+      ]
+    },
+    {
+      "key": "DevsOnBevs:frontend/src/ui/dash/useSessionAccount.js",
+      "name": "useSessionAccount.js",
+      "qualifier": "FIL",
+      "path": "frontend/src/ui/dash/useSessionAccount.js",
+      "language": "js",
+      "measures": [
+        {
+          "metric": "cognitive_complexity",
+          "value": "9",
+          "bestValue": false
+        },
+        {
+          "metric": "complexity",
+          "value": "7"
+        },
+        {
+          "metric": "ncloc",
+          "value": "27"
+        }
+      ]
+    }
+  ]
+}
